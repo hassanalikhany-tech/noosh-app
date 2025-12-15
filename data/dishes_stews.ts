@@ -7,6 +7,7 @@ export const STEWS: Dish[] = [
     "name": "خورش قورمه‌سبزی",
     "category": "stew",
     "description": "خورش قورمه‌سبزی",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Ghormeh_sabzi.jpg/640px-Ghormeh_sabzi.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۴۰۰ گرم (مکعبی خرد شده)" },
       { "item": "پیاز بزرگ", "amount": "۱ عدد (نگینی خرد شده)" },
@@ -41,6 +42,7 @@ export const STEWS: Dish[] = [
     "name": "خورش قیمه",
     "category": "stew",
     "description": "خورش قیمه",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Khoresht_Gheimeh.jpg/640px-Khoresht_Gheimeh.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۳۵۰ گرم (مکعبی کوچک خرد شده)" },
       { "item": "لپه", "amount": "۱ پیمانه (۲۰۰ گرم، از شب قبل خیس شده)" },
@@ -77,6 +79,7 @@ export const STEWS: Dish[] = [
     "name": "خورش قیمه‌بادمجان",
     "category": "stew",
     "description": "خورش قیمه‌بادمجان",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Khoresht_Bademjan.jpg/640px-Khoresht_Bademjan.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۳۵۰ گرم (مکعبی کوچک خرد شده)" },
       { "item": "بادمجان قلمی یا معمولی", "amount": "۶-۸ عدد متوسط" },
@@ -117,6 +120,7 @@ export const STEWS: Dish[] = [
     "name": "خورش قیمه‌سیب‌زمینی",
     "category": "stew",
     "description": "خورش قیمه‌سیب‌زمینی",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Khoresht_Gheimeh.jpg/640px-Khoresht_Gheimeh.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۳۵۰ گرم (مکعبی کوچک خرد شده)" },
       { "item": "لپه", "amount": "۱ پیمانه (۲۰۰ گرم، از شب قبل خیس شده)" },
@@ -156,6 +160,7 @@ export const STEWS: Dish[] = [
     "name": "خورش فسنجان",
     "category": "stew",
     "description": "خورش فسنجان",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Fesenjan_stew.jpg/640px-Fesenjan_stew.jpg",
     "ingredients": [
       { "item": "مرغ (ران یا سینه) یا گوشت قلقلی (قلوه گاه گوسفندی)", "amount": "۴ تکه مرغ (حدود ۶۰۰-۷۰۰ گرم) یا ۳۵۰ گرم گوشت قلقلی" },
       { "item": "گردو (آسیاب شده)", "amount": "۳۰۰ گرم" },
@@ -188,6 +193,7 @@ export const STEWS: Dish[] = [
     "name": "خورش فسنجان ترش گیلانی",
     "category": "stew",
     "description": "فسنجان ترش گیلانی",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Fesenjan_stew.jpg/640px-Fesenjan_stew.jpg",
     "ingredients": [
       { "item": "مرغ (ران یا سینه) یا اردک", "amount": "۴ تکه متوسط (حدود ۸۰۰ گرم)" },
       { "item": "گردوی چرخ شده", "amount": "۳۰۰ گرم" },
@@ -215,6 +221,7 @@ export const STEWS: Dish[] = [
     "name": "خورش فسنجان شیرین قزوینی",
     "category": "stew",
     "description": "فسنجان شیرین قزوینی",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Fesenjan_stew.jpg/640px-Fesenjan_stew.jpg",
     "ingredients": [
       { "item": "گوشت چرخ‌کرده گوسفندی یا مخلوط", "amount": "۳۰۰ گرم (برای قلقلی) یا مرغ (ران یا سینه): ۴ تکه متوسط" },
       { "item": "گردوی چرخ شده", "amount": "۳۰۰ گرم" },
@@ -245,6 +252,7 @@ export const STEWS: Dish[] = [
     "name": "خورش بادمجان",
     "category": "stew",
     "description": "خورش بادمجان",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Khoresht_Bademjan_2.jpg/640px-Khoresht_Bademjan_2.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۴۰۰ گرم" },
       { "item": "بادمجان قلمی متوسط", "amount": "۶ تا ۸ عدد" },
@@ -1538,6 +1546,7 @@ export const STEWS: Dish[] = [
     "name": "مسمای بادمجان",
     "category": "stew",
     "description": "مسمای بادمجان",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Khoresht_Bademjan_2.jpg/640px-Khoresht_Bademjan_2.jpg",
     "ingredients": [
       { "item": "گوشت گوسفندی یا گوساله (خورشتی)", "amount": "۳۰۰ گرم (مکعبی خرد شده)" },
       { "item": "بادمجان قلمی", "amount": "۴ عدد" },

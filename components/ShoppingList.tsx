@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
@@ -241,47 +242,50 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
         </div>
       </div>
 
-      {/* PRINT VIEW (Only visible when printing) */}
-      <div className="print-view print-view-modal">
-        <div className="p-8">
-            <div className="text-center mb-8 pb-4 border-b-2 border-black">
-              <h1 className="text-3xl font-black mb-2 text-black">لیست خرید</h1>
-              <p className="text-sm text-black">تاریخ: {new Date().toLocaleDateString('fa-IR')}</p>
-            </div>
+      {/* PRINT VIEW (Only visible when printing) - Using Portal to escape any fixed/hidden parent containers */}
+      {createPortal(
+        <div className="print-view print-view-modal" id="shopping-list-print">
+          <div className="p-8">
+              <div className="text-center mb-8 pb-4 border-b-2 border-black">
+                <h1 className="text-3xl font-black mb-2 text-black">لیست خرید</h1>
+                <p className="text-sm text-black">تاریخ: {new Date().toLocaleDateString('fa-IR')}</p>
+              </div>
 
-            {uniqueItems.length > 0 ? (
-              <table style={{width: '100%', borderCollapse: 'collapse', direction: 'rtl'}}>
-                <thead>
-                  <tr style={{backgroundColor: '#f3f4f6'}}>
-                    <th style={{border: '1px solid black', padding: '10px', width: '10%', textAlign: 'center'}}>ردیف</th>
-                    <th style={{border: '1px solid black', padding: '10px', textAlign: 'right'}}>نام کالا</th>
-                    <th style={{border: '1px solid black', padding: '10px', width: '20%', textAlign: 'center'}}>وضعیت</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {uniqueItems.map((item, index) => (
-                    <tr key={item.id} style={{backgroundColor: item.checked ? '#f9fafb' : 'white'}}>
-                      <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>{index + 1}</td>
-                      <td style={{border: '1px solid black', padding: '10px', textDecoration: item.checked ? 'line-through' : 'none'}}>
-                        {item.name}
-                      </td>
-                      <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>
-                        <div style={{width: '15px', height: '15px', border: '1px solid black', display: 'inline-block', marginRight: '5px'}}></div>
-                      </td>
+              {uniqueItems.length > 0 ? (
+                <table style={{width: '100%', borderCollapse: 'collapse', direction: 'rtl'}}>
+                  <thead>
+                    <tr style={{backgroundColor: '#f3f4f6'}}>
+                      <th style={{border: '1px solid black', padding: '10px', width: '10%', textAlign: 'center'}}>ردیف</th>
+                      <th style={{border: '1px solid black', padding: '10px', textAlign: 'right'}}>نام کالا</th>
+                      <th style={{border: '1px solid black', padding: '10px', width: '20%', textAlign: 'center'}}>وضعیت</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-center mt-10 text-xl text-black">لیست خالی است.</p>
-            )}
-            
-            <div className="mt-8 text-right text-sm text-black pt-4 border-t border-black font-bold">
-               ممنونم<br/>
-               {user.fullName || user.username}
-            </div>
-        </div>
-      </div>
+                  </thead>
+                  <tbody>
+                    {uniqueItems.map((item, index) => (
+                      <tr key={item.id} style={{backgroundColor: item.checked ? '#f9fafb' : 'white'}}>
+                        <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>{index + 1}</td>
+                        <td style={{border: '1px solid black', padding: '10px', textDecoration: item.checked ? 'line-through' : 'none'}}>
+                          {item.name}
+                        </td>
+                        <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>
+                          <div style={{width: '15px', height: '15px', border: '1px solid black', display: 'inline-block', marginRight: '5px'}}></div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-center mt-10 text-xl text-black">لیست خالی است.</p>
+              )}
+              
+              <div className="mt-8 text-right text-sm text-black pt-4 border-t border-black font-bold">
+                ممنونم<br/>
+                {user.fullName || user.username}
+              </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

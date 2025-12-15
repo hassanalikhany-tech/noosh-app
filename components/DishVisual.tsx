@@ -37,7 +37,7 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     if (imageUrl) {
       setResolvedSrc(imageUrl);
     } else if (dishId) {
-      // Default to png
+      // Start with PNG
       setResolvedSrc(`/images/dishes/${dishId}.png`);
     } else {
       setResolvedSrc(null);
@@ -50,14 +50,21 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       return;
     }
 
-    // Fallback strategy for local images: PNG -> JPG -> JPEG -> Error
+    // Fallback strategy: PNG -> JPG -> JPEG -> WEBP -> Error
     if (retryCount === 0) {
+      // Try JPG
       setResolvedSrc(`/images/dishes/${dishId}.jpg`);
       setRetryCount(1);
     } else if (retryCount === 1) {
+       // Try JPEG
        setResolvedSrc(`/images/dishes/${dishId}.jpeg`);
        setRetryCount(2);
+    } else if (retryCount === 2) {
+       // Try WEBP
+       setResolvedSrc(`/images/dishes/${dishId}.webp`);
+       setRetryCount(3);
     } else {
+      // Final failure: suppress error log and show icon
       setImageError(true);
     }
   };

@@ -429,7 +429,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Print View: Dedicated Structure for Weekly Plan PDF */}
-            <div className="print-view">
+            <div className="print-view" id="weekly-plan-print">
                 {dailyPlan.length > 0 ? (
                   <div className="p-8 max-w-[210mm] mx-auto bg-white">
                     <div className="text-center mb-8 border-b-2 border-black pb-4 flex justify-between items-end">
