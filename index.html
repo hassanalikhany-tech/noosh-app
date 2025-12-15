@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نوش | دستیار هوشمند آشپزی</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+      body {
+        font-family: 'Vazirmatn', sans-serif;
+        background-color: #f1f5f9;
+        overflow-x: hidden;
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.02);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      
+      .animate-enter {
+        animation: enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      @keyframes enter {
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .card-3d {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+      .card-3d:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* 
+         PRINT STRATEGY 
+         We separate content into .screen-only (visible on screen) 
+         and .print-view (visible on print).
+      */
+      
+      /* Default: Hide print view on screen */
+      .print-view {
+        display: none !important;
+      }
+
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 1cm;
+        }
+        
+        /* Reset Page Structure */
+        html, body {
+          width: 100%;
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          overflow: visible !important;
+        }
+
+        /* Hide Screen Elements */
+        .screen-only, 
+        .no-print, 
+        header, 
+        nav, 
+        button,
+        .fixed {
+          display: none !important;
+        }
+
+        /* Show Print Elements */
+        .print-view {
+          display: block !important;
+          position: static !important;
+          visibility: visible !important;
+          width: 100% !important;
+          height: auto !important;
+          font-size: 12pt;
+          color: black !important;
+          background: white !important;
+        }
+
+        /* Ensure IDs usually used for roots don't restrict size */
+        #root, #root > div {
+          height: auto !important;
+          overflow: visible !important;
+          display: block !important;
+        }
+
+        /* Modal specific print fix */
+        body.printing-modal .print-view-modal {
+          display: block !important;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          z-index: 9999;
+        }
+        
+        /* Table Styles for Print */
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+          border: 2px solid #000;
+        }
+        th, td {
+          border: 1px solid #444;
+          padding: 12px 8px;
+          text-align: right;
+          vertical-align: middle;
+        }
+        th {
+          background-color: #f0f0f0 !important;
+          -webkit-print-color-adjust: exact;
+          color: black !important;
+          font-weight: bold;
+          text-align: center;
+        }
+        tr:nth-child(even) {
+          background-color: #fafafa !important;
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
