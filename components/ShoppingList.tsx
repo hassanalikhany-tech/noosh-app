@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone } from 'lucide-react';
+import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, Edit2, Check, X as XIcon } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
 
@@ -21,16 +21,33 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setCustomItems(user.customShoppingList || []);
   }, [user]);
 
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingId]);
+
   const uniqueItems = useMemo(() => {
     const map = new Map<string, ShoppingItem>();
     
     customItems.forEach(item => {
+      // Use original item name if it's currently being edited to prevent it from jumping around
+      // or disappearing if user changes it to a duplicate name temporarily
+      // However, for display logic, we stick to the list.
       const normalized = item.name.trim().toLowerCase();
+      
+      // If we encounter a duplicate name, we prefer the one that is NOT checked (active)
       if (!map.has(normalized)) {
         map.set(normalized, item);
       } else {
@@ -80,6 +97,46 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
   const toggleCheck = (id: string) => {
     updateCustomItems(customItems.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
   };
+
+  // --- Edit Functions ---
+
+  const startEditing = (item: ShoppingItem) => {
+    setEditingId(item.id);
+    setEditValue(item.name);
+  };
+
+  const saveEdit = () => {
+    if (!editingId || !editValue.trim()) {
+      cancelEdit();
+      return;
+    }
+
+    const newItems = customItems.map(i => {
+      if (i.id === editingId) {
+        return { ...i, name: editValue.trim() };
+      }
+      return i;
+    });
+
+    updateCustomItems(newItems);
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  };
+
+  // --- End Edit Functions ---
 
   const getRawListText = () => {
     const activeItems = uniqueItems.filter(i => !i.checked);
@@ -211,29 +268,69 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
                 uniqueItems.map((item) => (
                   <div 
                     key={item.id} 
-                    className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-200 group ${item.checked ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100 hover:border-amber-200 hover:shadow-sm'}`}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 group ${item.checked ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100 hover:border-amber-200 hover:shadow-sm'}`}
                   >
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer flex-grow"
-                      onClick={() => toggleCheck(item.id)}
-                    >
-                      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${item.checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 group-hover:border-amber-400'}`}>
-                        {item.checked && <CheckCircle2 size={16} className="text-white" />}
+                    {editingId === item.id ? (
+                      // Edit Mode
+                      <div className="flex items-center gap-2 flex-grow w-full">
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleEditKeyDown}
+                          className="flex-grow px-3 py-2 rounded-lg border-2 border-amber-400 focus:outline-none text-gray-900 bg-white text-sm"
+                        />
+                        <button 
+                          onClick={saveEdit}
+                          className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                          title="ذخیره"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button 
+                          onClick={cancelEdit}
+                          className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+                          title="انصراف"
+                        >
+                          <XIcon size={18} />
+                        </button>
                       </div>
+                    ) : (
+                      // Display Mode
+                      <>
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer flex-grow min-w-0"
+                          onClick={() => toggleCheck(item.id)}
+                        >
+                          <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-colors ${item.checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 group-hover:border-amber-400'}`}>
+                            {item.checked && <CheckCircle2 size={16} className="text-white" />}
+                          </div>
 
-                      <div className="flex flex-col">
-                        <span className={`text-base font-medium ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                          {item.name}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <button 
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                          <span className={`text-base font-medium truncate ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                            {item.name}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => startEditing(item)}
+                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="ویرایش نام"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))
               )}
