@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Dish } from '../../types';
 import { RecipeService } from '../../services/recipeService';
 import { hideDishIds, unhideAllDishes, renameDish } from '../../utils/dishStorage';
-import { Trash2, CheckSquare, AlertTriangle, RefreshCw, Search, Filter, ArchiveRestore, Eye, Edit2, Save, Download, Copy, Check, X, Info } from 'lucide-react';
+import { Trash2, CheckSquare, AlertTriangle, RefreshCw, Search, Filter, ArchiveRestore, Eye, Edit2, Save, Download, Copy, Check, X, Info, FileCode } from 'lucide-react';
 import RecipeModal from '../RecipeModal';
 
 // Extend Dish type to ensure we have a unique handle for UI operations
@@ -161,33 +161,53 @@ const DuplicateResolver: React.FC = () => {
     setRenamingDish(null);
   };
 
-  const generateExport = () => {
-    // Strip internal properties
-    const cleanDishes = allDishes.map(({ _internalId, hasRealData, ...rest }) => rest);
-    const json = JSON.stringify(cleanDishes, null, 2);
-    setExportData(json);
-    setShowExport(true);
-    setCopySuccess(false);
-  };
-
   const copyToClipboard = () => {
     navigator.clipboard.writeText(exportData);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
+  const generatePermanentFile = () => {
+    // 1. Get the current clean list (without internal IDs)
+    const cleanDishes = allDishes.map(({ _internalId, hasRealData, ...rest }) => rest);
+    
+    // 2. Create the file content string
+    const fileContent = `
+import { Dish } from '../types';
+
+export const DEFAULT_DISHES: Dish[] = ${JSON.stringify(cleanDishes, null, 2)};
+`;
+
+    // 3. Create a download link
+    const blob = new Blob([fileContent], { type: 'text/typescript' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recipes.ts'; // The name of the file to replace
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    alert('فایل recipes.ts دانلود شد. لطفا این فایل را جایگزین فایل موجود در پوشه data/recipes.ts کنید تا تغییرات دائمی شوند.');
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden pb-32 relative min-h-[600px]">
       
       {/* Persistence Warning */}
-      <div className="bg-amber-50 border-b border-amber-200 p-4 flex items-start gap-3">
-        <Info className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
-        <div className="text-sm text-amber-800">
-          <strong>توجه مهم:</strong> تغییرات شما (حذف و تغییر نام) در حافظه مرورگر ذخیره می‌شود. 
-          <br/>
-          ۱. برای اینکه با پاک شدن کش مرورگر، زحماتتان هدر نرود، از تب <strong>«پشتیبان‌گیری»</strong> یک فایل بکاپ دانلود کنید.
-          <br/>
-          ۲. برای <strong>ذخیره دائمی</strong> در خود اپلیکیشن، بعد از اصلاحات، دکمه سبز «دریافت کد دیتابیس اصلاح شده» را بزنید و کد را برای برنامه‌نویس ارسال کنید.
+      <div className="bg-blue-50 border-b border-blue-200 p-4">
+        <div className="flex items-start gap-3">
+          <Info className="text-blue-600 flex-shrink-0 mt-0.5" size={24} />
+          <div className="text-sm text-blue-900">
+            <strong>راهنمای ذخیره دائمی تغییرات:</strong>
+            <br/>
+            تغییراتی که اینجا می‌دهید موقتی است. برای اینکه زحماتتان هدر نرود:
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>ابتدا همه موارد تکراری را حذف و نام‌ها را اصلاح کنید.</li>
+              <li>روی دکمه سبز رنگ <strong>«دانلود فایل نهایی (recipes.ts)»</strong> کلیک کنید.</li>
+              <li>فایل دانلود شده را در پوشه پروژه خود جایگزین فایل <code>data/recipes.ts</code> کنید.</li>
+            </ol>
+          </div>
         </div>
       </div>
 
@@ -232,11 +252,12 @@ const DuplicateResolver: React.FC = () => {
              </button>
 
              <button 
-               onClick={generateExport}
-               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all"
+               onClick={generatePermanentFile}
+               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm flex items-center gap-2 shadow-md active:scale-95 transition-all animate-pulse"
+               title="دانلود کد نهایی برای ذخیره دائمی"
              >
-               <Download size={18} />
-               دریافت کد دیتابیس اصلاح شده
+               <FileCode size={18} />
+               دانلود فایل نهایی (recipes.ts)
              </button>
 
              <button 
@@ -484,7 +505,7 @@ const DuplicateResolver: React.FC = () => {
         </div>
       )}
 
-      {/* Export Modal */}
+      {/* Export Modal (Deprecated, but kept for raw view if needed) */}
       {showExport && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
@@ -500,7 +521,7 @@ const DuplicateResolver: React.FC = () => {
                <p className="text-sm text-gray-600 mb-4 bg-yellow-50 p-3 rounded-xl border border-yellow-100">
                  <strong>روش کار:</strong> این کد حاوی دیتابیس تمیز و بدون تکرار شماست. <br/>
                  ۱. کد زیر را کپی کنید. <br/>
-                 ۲. آن را برای برنامه‌نویس (یا در فایل data/recipes.ts) ارسال/جایگزین کنید تا این لیست به عنوان لیست اصلی برنامه ثبت شود.
+                 ۲. آن را جایگزین محتویات فایل data/recipes.ts کنید.
                </p>
                <div className="relative">
                  <textarea 
