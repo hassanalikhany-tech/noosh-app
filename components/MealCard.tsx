@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Utensils, ChevronLeft, BookX, Flame, Clock, Leaf } from 'lucide-react';
+import { Utensils, ChevronLeft, BookX, Flame, Clock, Leaf, Sun, Snowflake, Scale } from 'lucide-react';
 import { DayPlan } from '../types';
 import RecipeModal from './RecipeModal';
 import DishVisual from './DishVisual';
-import { estimateCalories, estimateCookTime } from '../utils/recipeHelpers';
+import { estimateCalories, estimateCookTime, getDishNature } from '../utils/recipeHelpers';
 import { UserService } from '../services/userService';
 
 interface MealCardProps {
@@ -18,8 +18,15 @@ const MealCard: React.FC<MealCardProps> = ({ plan }) => {
   const user = UserService.getCurrentUser();
   const calories = estimateCalories(plan.dish);
   const time = estimateCookTime(plan.dish);
+  const nature = getDishNature(plan.dish);
   
   const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+
+  const NatureIcon = () => {
+    if (nature.type === 'hot') return <Sun size={14} className="text-orange-500" />;
+    if (nature.type === 'cold') return <Snowflake size={14} className="text-blue-400" />;
+    return <Scale size={14} className="text-emerald-500" />;
+  };
 
   return (
     <>
@@ -42,12 +49,22 @@ const MealCard: React.FC<MealCardProps> = ({ plan }) => {
             {plan.dayName}
           </div>
 
-          {user?.dietMode && calories < 500 && (
-             <div className="absolute top-3 left-3 bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm z-10 flex items-center gap-1">
-               <Leaf size={12} />
-               رژیمی
-             </div>
-          )}
+          <div className="absolute top-3 left-3 flex gap-1 z-10">
+            {user?.dietMode && calories < 500 && (
+               <div className="bg-emerald-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-sm flex items-center gap-1">
+                 <Leaf size={12} />
+                 رژیمی
+               </div>
+            )}
+            <div className={`px-2 py-1 rounded-lg text-[10px] font-black shadow-sm flex items-center gap-1 border ${
+              nature.type === 'hot' ? 'bg-orange-50 border-orange-200 text-orange-700' : 
+              nature.type === 'cold' ? 'bg-blue-50 border-blue-200 text-blue-700' : 
+              'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}>
+              <NatureIcon />
+              طبع {nature.label}
+            </div>
+          </div>
         </div>
         
         <div className="p-5 flex flex-col flex-grow">

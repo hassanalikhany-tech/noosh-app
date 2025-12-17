@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChefHat, Users, AlertCircle, Plus, Minus, Clock, Activity, Flame, PlusCircle, Check } from 'lucide-react';
+import { X, ChefHat, Users, AlertCircle, Plus, Minus, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck } from 'lucide-react';
 import { Dish, ShoppingItem } from '../types';
 import DishVisual from './DishVisual';
 import { UserService } from '../services/userService';
-import { estimateCalories, estimateCookTime, getDifficulty } from '../utils/recipeHelpers';
+import { estimateCalories, estimateCookTime, getDifficulty, getDishNature } from '../utils/recipeHelpers';
 
 interface RecipeModalProps {
   dish: Dish;
@@ -33,6 +33,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
   const calories = estimateCalories(dish);
   const time = estimateCookTime(dish);
   const difficulty = getDifficulty(dish);
+  const nature = getDishNature(dish);
 
   useEffect(() => {
     if (isOpen) {
@@ -150,7 +151,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
         </div>
 
         <div className="p-6 overflow-y-auto bg-white">
-          <div className="flex flex-wrap gap-4 mb-6">
+          <div className="flex flex-wrap gap-4 mb-4">
              <div className="flex items-center gap-2 bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-orange-100">
                <Clock size={16} />
                {toPersianDigits(time)} دقیقه
@@ -162,6 +163,31 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-blue-100">
                <Activity size={16} />
                {difficulty}
+             </div>
+          </div>
+
+          {/* Nature Info Section */}
+          <div className={`p-4 rounded-xl border mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center ${
+            nature.type === 'hot' ? 'bg-orange-50 border-orange-100' : 
+            nature.type === 'cold' ? 'bg-blue-50 border-blue-100' : 
+            'bg-emerald-50 border-emerald-100'
+          }`}>
+             <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                   nature.type === 'hot' ? 'bg-orange-500' : 
+                   nature.type === 'cold' ? 'bg-blue-500' : 
+                   'bg-emerald-500'
+                } text-white shadow-sm`}>
+                   {nature.type === 'hot' ? <Sun size={20} /> : nature.type === 'cold' ? <Snowflake size={20} /> : <Scale size={20} />}
+                </div>
+                <div>
+                   <h4 className="font-black text-gray-800 text-sm">طبع این غذا: {nature.label}</h4>
+                   <p className="text-[11px] text-gray-500">بر اساس اصول طب سنتی ایران</p>
+                </div>
+             </div>
+             <div className="sm:mr-auto flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-lg border border-black/5">
+                <ShieldCheck size={16} className="text-teal-600" />
+                <span className="text-xs text-gray-700 font-bold">مصلح پیشنهادی: <span className="text-teal-700">{nature.mosleh}</span></span>
              </div>
           </div>
 

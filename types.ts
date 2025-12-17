@@ -19,6 +19,8 @@ export type DishCategory =
   | 'international'
   | 'other';
 
+export type NatureType = 'hot' | 'cold' | 'balanced';
+
 export interface Dish {
   id: string;
   name: string;
@@ -28,7 +30,9 @@ export interface Dish {
   recipeSteps: string[];
   imageUrl?: string;
   hasRealData?: boolean;
-  nationality?: string; // New field for international dishes (e.g., 'tr', 'ar', 'it')
+  nationality?: string;
+  nature?: NatureType;
+  mosleh?: string;
 }
 
 export interface DayPlan {
@@ -79,23 +83,26 @@ export interface Challenge {
   color: string;
   bannedCategories?: DishCategory[];
   requiredKeywords?: string[];
-  bannedKeywords?: string[]; // Added this new field
+  bannedKeywords?: string[];
 }
 
 export interface UserProfile {
   username: string;
   fullName: string; 
   passwordCode: string; 
-  email?: string; // New
-  phoneNumber?: string; // New
-  avatar?: string; // New for Google profile pic
+  email?: string;
+  phoneNumber?: string;
+  avatar?: string;
   subscriptionExpiry: number; 
   blacklistedDishIds: string[]; 
   excludedCategories: DishCategory[]; 
-  history: string[]; 
+  preferredNatures: NatureType[]; // New: Filter by nature
+  // Added missing history property to fix type errors
+  history: string[];
   familySize: number;
   isAdmin?: boolean;
   dietMode?: boolean; 
   activeChallengeId?: string; 
   customShoppingList?: ShoppingItem[]; 
+  hasCompletedSetup?: boolean; // New: Onboarding flag
 }

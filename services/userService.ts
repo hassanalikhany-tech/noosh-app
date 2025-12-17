@@ -21,7 +21,6 @@ export const UserService = {
   login: (identifier: string, code: string): { success: boolean; user?: UserProfile; message?: string } => {
     const db = getUsersDB();
     
-    // Admin backdoor
     if (identifier === 'admin' && code === 'admin') {
       const adminUser: UserProfile = {
         username: 'admin',
@@ -30,10 +29,12 @@ export const UserService = {
         subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000),
         blacklistedDishIds: [],
         excludedCategories: [],
+        preferredNatures: ['hot', 'cold', 'balanced'],
         history: [],
         familySize: 4,
         isAdmin: true,
-        customShoppingList: []
+        customShoppingList: [],
+        hasCompletedSetup: true
       };
       db['admin'] = adminUser;
       saveUsersDB(db);
@@ -41,7 +42,6 @@ export const UserService = {
       return { success: true, user: adminUser };
     }
 
-    // Search by username OR email
     const user = Object.values(db).find(u => u.username === identifier || u.email === identifier);
 
     if (!user) return { success: false, message: 'حساب کاربری با این مشخصات یافت نشد.' };
@@ -49,8 +49,8 @@ export const UserService = {
     if (user.passwordCode === code) {
       if (!user.familySize) user.familySize = 4;
       if (!user.customShoppingList) user.customShoppingList = [];
+      if (!user.preferredNatures) user.preferredNatures = ['hot', 'cold', 'balanced'];
       
-      // Ensure DB is updated if we added default fields
       db[user.username] = user; 
       saveUsersDB(db);
       
@@ -64,17 +64,8 @@ export const UserService = {
   register: (data: { username: string; code: string; fullName: string; email?: string; phoneNumber?: string; avatar?: string }): { success: boolean; user?: UserProfile; message?: string } => {
     const db = getUsersDB();
     
-    // Check for duplicate username
     if (db[data.username] || data.username === 'admin') {
       return { success: false, message: 'این نام کاربری قبلاً گرفته شده است.' };
-    }
-
-    // Check for duplicate email if provided
-    if (data.email) {
-      const emailExists = Object.values(db).some(u => u.email === data.email);
-      if (emailExists) {
-        return { success: false, message: 'این ایمیل قبلاً ثبت شده است.' };
-      }
     }
 
     const newUser: UserProfile = {
@@ -84,12 +75,14 @@ export const UserService = {
       email: data.email,
       phoneNumber: data.phoneNumber,
       avatar: data.avatar,
-      subscriptionExpiry: Date.now() + (24 * 60 * 60 * 1000), // 24 hours trial
+      subscriptionExpiry: Date.now() + (24 * 60 * 60 * 1000),
       blacklistedDishIds: [],
       excludedCategories: [],
+      preferredNatures: ['hot', 'cold', 'balanced'],
       history: [],
       familySize: 4,
-      customShoppingList: []
+      customShoppingList: [],
+      hasCompletedSetup: false
     };
 
     db[data.username] = newUser;
@@ -106,11 +99,11 @@ export const UserService = {
     const db = getUsersDB();
     const user = db[username];
     
-    // Robust check: Ensure all array/object properties exist to prevent crashes
     if (user) {
         if (!user.customShoppingList) user.customShoppingList = [];
         if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
         if (!user.excludedCategories) user.excludedCategories = [];
+        if (!user.preferredNatures) user.preferredNatures = ['hot', 'cold', 'balanced'];
         if (!user.history) user.history = [];
         if (!user.familySize) user.familySize = 4;
     }
@@ -151,7 +144,6 @@ export const UserService = {
     const db = getUsersDB();
     const user = db[username];
     if (user) {
-      // Ensure array exists
       if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
       const set = new Set([...user.blacklistedDishIds, ...dishIds]);
       user.blacklistedDishIds = Array.from(set);

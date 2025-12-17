@@ -1,5 +1,5 @@
 
-import { Dish } from '../types';
+import { Dish, NatureType } from '../types';
 
 // Helper to estimate cooking time based on keywords and category
 export const estimateCookTime = (dish: Dish): number => {
@@ -59,4 +59,46 @@ export const getDifficulty = (dish: Dish): 'آسان' | 'متوسط' | 'سخت' 
   if (time < 45 && steps < 6) return 'آسان';
   if (time > 120 || steps > 12) return 'سخت';
   return 'متوسط';
+};
+
+// --- Traditional Persian Medicine Helpers ---
+
+export const getDishNature = (dish: Dish): { type: NatureType; label: string; mosleh: string } => {
+  const text = (dish.name + ' ' + dish.description + ' ' + JSON.stringify(dish.ingredients)).toLowerCase();
+  
+  // Logic for Cold dishes
+  if (
+    text.includes('ماهی') || 
+    text.includes('جو') || 
+    text.includes('عدس') || 
+    text.includes('بادمجان') || 
+    text.includes('خیار') || 
+    text.includes('دوغ') || 
+    text.includes('ماست') || 
+    text.includes('کدو') ||
+    text.includes('سیب زمینی')
+  ) {
+    let mosleh = "خرما، عسل، گردو، یا زیره";
+    if (text.includes('ماهی')) mosleh = "خرما یا گردو";
+    if (text.includes('برنج')) mosleh = "زعفران، زیره یا شوید";
+    if (text.includes('دوغ') || text.includes('ماست')) mosleh = "نعناع یا گردو";
+    
+    return { type: 'cold', label: 'سرد', mosleh };
+  }
+
+  // Logic for Hot dishes
+  if (
+    text.includes('قرمه') || 
+    text.includes('فسنجان') || 
+    text.includes('کباب') || 
+    text.includes('گوشت گوسفند') || 
+    text.includes('عسل') || 
+    text.includes('گردو') || 
+    text.includes('خرما') ||
+    text.includes('نخود')
+  ) {
+     return { type: 'hot', label: 'گرم', mosleh: 'سرکه، ترشیجات، یا آبلیمو تازه' };
+  }
+
+  return { type: 'balanced', label: 'معتدل', mosleh: 'نیاز به مصلح خاصی ندارد' };
 };
