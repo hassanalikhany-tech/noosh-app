@@ -15,6 +15,7 @@ const getUsersDB = (): Record<string, UserProfile> => {
 
 const saveUsersDB = (db: Record<string, UserProfile>) => {
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(db));
+  window.dispatchEvent(new CustomEvent('user-data-updated'));
 };
 
 export const UserService = {
@@ -28,6 +29,9 @@ export const UserService = {
         passwordCode: 'admin',
         subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000),
         blacklistedDishIds: [],
+        favoriteDishIds: [],
+        // Fix: Added missing required property dislikedIngredients
+        dislikedIngredients: [],
         excludedCategories: [],
         preferredNatures: ['hot', 'cold', 'balanced'],
         history: [],
@@ -47,13 +51,10 @@ export const UserService = {
     if (!user) return { success: false, message: 'حساب کاربری با این مشخصات یافت نشد.' };
 
     if (user.passwordCode === code) {
-      if (!user.familySize) user.familySize = 4;
-      if (!user.customShoppingList) user.customShoppingList = [];
-      if (!user.preferredNatures) user.preferredNatures = ['hot', 'cold', 'balanced'];
-      
+      if (!user.favoriteDishIds) user.favoriteDishIds = [];
+      if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
       db[user.username] = user; 
       saveUsersDB(db);
-      
       localStorage.setItem(CURRENT_USER_KEY, user.username);
       return { success: true, user };
     } else {
@@ -63,10 +64,7 @@ export const UserService = {
 
   register: (data: { username: string; code: string; fullName: string; email?: string; phoneNumber?: string; avatar?: string }): { success: boolean; user?: UserProfile; message?: string } => {
     const db = getUsersDB();
-    
-    if (db[data.username] || data.username === 'admin') {
-      return { success: false, message: 'این نام کاربری قبلاً گرفته شده است.' };
-    }
+    if (db[data.username] || data.username === 'admin') return { success: false, message: 'این نام کاربری قبلاً گرفته شده است.' };
 
     const newUser: UserProfile = {
       username: data.username,
@@ -75,8 +73,11 @@ export const UserService = {
       email: data.email,
       phoneNumber: data.phoneNumber,
       avatar: data.avatar,
-      subscriptionExpiry: Date.now() + (24 * 60 * 60 * 1000),
+      subscriptionExpiry: Date.now() + (30 * 24 * 60 * 60 * 1000), 
       blacklistedDishIds: [],
+      favoriteDishIds: [],
+      // Fix: Added missing required property dislikedIngredients
+      dislikedIngredients: [],
       excludedCategories: [],
       preferredNatures: ['hot', 'cold', 'balanced'],
       history: [],
@@ -98,31 +99,68 @@ export const UserService = {
     if (!username) return null;
     const db = getUsersDB();
     const user = db[username];
-    
     if (user) {
-        if (!user.customShoppingList) user.customShoppingList = [];
+        if (!user.favoriteDishIds) user.favoriteDishIds = [];
         if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
-        if (!user.excludedCategories) user.excludedCategories = [];
-        if (!user.preferredNatures) user.preferredNatures = ['hot', 'cold', 'balanced'];
-        if (!user.history) user.history = [];
-        if (!user.familySize) user.familySize = 4;
     }
-    
     return user || null;
   },
 
-  isSubscriptionValid: (user: UserProfile): boolean => {
-    if (user.isAdmin) return true;
-    return user.subscriptionExpiry > Date.now();
-  },
-
-  extendSubscription: (username: string, days: number): UserProfile => {
+  toggleFavorite: (username: string, dishId: string): UserProfile => {
     const db = getUsersDB();
     const user = db[username];
     if (user) {
-      const now = Date.now();
-      const baseTime = user.subscriptionExpiry > now ? user.subscriptionExpiry : now;
-      user.subscriptionExpiry = baseTime + (days * 24 * 60 * 60 * 1000);
+      const favorites = user.favoriteDishIds || [];
+      if (favorites.includes(dishId)) {
+        user.favoriteDishIds = favorites.filter(id => id !== dishId);
+      } else {
+        user.favoriteDishIds = [...favorites, dishId];
+        // اگر لایک شد، از دیس‌لایک خارج شود
+        user.blacklistedDishIds = (user.blacklistedDishIds || []).filter(id => id !== dishId);
+      }
+      saveUsersDB(db);
+      return user;
+    }
+    throw new Error('User not found');
+  },
+
+  toggleBlacklist: (username: string, dishId: string): UserProfile => {
+    const db = getUsersDB();
+    const user = db[username];
+    if (user) {
+      const blacklist = user.blacklistedDishIds || [];
+      if (blacklist.includes(dishId)) {
+        user.blacklistedDishIds = blacklist.filter(id => id !== dishId);
+      } else {
+        user.blacklistedDishIds = [...blacklist, dishId];
+        // اگر دیس‌لایک شد، از لایک‌ها خارج شود
+        user.favoriteDishIds = (user.favoriteDishIds || []).filter(id => id !== dishId);
+      }
+      saveUsersDB(db);
+      return user;
+    }
+    throw new Error('User not found');
+  },
+
+  addToBlacklist: (username: string, dishIds: string[]): UserProfile => {
+    const db = getUsersDB();
+    const user = db[username];
+    if (user) {
+      const currentBlacklist = user.blacklistedDishIds || [];
+      const newBlacklistSet = new Set([...currentBlacklist, ...dishIds]);
+      user.blacklistedDishIds = Array.from(newBlacklistSet);
+      user.favoriteDishIds = (user.favoriteDishIds || []).filter(id => !dishIds.includes(id));
+      saveUsersDB(db);
+      return user;
+    }
+    throw new Error('User not found');
+  },
+
+  removeFromBlacklist: (username: string, dishId: string): UserProfile => {
+    const db = getUsersDB();
+    const user = db[username];
+    if (user) {
+      user.blacklistedDishIds = (user.blacklistedDishIds || []).filter(id => id !== dishId);
       saveUsersDB(db);
       return user;
     }
@@ -140,38 +178,33 @@ export const UserService = {
     throw new Error('User not found');
   },
 
-  addToBlacklist: (username: string, dishIds: string[]): UserProfile => {
+  isSubscriptionValid: (user: UserProfile): boolean => user.isAdmin || user.subscriptionExpiry > Date.now(),
+  getAllUsers: (): UserProfile[] => Object.values(getUsersDB()),
+  extendSubscription: (username: string, days: number): UserProfile => {
     const db = getUsersDB();
     const user = db[username];
     if (user) {
-      if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
-      const set = new Set([...user.blacklistedDishIds, ...dishIds]);
-      user.blacklistedDishIds = Array.from(set);
+      const now = Date.now();
+      const baseTime = user.subscriptionExpiry > now ? user.subscriptionExpiry : now;
+      user.subscriptionExpiry = baseTime + (days * 24 * 60 * 60 * 1000);
       saveUsersDB(db);
       return user;
     }
     throw new Error('User not found');
   },
 
-  removeFromBlacklist: (username: string, dishId: string): UserProfile => {
+  deleteUser: (username: string) => {
     const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
-      user.blacklistedDishIds = user.blacklistedDishIds.filter(id => id !== dishId);
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+    delete db[username];
+    saveUsersDB(db);
   },
-  
+
   addToHistory: (username: string, dishIds: string[]): UserProfile => {
     const db = getUsersDB();
     const user = db[username];
     if (user) {
-      if (!user.history) user.history = [];
-      user.history = [...user.history, ...dishIds];
-      if (user.history.length > 100) user.history = user.history.slice(user.history.length - 100);
+      const currentHistory = user.history || [];
+      user.history = [...currentHistory, ...dishIds].slice(-100);
       saveUsersDB(db);
       return user;
     }
@@ -188,12 +221,5 @@ export const UserService = {
       return user;
     }
     throw new Error('User not found');
-  },
-
-  getAllUsers: (): UserProfile[] => Object.values(getUsersDB()),
-  deleteUser: (username: string) => {
-    const db = getUsersDB();
-    delete db[username];
-    saveUsersDB(db);
   }
 };

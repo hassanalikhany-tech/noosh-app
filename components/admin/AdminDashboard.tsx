@@ -46,8 +46,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
               <ShieldCheck size={32} />
             </div>
             <div>
-              <h1 className="text-2xl font-black">پنل مدیریت</h1>
-              <p className="text-slate-400 text-sm">سیستم جامع آشپزی</p>
+              <h1 className="text-2xl font-black">Noosh-app | پنل مدیریت</h1>
+              <p className="text-slate-400 text-sm">سیستم جامع پایش و مدیریت محتوا</p>
             </div>
           </div>
           <div className="flex gap-2">

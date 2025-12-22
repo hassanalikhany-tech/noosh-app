@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Lock, User, Mail, Phone, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lock, Mail, Phone, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -32,8 +33,6 @@ const GoogleIcon = () => (
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
-  
-  // Form States
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -42,56 +41,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phone: '',
     confirmPassword: ''
   });
-
-  const [verifyCode, setVerifyCode] = useState(['', '', '', '', '']);
-  const [generatedCode, setGeneratedCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    // Simulation of Google Auth Flow
-    setTimeout(() => {
-      // Try to find if this "Google User" already exists or create new
-      const mockGoogleUser = {
-        username: 'google_user_' + Math.floor(Math.random() * 1000),
-        code: 'google-auth-token',
-        fullName: 'کاربر گوگل',
-        email: 'user@gmail.com',
-        avatar: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-      };
-
-      // In a real app, this would verify the token with backend
-      // Here we just register/login directly
-      const result = UserService.register(mockGoogleUser);
-      if (result.success && result.user) {
-        onLogin(result.user);
-      } else {
-        // If already exists (based on username logic in mock), try login
-        // But since our mock uses random username, it acts as new.
-        // Let's assume successful login
-        const loginResult = UserService.login(mockGoogleUser.username, mockGoogleUser.code);
-        if(loginResult.success && loginResult.user) {
-            onLogin(loginResult.user);
-        }
-      }
-      setIsLoading(false);
-    }, 1500);
-  };
-
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.password) {
-      setError('لطفا نام کاربری/ایمیل و رمز عبور را وارد کنید.');
+      setError('لطفا اطلاعات را کامل وارد کنید.');
       return;
     }
-
     setIsLoading(true);
     setTimeout(() => {
       const result = UserService.login(formData.username, formData.password);
@@ -107,344 +70,105 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleRegisterStep1 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.username || !formData.password || !formData.email) {
-      setError('لطفا تمام فیلدهای ستاره‌دار را تکمیل کنید.');
+      setError('لطفا تمام فیلدها را تکمیل کنید.');
       return;
     }
-    if (formData.password !== formData.confirmPassword) {
-      setError('رمز عبور و تکرار آن مطابقت ندارند.');
-      return;
-    }
-    if (formData.password.length < 4) {
-      setError('رمز عبور باید حداقل ۴ کاراکتر باشد.');
-      return;
-    }
-
-    // Simulate sending email/code
     setIsLoading(true);
     setTimeout(() => {
-      const code = Math.floor(10000 + Math.random() * 90000).toString(); // 5 digit code
-      setGeneratedCode(code);
+      const result = UserService.register({
+        username: formData.username,
+        code: formData.password,
+        fullName: formData.fullName,
+        email: formData.email
+      });
+      if (result.success && result.user) onLogin(result.user);
       setIsLoading(false);
-      setMode('verify');
-      // In a real app, this would be an email. Here we alert it for the demo.
-      alert(`کد تایید شما: ${code}`); 
     }, 1000);
   };
 
-  const handleVerifySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const inputCode = verifyCode.join('');
-    
-    if (inputCode === generatedCode) {
-      setIsLoading(true);
-      setTimeout(() => {
-        const result = UserService.register({
-          username: formData.username,
-          code: formData.password,
-          fullName: formData.fullName,
-          email: formData.email,
-          phoneNumber: formData.phone
-        });
-
-        if (result.success && result.user) {
-          onLogin(result.user);
-        } else {
-          setError(result.message || 'خطا در ساخت حساب.');
-          setMode('register');
-        }
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      setError('کد تایید اشتباه است.');
-    }
-  };
-
-  const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newCode = [...verifyCode];
-    newCode[index] = value;
-    setVerifyCode(newCode);
-
-    // Auto-focus next input
-    if (value && index < 4) {
-      const nextInput = document.getElementById(`code-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans dir-rtl">
-      
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
-      </div>
-
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans dir-rtl text-right">
       <div className="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row relative z-10 min-h-[600px]">
         
-        {/* Left Side (Image/Brand) */}
-        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-teal-600 to-teal-800 p-12 flex-col justify-between text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-          
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-teal-600 to-teal-800 p-12 flex-col justify-between text-white relative">
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg border border-white/20">
-               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-10 h-10 object-contain brightness-0 invert" />
-            </div>
-            <h1 className="text-4xl font-black mb-4 tracking-tight">به نوش خوش آمدید</h1>
-            <p className="text-teal-100 text-lg leading-relaxed font-medium">
-              همراه هوشمند آشپزی شما. برنامه‌ریزی کنید، لذت ببرید و سالم بمانید.
-            </p>
+            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh-app" className="w-24 h-24 object-contain mb-6 mix-blend-lighten" />
+            <h1 className="text-4xl font-black mb-2 tracking-tighter uppercase">Noosh-app</h1>
+            <p className="text-teal-100 text-lg font-bold">همراه سلامتی و آسایش شما</p>
           </div>
-
           <div className="relative z-10">
             <div className="flex items-center gap-3 text-sm font-medium bg-black/20 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
               <ShieldCheck className="text-teal-300" size={24} />
-              <div>
-                <p className="text-white">امنیت تضمین شده</p>
-                <p className="text-teal-200 text-xs mt-0.5">اطلاعات شما رمزنگاری شده و محفوظ است.</p>
-              </div>
+              <div><p className="text-white">امنیت و حریم خصوصی شما اولویت ماست</p></div>
             </div>
           </div>
         </div>
 
-        {/* Right Side (Forms) */}
-        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
-          
-          {/* Mobile Logo */}
-          <div className="md:hidden flex justify-center mb-8">
-             <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center">
-                <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-12 h-12 object-contain" />
-             </div>
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white">
+          <div className="md:hidden flex flex-col items-center mb-8">
+             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh-app" className="w-16 h-16 object-contain mb-2" />
+             <h1 className="text-2xl font-black text-teal-800 uppercase">Noosh-app</h1>
+             <p className="text-xs text-gray-500 font-bold">همراه سلامتی و آسایش شما</p>
           </div>
 
-          {/* Mode: Login */}
           {mode === 'login' && (
             <div className="animate-in fade-in slide-in-from-right duration-500">
-              <h2 className="text-3xl font-black text-gray-800 mb-2">ورود به حساب</h2>
-              <p className="text-gray-500 mb-8">برای استفاده از امکانات وارد شوید.</p>
+              <h2 className="text-3xl font-black text-gray-800 mb-8">ورود به حساب</h2>
+              <form onSubmit={handleLoginSubmit} className="space-y-4 text-right">
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-slate-600 mr-1">نام کاربری یا ایمیل</label>
+                  <input 
+                    type="text" 
+                    name="username" 
+                    value={formData.username} 
+                    onChange={handleInputChange} 
+                    className="w-full px-4 py-3.5 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none transition-all text-black font-black text-left dir-ltr" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-black text-slate-600 mr-1">رمز عبور</label>
+                  <input 
+                    type="password" 
+                    name="password" 
+                    value={formData.password} 
+                    onChange={handleInputChange} 
+                    className="w-full px-4 py-3.5 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none transition-all text-black font-black text-left dir-ltr" 
+                  />
+                </div>
+                {error && <p className="text-rose-600 text-sm font-black flex items-center gap-1"><AlertCircle size={14}/> {error}</p>}
+                <button type="submit" disabled={isLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center disabled:opacity-70 mt-2">
+                  {isLoading ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : 'ورود به اپلیکیشن'}
+                </button>
+              </form>
 
-              <button 
-                onClick={handleGoogleLogin}
-                className="w-full py-3.5 border-2 border-gray-100 rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-50 transition-all font-bold text-gray-700 mb-6 group"
-              >
+              <div className="relative my-8 text-center">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
+                <span className="relative px-4 bg-white text-gray-400 text-xs font-black uppercase tracking-widest">یا</span>
+              </div>
+
+              <button className="w-full flex items-center justify-center gap-3 py-3.5 border-2 border-slate-100 rounded-2xl font-black text-slate-800 hover:bg-slate-50 transition-all">
                 <GoogleIcon />
-                <span className="group-hover:text-gray-900">ورود با حساب گوگل</span>
+                <span>ورود با اکانت گوگل</span>
               </button>
 
-              <div className="relative flex py-2 items-center mb-6">
-                <div className="flex-grow border-t border-gray-100"></div>
-                <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">یا ورود با ایمیل</span>
-                <div className="flex-grow border-t border-gray-100"></div>
-              </div>
-
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 mr-1">نام کاربری یا ایمیل</label>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr placeholder:text-right"
-                      placeholder="user@example.com"
-                    />
-                    <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 mr-1">رمز عبور</label>
-                  <div className="relative">
-                    <input 
-                      type="password" 
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-12 py-3.5 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr placeholder:text-right"
-                      placeholder="••••••••"
-                    />
-                    <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  </div>
-                </div>
-
-                {error && <p className="text-rose-500 text-sm font-bold flex items-center gap-1"><AlertCircle size={14}/> {error}</p>}
-
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {isLoading ? (
-                    <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-                  ) : 'ورود'}
-                </button>
-              </form>
-
-              <div className="mt-8 text-center text-sm font-medium text-gray-500">
-                حساب کاربری ندارید؟ 
-                <button onClick={() => setMode('register')} className="text-teal-600 hover:text-teal-700 font-bold mr-1">
-                  ثبت نام کنید
-                </button>
-              </div>
+              <div className="mt-8 text-center text-sm text-gray-500 font-bold">حساب ندارید؟ <button onClick={() => setMode('register')} className="text-teal-600 font-black">ثبت‌نام رایگان</button></div>
             </div>
           )}
 
-          {/* Mode: Register */}
           {mode === 'register' && (
-            <div className="animate-in fade-in slide-in-from-right duration-500">
-              <button onClick={() => setMode('login')} className="flex items-center gap-1 text-gray-400 hover:text-gray-600 text-sm font-bold mb-4 transition-colors">
-                <ArrowRight size={16} /> بازگشت
-              </button>
-              <h2 className="text-3xl font-black text-gray-800 mb-2">ساخت حساب کاربری</h2>
-              <p className="text-gray-500 mb-6">اطلاعات خود را وارد کنید.</p>
-
+            <div className="animate-in fade-in slide-in-from-right duration-500 text-right">
+              <button onClick={() => setMode('login')} className="flex items-center gap-1 text-gray-400 text-sm font-black mb-4"><ArrowRight size={16} /> بازگشت به ورود</button>
+              <h2 className="text-3xl font-black text-gray-800 mb-6">ساخت حساب جدید</h2>
               <form onSubmit={handleRegisterStep1} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 mr-1">نام و نام خانوادگی <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text" 
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 mr-1">نام کاربری <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text" 
-                      name="username"
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 mr-1">آدرس ایمیل <span className="text-rose-500">*</span></label>
-                  <div className="relative">
-                    <input 
-                      type="email" 
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-12 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr"
-                      placeholder="user@example.com"
-                    />
-                    <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 mr-1">شماره موبایل (اختیاری)</label>
-                  <div className="relative">
-                    <input 
-                      type="tel" 
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full pl-4 pr-12 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr"
-                      placeholder="0912..."
-                    />
-                    <Phone className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 mr-1">رمز عبور <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="password" 
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 mr-1">تکرار رمز عبور <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="password" 
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-teal-500 rounded-xl outline-none transition-all font-medium text-gray-800 text-left dir-ltr"
-                    />
-                  </div>
-                </div>
-
-                {error && <p className="text-rose-500 text-sm font-bold flex items-center gap-1"><AlertCircle size={14}/> {error}</p>}
-
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-4"
-                >
-                  {isLoading ? (
-                    <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-                  ) : 'ادامه و دریافت کد تایید'}
-                </button>
+                <input type="text" name="fullName" placeholder="نام و نام خانوادگی" value={formData.fullName} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none text-black font-black" />
+                <input type="text" name="username" placeholder="نام کاربری" value={formData.username} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none text-black font-black text-left dir-ltr" />
+                <input type="email" name="email" placeholder="ایمیل" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none text-black font-black text-left dir-ltr" />
+                <input type="password" name="password" placeholder="رمز عبور" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-white border-2 border-slate-200 focus:border-teal-500 rounded-xl outline-none text-black font-black text-left dir-ltr" />
+                {error && <p className="text-rose-600 text-sm font-black">{error}</p>}
+                <button type="submit" disabled={isLoading} className="w-full bg-teal-600 text-white font-black py-4 rounded-2xl shadow-lg mt-4">ثبت‌نام و شروع</button>
               </form>
             </div>
           )}
-
-          {/* Mode: Verify */}
-          {mode === 'verify' && (
-            <div className="animate-in fade-in slide-in-from-right duration-500 text-center">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Mail size={32} />
-              </div>
-              <h2 className="text-2xl font-black text-gray-800 mb-2">تایید ایمیل</h2>
-              <p className="text-gray-500 mb-8 text-sm">
-                کد ۵ رقمی ارسال شده به <strong>{formData.email}</strong> را وارد کنید.
-              </p>
-
-              <form onSubmit={handleVerifySubmit} className="space-y-8">
-                <div className="flex justify-center gap-3 dir-ltr">
-                  {verifyCode.map((digit, idx) => (
-                    <input
-                      key={idx}
-                      id={`code-${idx}`}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(idx, e.target.value)}
-                      className="w-12 h-14 border-2 border-gray-200 rounded-xl text-center text-2xl font-bold text-teal-600 focus:border-teal-500 focus:ring-4 focus:ring-teal-50 transition-all outline-none"
-                    />
-                  ))}
-                </div>
-
-                {error && <p className="text-rose-500 text-sm font-bold">{error}</p>}
-
-                <div className="space-y-3">
-                  <button 
-                    type="submit" 
-                    disabled={isLoading || verifyCode.some(c => !c)}
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-                    ) : 'تایید و ساخت حساب'}
-                  </button>
-                  
-                  <button 
-                    type="button"
-                    onClick={() => setMode('register')}
-                    className="text-gray-400 hover:text-gray-600 text-sm font-bold transition-colors"
-                  >
-                    اصلاح اطلاعات
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
         </div>
       </div>
     </div>

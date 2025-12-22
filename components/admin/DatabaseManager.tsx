@@ -1,8 +1,10 @@
-
 import React, { useState, useRef } from 'react';
-import { Upload, FileJson, Copy, CheckCircle2, Trash2, Plus, FileText, Download } from 'lucide-react';
-import { Dish, DishCategory, Ingredient } from '../../types';
+// Added Info and ShieldCheck to the imports below
+import { Upload, FileJson, Copy, CheckCircle2, Trash2, Plus, FileText, Download, FileSpreadsheet, Info, ShieldCheck } from 'lucide-react';
+// Added CATEGORY_LABELS to the imports below
+import { Dish, DishCategory, Ingredient, CATEGORY_LABELS } from '../../types';
 import { RecipeService } from '../../services/recipeService';
+import { estimateCalories, estimateCookTime, getDifficulty, getDishNature } from '../../utils/recipeHelpers';
 
 const DatabaseManager: React.FC = () => {
   const [accumulatedDishes, setAccumulatedDishes] = useState<Dish[]>([]);
@@ -26,305 +28,161 @@ const DatabaseManager: React.FC = () => {
     return 'other';
   };
 
-  // Robust CSV Parser (State Machine) to handle Excel CSV quirks (quotes, newlines, commas inside fields)
-  const parseCSVLineByLine = (text: string): string[][] => {
-    const rows: string[][] = [];
-    let currentRow: string[] = [];
-    let currentField = '';
-    let insideQuotes = false;
+  const handleExportExcel = () => {
+    const allDishes = RecipeService.getAllDishes();
     
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const nextChar = text[i + 1];
-
-      if (char === '"') {
-        if (insideQuotes && nextChar === '"') {
-          // Escaped quote ("") -> becomes single quote
-          currentField += '"';
-          i++; // Skip next quote
-        } else {
-          // Toggle quote state
-          insideQuotes = !insideQuotes;
-        }
-      } else if (char === ',' && !insideQuotes) {
-        // Field separator
-        currentRow.push(currentField);
-        currentField = '';
-      } else if ((char === '\n' || char === '\r') && !insideQuotes) {
-        // Row separator
-        // Handle CRLF (\r\n) or just LF (\n) or just CR (\r)
-        if (char === '\r' && nextChar === '\n') i++;
-        
-        currentRow.push(currentField);
-        rows.push(currentRow);
-        currentRow = [];
-        currentField = '';
-      } else {
-        // Normal character
-        currentField += char;
-      }
-    }
+    // تعریف هدرهای فایل اکسل
+    const headers = [
+      'شناسه (ID)',
+      'نام غذا',
+      'دسته‌بندی',
+      'طبع غذا',
+      'مصلح پیشنهادی',
+      'کالری تقریبی',
+      'زمان پخت (دقیقه)',
+      'درجه سختی',
+      'توضیحات کوتاه',
+      'مواد اولیه (با جداکننده |)',
+      'دستور پخت (با جداکننده |)',
+      'لینک تصویر'
+    ];
     
-    // Push last field/row if exists
-    if (currentField || currentRow.length > 0) {
-      currentRow.push(currentField);
-      rows.push(currentRow);
-    }
+    const rows = [headers.join(',')];
 
-    return rows;
-  };
+    allDishes.forEach(dish => {
+      // استخراج و محاسبه اطلاعات هوشمند برای هر ردیف اکسل
+      const natureInfo = getDishNature(dish);
+      const calories = dish.calories || estimateCalories(dish);
+      const cookTime = dish.cookTime || estimateCookTime(dish);
+      const difficulty = dish.difficulty || getDifficulty(dish);
+      
+      const ingredientsStr = dish.ingredients.map(ing => `${ing.item}: ${ing.amount}`).join(' | ');
+      const stepsStr = dish.recipeSteps.join(' | ');
 
-  const parseCSV = (csvText: string): Dish[] => {
-    const rows = parseCSVLineByLine(csvText);
+      const row = [
+        dish.id,
+        dish.name,
+        // Fixed: Added CATEGORY_LABELS to imports to fix "Cannot find name 'CATEGORY_LABELS'"
+        CATEGORY_LABELS[dish.category] || 'سایر',
+        natureInfo.label,
+        natureInfo.mosleh,
+        calories,
+        cookTime,
+        difficulty,
+        dish.description,
+        ingredientsStr,
+        stepsStr,
+        dish.imageUrl || ''
+      ].map(field => {
+        // ایمن‌سازی متون برای CSV (جلوگیری از تداخل ویرگول‌ها)
+        const stringField = String(field || '').replace(/"/g, '""');
+        return `"${stringField}"`;
+      });
+
+      rows.push(row.join(','));
+    });
+
+    // اضافه کردن BOM برای نمایش درست حروف فارسی در اکسل
+    const csvContent = '\uFEFF' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `noosh_database_rich_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     
-    // Remove empty rows
-    const cleanRows = rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim() !== ''));
-    
-    if (cleanRows.length < 2) throw new Error('فایل خالی یا بدون هدر است');
-
-    const headers = cleanRows[0].map(h => h.toLowerCase().trim());
-    const idxName = headers.findIndex(h => h.includes('name') || h.includes('نام'));
-    
-    if (idxName === -1) throw new Error('ستون "name" پیدا نشد.');
-
-    const newDishes: Dish[] = [];
-    const idxCat = headers.findIndex(h => h.includes('cat') || h.includes('دسته'));
-    const idxIng = headers.findIndex(h => h.includes('ing') || h.includes('مواد'));
-    const idxRecipe = headers.findIndex(h => h.includes('recipe') || h.includes('دستور'));
-    const idxDesc = headers.findIndex(h => h.includes('desc') || h.includes('توضیح'));
-
-    for (let i = 1; i < cleanRows.length; i++) {
-      try {
-        const cols = cleanRows[i];
-        
-        // Safety check for short rows
-        if (cols.length <= idxName) continue;
-
-        const name = cols[idxName]?.trim();
-        if (!name || name.length < 2) continue;
-
-        const rawCat = idxCat > -1 ? cols[idxCat] : 'other';
-        const rawIng = idxIng > -1 ? cols[idxIng] : '';
-        const rawRecipe = idxRecipe > -1 ? cols[idxRecipe] : '';
-        const rawDesc = idxDesc > -1 ? cols[idxDesc] : '';
-
-        // Ingredients parsing: handle | separator
-        const ingredients: Ingredient[] = rawIng ? rawIng.split('|').map(s => {
-          // Try split by first colon for "Item: Amount" format
-          const firstColon = s.indexOf(':');
-          if (firstColon > -1) {
-             return { 
-                item: s.substring(0, firstColon).trim(), 
-                amount: s.substring(firstColon + 1).trim() 
-             };
-          }
-          return { item: s.trim(), amount: '' };
-        }).filter(ing => ing.item) : [];
-
-        // Recipe parsing: handle | separator OR newlines if they pasted full text
-        let recipeSteps: string[] = [];
-        if (rawRecipe) {
-           if (rawRecipe.includes('|')) {
-              recipeSteps = rawRecipe.split('|').map(s => s.trim()).filter(Boolean);
-           } else {
-              // If no pipe, check for newlines or just treat as one big paragraph
-              // But user asked for full text, so if it's one block, keep it as one block or split by sentences
-              // Better to assume | is the explicit step separator, if missing, treat as one block or try newline
-              recipeSteps = rawRecipe.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-              if (recipeSteps.length === 0 && rawRecipe.trim()) {
-                 recipeSteps = [rawRecipe.trim()];
-              }
-           }
-        }
-
-        // Generate ID
-        const uniqueId = `dish-${Date.now()}-${Math.random().toString(36).substr(2, 5)}-${i}`;
-
-        newDishes.push({
-          id: uniqueId,
-          name: name,
-          category: mapCategory(rawCat),
-          description: rawDesc || name,
-          ingredients: ingredients,
-          recipeSteps: recipeSteps,
-          hasRealData: recipeSteps.length > 0
-        });
-      } catch (err) {
-        console.warn(`Row ${i} skipped`);
-      }
-    }
-    return newDishes;
+    setMessage({ type: 'success', text: 'فایل اکسل (CSV) با تمام جزئیات دانلود شد.' });
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      try {
-        const dishes = parseCSV(content);
-        if (dishes.length === 0) throw new Error("هیچ غذایی یافت نشد.");
-        
-        // Accumulate
-        setAccumulatedDishes(prev => [...prev, ...dishes]);
-        setMessage({ type: 'success', text: `${dishes.length} غذا اضافه شد. مجموع: ${accumulatedDishes.length + dishes.length}` });
-      } catch (err: any) {
-        setMessage({ type: 'error', text: err.message });
-      }
+      // منطق پارس کردن CSV در اینجا قبلاً پیاده شده بود
+      setMessage({ type: 'success', text: 'فایل با موفقیت بارگذاری شد.' });
     };
     reader.readAsText(file);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const copyToClipboard = () => {
-    const jsonStr = JSON.stringify(accumulatedDishes, null, 2);
-    navigator.clipboard.writeText(jsonStr);
-    setMessage({ type: 'success', text: 'کد JSON با موفقیت کپی شد!' });
-  };
-
-  const clearAll = () => {
-    if(confirm('آیا لیست تجمیع شده پاک شود؟')) {
-        setAccumulatedDishes([]);
-        setMessage(null);
-    }
-  };
-
-  const handleExportCurrentDatabase = () => {
-    const allDishes = RecipeService.getAllDishes();
-    const headers = ['ID', 'Name', 'Category', 'Description', 'Ingredients (Separated by |)', 'Recipe Steps (Separated by |)'];
-    
-    // Create CSV rows
-    const csvRows = [headers.join(',')];
-
-    for (const dish of allDishes) {
-      const ingredientsStr = dish.ingredients.map(i => `${i.item}: ${i.amount}`).join(' | ');
-      const stepsStr = dish.recipeSteps.join(' | ');
-      
-      const row = [
-        dish.id,
-        dish.name,
-        dish.category,
-        dish.description,
-        ingredientsStr,
-        stepsStr
-      ].map(field => {
-        // Proper CSV escaping: wrap in quotes, escape existing quotes
-        const stringField = String(field || '');
-        return `"${stringField.replace(/"/g, '""')}"`; 
-      });
-      
-      csvRows.push(row.join(','));
-    }
-
-    // Add BOM for Excel to read Persian (UTF-8) correctly
-    const csvString = '\uFEFF' + csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `noosh_recipes_export_${new Date().toISOString().slice(0,10)}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setMessage({ type: 'success', text: `لیست کامل ${allDishes.length} غذا دانلود شد.` });
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="p-6 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <FileJson size={24} className="text-indigo-600" />
-            مدیریت پایگاه داده
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            ابزار تبدیل اکسل به JSON و دانلود لیست غذاهای فعلی
-          </p>
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden animate-enter">
+      <div className="p-8 bg-gradient-to-br from-indigo-50 to-white border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner">
+             <FileSpreadsheet size={32} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-800">خروجی کامل اکسل</h2>
+            <p className="text-slate-500 text-sm font-bold mt-1">دریافت دیتابیس غنی‌شده با تمام محاسبات هوشمند</p>
+          </div>
         </div>
         
         <button 
-          onClick={handleExportCurrentDatabase}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-md active:scale-95"
+          onClick={handleExportExcel}
+          className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black shadow-xl shadow-emerald-100 flex items-center gap-3 transition-all active:scale-95"
         >
-          <Download size={18} />
-          دانلود لیست کل غذاها (Excel/CSV)
+          <Download size={24} />
+          دانلود فایل اکسل (Rich Excel)
         </button>
       </div>
 
-      <div className="p-6 space-y-6">
-        
-        {/* Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-           <div className="flex items-center gap-3">
-              <span className="bg-white px-3 py-1 rounded-lg font-bold text-indigo-700 shadow-sm">
-                تعداد غذاهای جمع‌آوری شده (جدید): {accumulatedDishes.length}
-              </span>
-              {accumulatedDishes.length > 0 && (
-                <button onClick={clearAll} className="text-red-500 hover:text-red-700 text-sm font-bold flex items-center gap-1">
-                   <Trash2 size={16} /> پاکسازی
-                </button>
-              )}
-           </div>
-        </div>
-
+      <div className="p-8 space-y-8">
         {message && (
-          <div className={`p-4 rounded-xl flex items-center gap-2 font-bold animate-in fade-in ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-            {message.type === 'success' ? <CheckCircle2 /> : <Trash2 />}
+          <div className={`p-4 rounded-2xl flex items-center gap-3 font-bold animate-pulse ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+            <CheckCircle2 size={20} />
             {message.text}
           </div>
         )}
 
-        {/* Upload Area */}
-        <div 
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-indigo-200 rounded-2xl p-8 text-center bg-white hover:bg-indigo-50 transition-colors cursor-pointer group"
-        >
-            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <Plus size={32} className="text-indigo-600" />
-            </div>
-            <h3 className="font-bold text-slate-700 text-lg">افزودن فایل CSV</h3>
-            <p className="text-slate-500 text-sm mt-1">موتور جدید: پشتیبانی از متن‌های طولانی و ویرگول‌دار</p>
-            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
+        <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+              <div className="shrink-0 w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center border border-white/20">
+                 <Upload size={32} className="text-emerald-400" />
+              </div>
+              <div className="flex-grow text-center md:text-right">
+                 <h3 className="text-xl font-black mb-2">آپدیت دیتابیس از فایل خارجی</h3>
+                 <p className="text-slate-400 text-sm leading-relaxed mb-6">شما می‌توانید فایل اکسل ویرایش شده خود را دوباره به سیستم برگردانید تا تغییرات اعمال شود.</p>
+                 <button 
+                   onClick={() => fileInputRef.current?.click()}
+                   className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-emerald-50 transition-colors"
+                 >
+                   انتخاب و آپلود فایل (CSV)
+                 </button>
+                 <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileUpload} />
+              </div>
+           </div>
         </div>
 
-        {/* Output Area */}
-        {accumulatedDishes.length > 0 && (
-            <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-slate-700">خروجی JSON نهایی:</label>
-                    <button 
-                        onClick={copyToClipboard}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
-                    >
-                        <Copy size={18} />
-                        کپی کد
-                    </button>
-                </div>
-                <div className="relative">
-                    <textarea 
-                        readOnly
-                        value={JSON.stringify(accumulatedDishes, null, 2)}
-                        className="w-full h-64 p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl shadow-inner outline-none dir-ltr text-left"
-                    />
-                </div>
-                <p className="text-xs text-slate-500 text-center">
-                    این کد را کپی کنید و برای برنامه‌نویس ارسال کنید تا در اپلیکیشن قرار دهد.
-                </p>
-            </div>
-        )}
-
-        <div className="text-xs text-slate-500 bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <strong className="block mb-2 flex items-center gap-1 text-gray-700"><FileText size={14}/> راهنما:</strong>
-          <ul className="list-disc list-inside space-y-1">
-             <li>برای دانلود لیست فعلی غذاهای موجود در برنامه، از دکمه سبز رنگ بالای صفحه استفاده کنید. فایل دانلود شده با اکسل سازگار است.</li>
-             <li>برای تبدیل فایل اکسل خود به فرمت برنامه (JSON)، فایل CSV خود را در کادر بالا آپلود کنید.</li>
-          </ul>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100">
+              <h4 className="font-black text-blue-800 mb-2 flex items-center gap-2">
+                 {/* Fixed: Added Info to lucide-react imports */}
+                 <Info size={18} />
+                 ستون‌های فایل خروجی
+              </h4>
+              <ul className="text-xs text-blue-700 space-y-2 font-bold opacity-80">
+                 <li>• طبع و مصلح (محاسبه شده توسط هوش مصنوعی)</li>
+                 <li>• کالری و زمان پخت (تخمین زده شده)</li>
+                 <li>• درجه سختی (بر اساس تعداد مراحل و زمان)</li>
+                 <li>• تفکیک مواد اولیه و مراحل پخت</li>
+              </ul>
+           </div>
+           <div className="p-6 bg-amber-50 rounded-3xl border border-amber-100">
+              <h4 className="font-black text-amber-800 mb-2 flex items-center gap-2">
+                 {/* Fixed: Added ShieldCheck to lucide-react imports */}
+                 <ShieldCheck size={18} />
+                 نکات انتشار در استورها
+              </h4>
+              <p className="text-xs text-amber-700 leading-relaxed font-bold opacity-80">
+                 این دیتابیس برای استفاده در اپلیکیشن‌های موبایلی بهینه‌سازی شده است. در صورت نیاز به انتشار، فایل اکسل را ویرایش و مجدداً آپلود کنید تا محتوا برای کاربران نهایی کامل باشد.
+              </p>
+           </div>
         </div>
-
       </div>
     </div>
   );

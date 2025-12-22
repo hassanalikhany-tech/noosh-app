@@ -1,3 +1,4 @@
+
 import { Challenge } from '../types';
 import { Droplets, Leaf, Dumbbell, Zap, Heart } from 'lucide-react';
 
@@ -9,42 +10,45 @@ export const CHALLENGES: Challenge[] = [
     icon: Droplets,
     color: 'bg-blue-500',
     bannedCategories: ['kuku', 'fastfood'],
-    // If description/recipe contains "fry" or "oil" -> ban logic handled in planner
+    bannedKeywords: ['سرخ شده', 'سرخ کنید', 'تفت دهید', 'روغن فراوان', 'سرخ‌کردنی']
   },
   {
     id: 'vegan-week',
     title: 'هفته گیاه‌خواری',
-    description: 'یک هفته بدون گوشت قرمز، مرغ و ماهی. تمرکز روی آش، کوکو سبزیجات و خوراک‌های گیاهی.',
+    description: 'یک هفته بدون گوشت قرمز، مرغ، ماهی و محصولات حیوانی سنگین. تمرکز روی سبزیجات و حبوبات.',
     icon: Leaf,
     color: 'bg-emerald-500',
-    // We ban heavy meat categories, but we also need to check ingredients for meat
     bannedCategories: ['kabab', 'stew', 'polo', 'dolma', 'fastfood'], 
-    // New property for strict exclusion
-    bannedKeywords: ['گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'پاچه', 'سیرابی', 'جگر'] 
+    // Super strict keyword list to ensure no meat slips through
+    bannedKeywords: [
+      'گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'پاچه', 'سیرابی', 'جگر', 
+      'شینسل', 'کباب', 'فیله', 'ژامبون', 'بوقلمون', 'اردک', 'ماهیچه', 'مغز', 'زبان',
+      'چلو گوشت', 'خورشت', 'کوفته', 'دلمه', 'گردن', 'راسته'
+    ] 
   },
   {
     id: 'protein-power',
     title: 'پروتئین پلاس',
-    description: 'هفته عضله‌سازی! هر روز باید حداقل یک وعده کباب یا غذای گوشتی داشته باشید.',
+    description: 'هفته عضله‌سازی! تمرکز روی غذاهای سرشار از پروتئین حیوانی و گیاهی.',
     icon: Dumbbell,
     color: 'bg-rose-500',
-    requiredKeywords: ['کباب', 'گوشت', 'مرغ', 'ماهی', 'تخم مرغ']
+    requiredKeywords: ['گوشت', 'مرغ', 'ماهی', 'تخم مرغ', 'عدس', 'لوبیا', 'نخود']
   },
   {
     id: 'light-dinner',
     title: 'شام سبک',
-    description: 'تمرکز بر روی سوپ‌ها، آش‌ها و سالادها برای وعده‌های سبک‌تر.',
+    description: 'تمرکز بر روی سوپ‌ها، آش‌ها و خوراک‌های ساده برای هضم راحت‌تر در شب.',
     icon: Zap,
     color: 'bg-amber-500',
-    bannedCategories: ['polo', 'stew', 'fastfood', 'kabab', 'dolma']
+    bannedCategories: ['polo', 'stew', 'kabab', 'dolma']
   },
   {
     id: 'sugar-free',
     title: 'حذف قند و شکر',
-    description: 'حذف کامل دسرها و غذاهای شیرین مثل خورش‌های شیرین.',
+    description: 'حذف کامل دسرها و غذاهایی که در آن‌ها از شکر یا قند مصنوعی استفاده شده است.',
     icon: Heart,
     color: 'bg-purple-500',
     bannedCategories: ['dessert'],
-    bannedKeywords: ['شکر', 'قند', 'نبات', 'شیرینی']
+    bannedKeywords: ['شکر', 'قند', 'نبات', 'شیرینی', 'پولکی']
   }
 ];

@@ -42,12 +42,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     const map = new Map<string, ShoppingItem>();
     
     customItems.forEach(item => {
-      // Use original item name if it's currently being edited to prevent it from jumping around
-      // or disappearing if user changes it to a duplicate name temporarily
-      // However, for display logic, we stick to the list.
       const normalized = item.name.trim().toLowerCase();
       
-      // If we encounter a duplicate name, we prefer the one that is NOT checked (active)
       if (!map.has(normalized)) {
         map.set(normalized, item);
       } else {
@@ -98,8 +94,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     updateCustomItems(customItems.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
   };
 
-  // --- Edit Functions ---
-
   const startEditing = (item: ShoppingItem) => {
     setEditingId(item.id);
     setEditValue(item.name);
@@ -136,8 +130,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     }
   };
 
-  // --- End Edit Functions ---
-
   const getRawListText = () => {
     const activeItems = uniqueItems.filter(i => !i.checked);
     if (activeItems.length === 0) return 'سبد خرید خالی است.';
@@ -168,7 +160,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
   return (
     <div id="shopping-list-content" className="bg-white rounded-2xl p-6 min-h-full flex flex-col">
       
-      {/* SCREEN VIEW */}
       <div className="screen-only">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -248,7 +239,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
                 placeholder="افزودن کالا..."
-                className="flex-grow px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-amber-500 outline-none text-sm transition-colors"
+                className="flex-grow px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-amber-500 outline-none text-sm transition-colors text-slate-900"
               />
               <button 
                 onClick={handleAddItem}
@@ -271,7 +262,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
                     className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 group ${item.checked ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100 hover:border-amber-200 hover:shadow-sm'}`}
                   >
                     {editingId === item.id ? (
-                      // Edit Mode
                       <div className="flex items-center gap-2 flex-grow w-full">
                         <input
                           ref={editInputRef}
@@ -297,7 +287,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
                         </button>
                       </div>
                     ) : (
-                      // Display Mode
                       <>
                         <div 
                           className="flex items-center gap-3 cursor-pointer flex-grow min-w-0"
@@ -339,7 +328,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
         </div>
       </div>
 
-      {/* PRINT VIEW (Only visible when printing) - Using Portal to escape any fixed/hidden parent containers */}
       {createPortal(
         <div className="print-view print-view-modal" id="shopping-list-print">
           <div className="p-8">

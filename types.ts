@@ -33,6 +33,10 @@ export interface Dish {
   nationality?: string;
   nature?: NatureType;
   mosleh?: string;
+  calories?: number;
+  cookTime?: number;
+  difficulty?: string;
+  natureLabel?: string;
 }
 
 export interface DayPlan {
@@ -95,14 +99,16 @@ export interface UserProfile {
   avatar?: string;
   subscriptionExpiry: number; 
   blacklistedDishIds: string[]; 
+  favoriteDishIds: string[];
+  dislikedIngredients: string[]; // فیلد جدید برای حساسیت‌ها
   excludedCategories: DishCategory[]; 
-  preferredNatures: NatureType[]; // New: Filter by nature
-  // Added missing history property to fix type errors
+  preferredNatures: NatureType[];
   history: string[];
   familySize: number;
   isAdmin?: boolean;
   dietMode?: boolean; 
   activeChallengeId?: string; 
   customShoppingList?: ShoppingItem[]; 
-  hasCompletedSetup?: boolean; // New: Onboarding flag
+  hasCompletedSetup?: boolean;
+  onlyFavoritesMode?: boolean;
 }
