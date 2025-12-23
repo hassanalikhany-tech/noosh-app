@@ -25,13 +25,15 @@ const DatabaseManager: React.FC = () => {
   const handleFullSync = async () => {
     if (!confirm(`آیا مطمئن هستید که می‌خواهید ${stats.local} غذای موجود در کد را به فایربیس ارسال کنید؟`)) return;
     setIsSyncing(true);
-    setMessage({ type: 'info', text: 'در حال ارسال داده‌ها به فایربیس...' });
+    setMessage({ type: 'info', text: 'در حال برقراری ارتباط با فایربیس و ارسال داده‌ها...' });
+    
     const result = await RecipeService.syncAllToFirebase();
+    
     if (result.success) {
-      setMessage({ type: 'success', text: `عملیات موفق! ${result.count} مورد به ابر منتقل شد.` });
+      setMessage({ type: 'success', text: `عملیات موفق! ${result.count} مورد به دیتابیس ابری منتقل شد.` });
       await loadStats();
     } else {
-      setMessage({ type: 'error', text: 'خطا: ' + result.message });
+      setMessage({ type: 'error', text: 'خطا در همگام‌سازی: ' + result.message });
     }
     setIsSyncing(false);
   };
@@ -84,7 +86,7 @@ const DatabaseManager: React.FC = () => {
             message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
             message.type === 'error' ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-blue-50 text-blue-700 border-blue-100'
           }`}>
-            <CheckCircle2 size={24} />
+            {message.type === 'error' ? <XCircle size={24} /> : <CheckCircle2 size={24} />}
             <span className="leading-relaxed">{message.text}</span>
           </div>
         )}

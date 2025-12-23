@@ -9,21 +9,30 @@ import {
   getDocs,
   getCountFromServer
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
 
 let cachedDishes: Dish[] = [...DEFAULT_DISHES];
 
-const sanitizeForFirebase = (obj: any): any => {
-  if (obj === null || obj === undefined) return "";
-  if (Array.isArray(obj)) return obj.map(sanitizeForFirebase);
-  if (typeof obj === 'object') {
-    const cleanObj: any = {};
+// تابع بسیار دقیق برای حذف مقادیر غیرمجاز از شیء قبل از ارسال به فایربیس
+const cleanObject = (obj: any): any => {
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanObject(item));
+  }
+  if (obj !== null && typeof obj === 'object') {
+    const newObj: any = {};
     Object.keys(obj).forEach(key => {
-      const value = obj[key];
-      cleanObj[key] = (value !== undefined && value !== null) ? sanitizeForFirebase(value) : "";
+      const val = obj[key];
+      // فایربیس اجازه ذخیره undefined را نمی‌دهد
+      if (val !== undefined && val !== null) {
+        if (typeof val === 'object') {
+          newObj[key] = cleanObject(val);
+        } else {
+          newObj[key] = val;
+        }
+      }
     });
-    return cleanObj;
+    return newObj;
   }
   return obj;
 };
@@ -83,8 +92,12 @@ export const RecipeService = {
   getLocalCount: () => DEFAULT_DISHES.length,
   
   getOfflineCacheCount: async () => {
-    const items = await DB.getAll('dishes');
-    return items.length;
+    try {
+      const items = await DB.getAll('dishes');
+      return items.length;
+    } catch {
+      return 0;
+    }
   },
 
   getRealCloudCount: async () => {
@@ -93,56 +106,75 @@ export const RecipeService = {
       const snapshot = await getCountFromServer(coll);
       return snapshot.data().count;
     } catch (e) {
+      console.error("Count Error:", e);
       return 0;
     }
   },
 
   clearLocalCache: async () => {
-    const dbInstance = await DB.init();
-    return new Promise((resolve) => {
-      const transaction = dbInstance.transaction('dishes', 'readwrite');
-      const store = transaction.objectStore('dishes');
-      const request = store.clear();
-      request.onsuccess = () => {
-        cachedDishes = [...DEFAULT_DISHES];
-        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: cachedDishes }));
-        resolve(true);
-      };
-    });
-  },
-
-  syncAllToFirebase: async () => {
     try {
-      const allDishes = DEFAULT_DISHES.filter(d => d && d.id);
-      const chunkSize = 50; 
-      for (let i = 0; i < allDishes.length; i += chunkSize) {
-        const batch = writeBatch(db);
-        const chunk = allDishes.slice(i, i + chunkSize);
-        chunk.forEach((dish) => {
-          const cleanDish = sanitizeForFirebase(dish);
-          const dishRef = doc(db, "dishes", dish.id);
-          batch.set(dishRef, cleanDish, { merge: true });
-        });
-        await batch.commit();
-      }
-      return { success: true, count: allDishes.length };
-    } catch (error: any) {
-      return { success: false, message: error.message };
+      const dbInstance = await DB.init();
+      return new Promise((resolve) => {
+        const transaction = dbInstance.transaction('dishes', 'readwrite');
+        const store = transaction.objectStore('dishes');
+        const request = store.clear();
+        request.onsuccess = () => {
+          cachedDishes = [...DEFAULT_DISHES];
+          window.dispatchEvent(new CustomEvent('recipes-updated', { detail: cachedDishes }));
+          resolve(true);
+        };
+      });
+    } catch {
+      return false;
     }
   },
 
-  clearCloudDatabase: async () => {
+  syncAllToFirebase: async () => {
+    if (!auth.currentUser) {
+      return { success: false, message: "شما وارد حساب کاربری نشده‌اید." };
+    }
+
     try {
-      const snapshot = await getDocs(collection(db, "dishes"));
-      const batchSize = 400;
-      for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+      const dishMap = new Map();
+      // اول کدهای پیش‌فرض را می‌گیرم
+      DEFAULT_DISHES.forEach(d => {
+        if (d && d.id) dishMap.set(d.id, d);
+      });
+      // بعد کش آفلاین را (اگر تغییراتی داشته)
+      const offlineDishes = await DB.getAll('dishes');
+      offlineDishes.forEach(d => {
+        if (d && d.id) dishMap.set(d.id, d);
+      });
+      
+      const allDishes = Array.from(dishMap.values());
+      console.log(`Starting sync for ${allDishes.length} dishes...`);
+      
+      const chunkSize = 25; // دسته‌های کوچک‌تر برای اطمینان بیشتر از موفقیت
+      let processedCount = 0;
+
+      for (let i = 0; i < allDishes.length; i += chunkSize) {
         const batch = writeBatch(db);
-        snapshot.docs.slice(i, i + batchSize).forEach(d => batch.delete(d.ref));
+        const chunk = allDishes.slice(i, i + chunkSize);
+        
+        chunk.forEach((dish) => {
+          const cleaned = cleanObject(dish);
+          const dishRef = doc(db, "dishes", dish.id);
+          batch.set(dishRef, cleaned, { merge: true });
+        });
+        
         await batch.commit();
+        processedCount += chunk.length;
+        console.log(`Sync progress: ${processedCount}/${allDishes.length}`);
       }
-      return true;
-    } catch (e) {
-      return false;
+      
+      return { success: true, count: processedCount };
+    } catch (error: any) {
+      console.error("Firebase Sync Critical Error:", error);
+      let customMsg = error.message;
+      if (error.code === 'permission-denied') {
+        customMsg = "دسترسی نوشتن در دیتابیس رد شد. مطمئن شوید ادمین هستید.";
+      }
+      return { success: false, message: customMsg };
     }
   }
 };

@@ -1,3 +1,4 @@
+
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -29,7 +30,7 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
   passwordCode: "PROTECTED",
   email: user.email || "",
   phoneNumber: phoneNumber || "",
-  subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000), // ۱ سال هدیه اولیه
+  subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000), 
   blacklistedDishIds: [],
   favoriteDishIds: [],
   dislikedIngredients: [],
@@ -43,56 +44,48 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
 });
 
 export const UserService = {
-  /**
-   * ورود به سیستم - محدودیت تایید ایمیل برداشته شد تا مدیر بتواند وارد شود
-   */
   login: async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
-      // جستجوی پروفایل در دیتابیس
-      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
       
+      let userData: UserProfile;
+
       if (!userDoc.exists()) {
-        const newProfile = createDefaultProfile(firebaseUser, "");
-        await setDoc(doc(db, "users", firebaseUser.uid), newProfile);
-        // Fix: satisfy inferred type for Login.tsx result.needsVerification
-        return { success: true, user: newProfile, needsVerification: false };
+        userData = createDefaultProfile(firebaseUser, "");
+        await setDoc(userDocRef, userData);
+      } else {
+        userData = userDoc.data() as UserProfile;
       }
-
-      const userData = userDoc.data() as UserProfile;
       
-      // Fix: Check verification for non-admins and return needsVerification for Login.tsx logic
-      if (!userData.isAdmin && !firebaseUser.emailVerified) {
-        return { 
-          success: false, 
-          message: "لطفاً ابتدا ایمیل خود را تایید کنید.", 
-          needsVerification: true 
-        };
+      // Force admin if it's your email
+      if (firebaseUser.email === 'm.fatahi2010@gmail.com' && !userData.isAdmin) {
+        userData.isAdmin = true;
+        await updateDoc(userDocRef, { isAdmin: true });
       }
 
-      // Fix: satisfy inferred type for Login.tsx result.needsVerification
+      // تایید ایمیل موقتاً غیرفعال شد
       return { success: true, user: userData, needsVerification: false };
+
     } catch (error: any) {
-      console.error(error);
-      // Fix: satisfy inferred type for Login.tsx result.needsVerification
+      console.error("Login Error:", error.code);
+      let msg = "ایمیل یا رمز عبور اشتباه است.";
+      if (error.code === 'auth/invalid-credential') msg = "اطلاعات ورود نامعتبر است. دوباره تلاش کنید.";
+      
       return { 
         success: false, 
-        message: "ایمیل یا رمز عبور اشتباه است.", 
+        message: msg, 
         needsVerification: false 
       };
     }
   },
 
   resendVerificationEmail: async (email: string, password: string) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(userCredential.user);
-      return { success: true, message: "لینک تایید مجدداً ارسال شد." };
-    } catch (error: any) {
-      return { success: false, message: "خطا در ارسال مجدد ایمیل." };
-    }
+    // این متد فعلاً بلااستفاده است
+    return { success: true, message: "سیستم تایید ایمیل فعلاً غیرفعال است." };
   },
 
   loginWithGoogle: async () => {
@@ -104,14 +97,20 @@ export const UserService = {
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
       
+      let data: UserProfile;
       if (userDoc.exists()) {
-        const data = userDoc.data() as UserProfile;
-        return { success: true, user: data };
+        data = userDoc.data() as UserProfile;
       } else {
-        const newUser = createDefaultProfile(user, user.displayName || "");
-        await setDoc(userDocRef, newUser);
-        return { success: true, user: newUser };
+        data = createDefaultProfile(user, user.displayName || "");
+        await setDoc(userDocRef, data);
       }
+
+      if (user.email === 'm.fatahi2010@gmail.com' && !data.isAdmin) {
+        data.isAdmin = true;
+        await updateDoc(userDocRef, { isAdmin: true });
+      }
+
+      return { success: true, user: data };
     } catch (error: any) {
       return { success: false, message: "خطا در اتصال به حساب گوگل." };
     }
@@ -123,15 +122,14 @@ export const UserService = {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
       
-      // ارسال ایمیل تایید به صورت اختیاری در پس‌زمینه
-      sendEmailVerification(firebaseUser).catch(e => console.log("Verification email fail", e));
+      // ارسال ایمیل تایید غیرفعال شد
       
       const newUser = createDefaultProfile(firebaseUser, fullName, phoneNumber);
       await setDoc(doc(db, "users", firebaseUser.uid), newUser);
 
       return { success: true, user: newUser };
     } catch (error: any) {
-      return { success: false, message: "خطا در ثبت‌نام." };
+      return { success: false, message: "خطا در ثبت‌نام: " + error.message };
     }
   },
 
@@ -143,7 +141,12 @@ export const UserService = {
           const userDocRef = doc(db, "users", user.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
-            resolve(userDoc.data() as UserProfile);
+            const data = userDoc.data() as UserProfile;
+            if (user.email === 'm.fatahi2010@gmail.com' && !data.isAdmin) {
+               await updateDoc(userDocRef, { isAdmin: true });
+               data.isAdmin = true;
+            }
+            resolve(data);
           } else {
             resolve(null);
           }
@@ -154,24 +157,12 @@ export const UserService = {
     });
   },
 
-  /**
-   * فعال‌سازی دسترسی مدیریت برای کاربر فعلی (شما)
-   */
   seedAdmin: async () => {
     const user = auth.currentUser;
-    if (!user) return;
-    
+    if (!user || user.email !== 'm.fatahi2010@gmail.com') return;
     const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (userDoc.exists()) {
-      const data = userDoc.data() as UserProfile;
-      // اگر کاربر وارد شده ادمین نیست، او را ادمین کن
-      if (!data.isAdmin) {
-        await updateDoc(userDocRef, { isAdmin: true });
-        notifyUpdate();
-      }
-    }
+    await updateDoc(userDocRef, { isAdmin: true });
+    notifyUpdate();
   },
 
   updateProfile: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
