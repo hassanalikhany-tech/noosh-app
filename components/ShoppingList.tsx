@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, Edit2, Check, X as XIcon } from 'lucide-react';
+import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, Edit2, Check, X as XIcon, Zap } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
 
@@ -17,12 +17,11 @@ interface ShoppingListProps {
   onUpdateUser: (user: UserProfile) => void;
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
+const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateUser }) => {
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +30,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     setCustomItems(user.customShoppingList || []);
   }, [user]);
 
-  // Focus input when editing starts
   useEffect(() => {
     if (editingId && editInputRef.current) {
       editInputRef.current.focus();
@@ -39,39 +37,17 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
   }, [editingId]);
 
   const uniqueItems = useMemo(() => {
-    const map = new Map<string, ShoppingItem>();
-    
-    customItems.forEach(item => {
-      const normalized = item.name.trim().toLowerCase();
-      
-      if (!map.has(normalized)) {
-        map.set(normalized, item);
-      } else {
-        const existing = map.get(normalized)!;
-        if (existing.checked && !item.checked) {
-          map.set(normalized, item);
-        }
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+    return [...customItems].sort((a, b) => a.name.localeCompare(b.name, 'fa'));
   }, [customItems]);
 
-  const updateCustomItems = (newItems: ShoppingItem[]) => {
+  const updateCustomItems = async (newItems: ShoppingItem[]) => {
     setCustomItems(newItems);
-    const updatedUser = UserService.updateShoppingList(user.username, newItems);
+    const updatedUser = await UserService.updateShoppingList(user.username, newItems);
     onUpdateUser(updatedUser);
   };
 
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
-    
-    const exists = customItems.some(i => i.name.trim().toLowerCase() === newItemName.trim().toLowerCase());
-    if (exists) {
-      alert('این کالا قبلاً در لیست وجود دارد.');
-      return;
-    }
-
     const newItem: ShoppingItem = {
       id: Date.now().toString(),
       name: newItemName.trim(),
@@ -79,6 +55,42 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     };
     updateCustomItems([...customItems, newItem]);
     setNewItemName('');
+  };
+
+  const handleGenerateFromPlan = async () => {
+    if (!weeklyPlan || weeklyPlan.length === 0) {
+      alert('ابتدا یک برنامه غذایی بسازید.');
+      return;
+    }
+
+    const aggregated = new Map<string, { amount: number, unit: string }>();
+
+    weeklyPlan.forEach(plan => {
+      plan.dish.ingredients.forEach(ing => {
+        const key = `${ing.item.trim()}_${ing.unit.trim()}`;
+        const current = aggregated.get(key);
+        if (current) {
+          aggregated.set(key, { ...current, amount: current.amount + ing.amount });
+        } else {
+          aggregated.set(key, { amount: ing.amount, unit: ing.unit });
+        }
+      });
+    });
+
+    const newShoppingItems: ShoppingItem[] = Array.from(aggregated.entries()).map(([key, data]) => {
+      const name = key.split('_')[0];
+      return {
+        id: `auto-${Date.now()}-${Math.random()}`,
+        name: name,
+        amount: data.amount,
+        unit: data.unit,
+        checked: false,
+        fromRecipe: 'برنامه هفتگی'
+      };
+    });
+
+    updateCustomItems([...customItems, ...newShoppingItems]);
+    alert('لیست خرید بر اساس برنامه هفتگی شما ساخته شد.');
   };
 
   const handleDeleteItem = (id: string) => {
@@ -94,58 +106,21 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
     updateCustomItems(customItems.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
   };
 
-  const startEditing = (item: ShoppingItem) => {
-    setEditingId(item.id);
-    setEditValue(item.name);
-  };
-
-  const saveEdit = () => {
-    if (!editingId || !editValue.trim()) {
-      cancelEdit();
-      return;
-    }
-
-    const newItems = customItems.map(i => {
-      if (i.id === editingId) {
-        return { ...i, name: editValue.trim() };
-      }
-      return i;
-    });
-
-    updateCustomItems(newItems);
-    setEditingId(null);
-    setEditValue('');
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditValue('');
-  };
-
-  const handleEditKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
+  const toPersianDigits = (num: number | undefined) => num ? num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]) : '';
 
   const getRawListText = () => {
     const activeItems = uniqueItems.filter(i => !i.checked);
     if (activeItems.length === 0) return 'سبد خرید خالی است.';
 
-    let text = `سلام خسته نباشی، لطفا سر راهت این اقلام را هم بخر 🛒:\n\n`;
+    let text = `سلام، لیست خرید من 🛒:\n\n`;
     activeItems.forEach((item, index) => {
-       text += `${index + 1}. ${item.name}\n`;
+       text += `${index + 1}. ${item.name} ${item.amount ? `(${toPersianDigits(item.amount)} ${item.unit})` : ''}\n`;
     });
-
     text += `\nممنونم\n${user.fullName || user.username}`;
     return text;
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleSMS = () => {
     const text = getRawListText();
@@ -159,7 +134,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
 
   return (
     <div id="shopping-list-content" className="bg-white rounded-2xl p-6 min-h-full flex flex-col">
-      
       <div className="screen-only">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b pb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -173,59 +147,40 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
           </div>
           
           <div className="flex gap-2 flex-wrap justify-end">
-            {customItems.length > 0 && (
-               <button 
-                 onClick={() => setShowDeleteConfirm(true)} 
-                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100 mr-2" 
-                 title="حذف همه"
-               >
-                 <Trash2 size={20} />
-               </button>
-            )}
+            <button 
+              onClick={handleGenerateFromPlan}
+              className="px-4 py-2 bg-teal-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-teal-700 transition-all shadow-md active:scale-95"
+              title="ساخت لیست از برنامه هفتگی"
+            >
+              <Zap size={18} /> لیست خودکار هفته
+            </button>
             
-            <button onClick={handlePrint} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="چاپ یا ذخیره PDF">
+            <button onClick={handlePrint} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border" title="چاپ">
               <Printer size={20} />
             </button>
             
-            <button 
-              onClick={handleSMS}
-              className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-              title="ارسال پیامک"
-            >
+            <button onClick={handleSMS} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border" title="پیامک">
               <Smartphone size={20} />
             </button>
 
-            <a 
-              href={`https://wa.me/?text=${encodedText}`} 
-              target="_blank" 
-              rel="noreferrer"
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors" 
-              title="ارسال در واتس‌اپ"
-            >
+            <a href={`https://wa.me/?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors border">
               <MessageCircle size={20} />
             </a>
             
-            <a 
-              href={`https://t.me/share/url?url=${encodedText}&text=`} 
-              target="_blank" 
-              rel="noreferrer"
-              className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" 
-              title="ارسال در تلگرام"
-            >
-              <TelegramIcon />
-            </a>
+            {customItems.length > 0 && (
+               <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border">
+                 <Trash2 size={20} />
+               </button>
+            )}
           </div>
         </div>
 
         {showDeleteConfirm && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between animate-enter">
-             <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
-               <AlertTriangle size={18} />
-               آیا مطمئن هستید که می‌خواهید همه اقلام را حذف کنید؟
-             </div>
+             <div className="text-red-700 font-bold text-sm flex items-center gap-2"><AlertTriangle size={18} /> حذف کل لیست؟</div>
              <div className="flex gap-2">
-                <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1 bg-white text-gray-600 rounded-lg text-xs border hover:bg-gray-50">انصراف</button>
-                <button onClick={handleDeleteAll} className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700">بله، حذف کن</button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1 bg-white border rounded-lg text-xs">انصراف</button>
+                <button onClick={handleDeleteAll} className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs">حذف</button>
              </div>
           </div>
         )}
@@ -238,88 +193,39 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                placeholder="افزودن کالا..."
+                placeholder="افزودن کالای دستی..."
                 className="flex-grow px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-amber-500 outline-none text-sm transition-colors text-slate-900"
               />
-              <button 
-                onClick={handleAddItem}
-                className="px-4 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors shadow-md active:scale-95"
-              >
+              <button onClick={handleAddItem} className="px-4 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors shadow-md active:scale-95">
                 <Plus size={24} />
               </button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pb-10">
               {uniqueItems.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl">
+                <div className="text-center py-20 text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl">
                   <ShoppingCart size={48} className="mx-auto mb-3 opacity-20" />
-                  <p>سبد خرید خالی است</p>
+                  <p>سبد خرید شما فعلاً خالی است</p>
                 </div>
               ) : (
                 uniqueItems.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-200 group ${item.checked ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-100 hover:border-amber-200 hover:shadow-sm'}`}
-                  >
-                    {editingId === item.id ? (
-                      <div className="flex items-center gap-2 flex-grow w-full">
-                        <input
-                          ref={editInputRef}
-                          type="text"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          className="flex-grow px-3 py-2 rounded-lg border-2 border-amber-400 focus:outline-none text-gray-900 bg-white text-sm"
-                        />
-                        <button 
-                          onClick={saveEdit}
-                          className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                          title="ذخیره"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button 
-                          onClick={cancelEdit}
-                          className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
-                          title="انصراف"
-                        >
-                          <XIcon size={18} />
-                        </button>
+                  <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${item.checked ? 'bg-gray-50 opacity-60' : 'bg-white shadow-sm'}`}>
+                    <div className="flex items-center gap-3 cursor-pointer flex-grow" onClick={() => toggleCheck(item.id)}>
+                      <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center ${item.checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}`}>
+                        {item.checked && <CheckCircle2 size={16} className="text-white" />}
                       </div>
-                    ) : (
-                      <>
-                        <div 
-                          className="flex items-center gap-3 cursor-pointer flex-grow min-w-0"
-                          onClick={() => toggleCheck(item.id)}
-                        >
-                          <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-colors ${item.checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 group-hover:border-amber-400'}`}>
-                            {item.checked && <CheckCircle2 size={16} className="text-white" />}
-                          </div>
-
-                          <span className={`text-base font-medium truncate ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
-                            {item.name}
+                      <div className="flex flex-col">
+                        <span className={`text-sm font-bold ${item.checked ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                          {item.name}
+                        </span>
+                        {item.amount && (
+                          <span className="text-[10px] text-teal-600 font-black">
+                            {toPersianDigits(item.amount)} {item.unit}
                           </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => startEditing(item)}
-                            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="ویرایش نام"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          
-                          <button 
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            title="حذف"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </>
-                    )}
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={() => handleDeleteItem(item.id)} className="p-2 text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
                   </div>
                 ))
               )}
@@ -332,46 +238,33 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, onUpdateUser }) => {
         <div className="print-view print-view-modal" id="shopping-list-print">
           <div className="p-8">
               <div className="text-center mb-8 pb-4 border-b-2 border-black">
-                <h1 className="text-3xl font-black mb-2 text-black">لیست خرید</h1>
+                <h1 className="text-3xl font-black mb-2 text-black">لیست خرید نوش</h1>
                 <p className="text-sm text-black">تاریخ: {new Date().toLocaleDateString('fa-IR')}</p>
               </div>
-
-              {uniqueItems.length > 0 ? (
-                <table style={{width: '100%', borderCollapse: 'collapse', direction: 'rtl'}}>
+              <table style={{width: '100%', borderCollapse: 'collapse', direction: 'rtl'}}>
                   <thead>
                     <tr style={{backgroundColor: '#f3f4f6'}}>
-                      <th style={{border: '1px solid black', padding: '10px', width: '10%', textAlign: 'center'}}>ردیف</th>
+                      <th style={{border: '1px solid black', padding: '10px', width: '10%'}}>ردیف</th>
                       <th style={{border: '1px solid black', padding: '10px', textAlign: 'right'}}>نام کالا</th>
-                      <th style={{border: '1px solid black', padding: '10px', width: '20%', textAlign: 'center'}}>وضعیت</th>
+                      <th style={{border: '1px solid black', padding: '10px', width: '20%'}}>مقدار</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {uniqueItems.map((item, index) => (
-                      <tr key={item.id} style={{backgroundColor: item.checked ? '#f9fafb' : 'white'}}>
+                    {uniqueItems.filter(i => !i.checked).map((item, index) => (
+                      <tr key={item.id}>
                         <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>{index + 1}</td>
-                        <td style={{border: '1px solid black', padding: '10px', textDecoration: item.checked ? 'line-through' : 'none'}}>
-                          {item.name}
-                        </td>
+                        <td style={{border: '1px solid black', padding: '10px'}}>{item.name}</td>
                         <td style={{border: '1px solid black', padding: '10px', textAlign: 'center'}}>
-                          <div style={{width: '15px', height: '15px', border: '1px solid black', display: 'inline-block', marginRight: '5px'}}></div>
+                          {item.amount ? `${toPersianDigits(item.amount)} ${item.unit}` : '---'}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              ) : (
-                <p className="text-center mt-10 text-xl text-black">لیست خالی است.</p>
-              )}
-              
-              <div className="mt-8 text-right text-sm text-black pt-4 border-t border-black font-bold">
-                ممنونم<br/>
-                {user.fullName || user.username}
-              </div>
+              </table>
           </div>
         </div>,
         document.body
       )}
-
     </div>
   );
 };

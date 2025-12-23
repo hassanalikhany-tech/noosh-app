@@ -1,84 +1,77 @@
 
-import { Dish } from '../types';
+import { Dish, UserProfile } from '../types';
 
-const DB_NAME = 'PersianMealPlannerDB';
+const DB_NAME = 'NooshAppDB_v5';
 const DB_VERSION = 1;
-const STORE_NAME = 'dishes';
+const STORES = {
+  USERS: 'users',
+  DISHES: 'dishes',
+  SETTINGS: 'settings'
+};
 
 export const DB = {
-  open: (): Promise<IDBDatabase> => {
+  init: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      // Check if IndexedDB is supported
-      if (!window.indexedDB) {
-        reject(new Error("IndexedDB is not supported"));
-        return;
-      }
-
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORES.USERS)) {
+          db.createObjectStore(STORES.USERS, { keyPath: 'username' });
+        }
+        if (!db.objectStoreNames.contains(STORES.DISHES)) {
+          db.createObjectStore(STORES.DISHES, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+          db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
         }
       };
 
-      request.onsuccess = (event) => {
-        resolve((event.target as IDBOpenDBRequest).result);
-      };
-
-      request.onerror = (event) => {
-        reject((event.target as IDBOpenDBRequest).error);
-      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
   },
 
-  getAllDishes: async (): Promise<Dish[]> => {
-    try {
-      const db = await DB.open();
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE_NAME, 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.getAll();
-
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-      });
-    } catch (e) {
-      console.error("DB Read Error", e);
-      return [];
-    }
-  },
-
-  addDishes: async (dishes: Dish[], append: boolean): Promise<void> => {
-    const db = await DB.open();
+  // متدهای عمومی برای کار با جداول
+  put: async (storeName: string, data: any): Promise<void> => {
+    const db = await DB.init();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = (e) => reject(transaction.error || e);
-      transaction.onabort = (e) => reject(transaction.error || e);
-
-      if (!append) {
-        store.clear();
-      }
-
-      dishes.forEach(dish => {
-        if (dish && dish.id && dish.name) {
-            store.put(dish);
-        }
-      });
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.put(data);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   },
 
-  clearDatabase: async (): Promise<void> => {
-    const db = await DB.open();
+  get: async (storeName: string, key: string): Promise<any> => {
+    const db = await DB.init();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.clear();
-      
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  getAll: async (storeName: string): Promise<any[]> => {
+    const db = await DB.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  delete: async (storeName: string, key: string): Promise<void> => {
+    const db = await DB.init();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.delete(key);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

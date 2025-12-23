@@ -1,4 +1,3 @@
-
 import { Dish, NatureType } from '../types';
 
 export const estimateCookTime = (dish: Dish): number => {
@@ -30,13 +29,15 @@ export const estimateCalories = (dish: Dish): number => {
   if (dish.category === 'fastfood') baseCal = 750;
   if (dish.category === 'dessert') baseCal = 500;
 
-  const ingText = JSON.stringify(dish.ingredients);
-  if (ingText.includes('دنبه') || ingText.includes('چربی')) baseCal += 150;
-  if (ingText.includes('خامه') || ingText.includes('کره')) baseCal += 120;
-  if (ingText.includes('شکر')) baseCal += 80;
-  if (ingText.includes('بادمجان') && !ingText.includes('کبابی')) baseCal += 100;
-  if (ingText.includes('سینه مرغ')) baseCal -= 50;
-  if (ingText.includes('سبزیجات')) baseCal -= 30;
+  // استفاده از روش متنی به جای JSON.stringify برای امنیت بیشتر
+  const ingredientsSummary = (dish.ingredients || []).map(ing => ing.item).join(' ');
+  
+  if (ingredientsSummary.includes('دنبه') || ingredientsSummary.includes('چربی')) baseCal += 150;
+  if (ingredientsSummary.includes('خامه') || ingredientsSummary.includes('کره')) baseCal += 120;
+  if (ingredientsSummary.includes('شکر')) baseCal += 80;
+  if (ingredientsSummary.includes('بادمجان') && !ingredientsSummary.includes('کبابی')) baseCal += 100;
+  if (ingredientsSummary.includes('سینه مرغ')) baseCal -= 50;
+  if (ingredientsSummary.includes('سبزیجات')) baseCal -= 30;
 
   return Math.round(baseCal);
 };
@@ -50,7 +51,8 @@ export const getDifficulty = (dish: Dish): 'آسان' | 'متوسط' | 'سخت' 
 };
 
 export const getDishNature = (dish: Dish): { type: NatureType; label: string; mosleh: string } => {
-  const text = (dish.name + ' ' + dish.description + ' ' + JSON.stringify(dish.ingredients)).toLowerCase();
+  const ingredientsSummary = (dish.ingredients || []).map(ing => ing.item).join(' ');
+  const text = (dish.name + ' ' + dish.description + ' ' + ingredientsSummary).toLowerCase();
   
   if (
     text.includes('ماهی') || 

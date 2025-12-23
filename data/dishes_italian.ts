@@ -11,75 +11,111 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "گوشت چرخ‌کرده گوسفند و گوساله (ترکیبی)",
-        "amount": "۴۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 400,
+        "unit": "گرم"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "هویج متوسط",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "ساقه کرفس",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه"
       },
       {
         "item": "گوجه‌فرنگی پوره شده",
-        "amount": "۸۰۰ گرم (۲ قوطی ۴۰۰ گرمی)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 800,
+        "unit": "گرم (۲ قوطی ۴۰۰ گرمی)"
       },
       {
         "item": "رب گوجه‌فرنگی",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "شیر پرچرب",
-        "amount": "۲۵۰ میلی‌لیتر"
+        // Fix: Converted amount string to number and added unit
+        "amount": 250,
+        "unit": "میلی‌لیتر"
       },
       {
         "item": "روغن زیتون",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پنیر پارمزان رنده شده",
-        "amount": "۱۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم"
       },
       {
         "item": "برگ لازانیا",
-        "amount": "۱۲-۱۵ ورق"
+        // Fix: Converted amount string to number and added unit
+        "amount": 12,
+        "unit": "تا ۱۵ ورق"
       },
       {
         "item": "کره",
-        "amount": "۵۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 50,
+        "unit": "گرم"
       },
       {
         "item": "آرد گندم",
-        "amount": "۵۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 50,
+        "unit": "گرم"
       },
       {
         "item": "شیر",
-        "amount": "۵۰۰ میلی‌لیتر (برای سس بشامل)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 500,
+        "unit": "میلی‌لیتر (برای سس بشامل)"
       },
       {
         "item": "جوز هندی",
-        "amount": "۱/۴ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "آویشن خشک",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       }
     ],
     "recipeSteps": [
@@ -115,41 +151,55 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "اسپاگتی",
-        "amount": "۳۵۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 350,
+        "unit": "گرم"
       },
       {
         "item": "تخم‌مرغ بزرگ",
-        "amount": "۳ عدد (۲ عدد کامل، ۱ عدد زرده تنها)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "عدد (۲ عدد کامل، ۱ عدد زرده تنها)"
       },
       {
         "item": "پنیر پکورینو رومانو (یا پارمزان)",
-        "amount": "۱۰۰ گرم رنده شده"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم رنده شده"
       },
       {
         "item": "گوانچاله یا بیکن",
-        "amount": "۱۵۰ گرم (گوانچاله طعم بهتری می‌دهد)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 150,
+        "unit": "گرم (گوانچاله طعم بهتری می‌دهد)"
       },
       {
         "item": "فلفل سیاه تازه آسیاب شده",
-        "amount": "۱ قاشق چای‌خوری (یا بیشتر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (یا بیشتر)"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "روغن زیتون",
-        "amount": "۱ قاشق غذاخوری (اختیاری، اگر بیکن چربی کمی دارد)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری (اختیاری، اگر بیکن چربی کمی دارد)"
       }
     ],
     "recipeSteps": [
       "گوانچاله یا بیکن را به مکعب‌های کوچک یا نواری برش دهید",
-      "در یک تابه نچسب، گوانچاله را بدون روغن (اگر گوانچاله است) یا با کمی روغن زیتون (اگر بیکن کم چرب است) با حرارت ملایم تا متوسط تفت دهید تا ترد و طلایی شود و چربی آن خارج شود (حدود ۸-۱۰ دقیقه)",
-      "گوانچاله ترد شده را از تابه خارج کرده و چربی باقیمانده در تابه را نگه دارید",
+      "در یک تایه نچسب، گوانچاله را بدون روغن (اگر گوانچاله است) یا با کمی روغن زیتون (اگر بیکن کم چرب است) با حرارت ملایم تا متوسط تفت دهید تا ترد و طلایی شود و چربی آن خارج شود (حدود ۸-۱۰ دقیقه)",
+      "گوانچاله ترد شده را از تایه خارج کرده و چربی باقیمانده در تایه را نگه دارید",
       "در یک کاسه بزرگ، تخم‌مرغ‌های کامل و زرده تخم‌مرغ را با نصف پنیر رنده شده و مقدار زیادی فلفل سیاه تازه آسیاب شده با چنگال خوب هم بزنید تا یکدست شود",
       "اسپاگتی را طبق دستورالعمل روی بسته‌بندی در آب جوش و نمک‌دار بپزید تا آل دنته شود",
       "قبل از آبکش کردن اسپاگتی، حدود ۱ فنجان (۲۴۰ میلی‌لیتر) از آب پاستا را کنار بگذارید",
-      "اسپاگتی آبکش شده را بلافاصله (داغ) به تابه حاوی چربی گوانچاله (حرارت خاموش) اضافه کنید",
+      "اسپاگتی آبکش شده را بلافاصله (داغ) به تایه حاوی چربی گوانچاله (حرارت خاموش) اضافه کنید",
       "سریعاً مخلوط تخم‌مرغ و پنیر را به اسپاگتی داغ اضافه کرده و به سرعت و مداوم هم بزنید تا سس یکدست و خامه‌ای شود و تخم‌مرغ نپزد (حرارت اسپاگتی باید کافی باشد)",
       "اگر سس خیلی غلیظ شد، کم کم از آب پاستای کنار گذاشته شده اضافه کنید تا به غلظت دلخواه برسد",
       "گوانچاله ترد شده را اضافه کرده و با اسپاگتی مخلوط کنید",
@@ -165,51 +215,75 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برنج آربوریو (یا برنج مخصوص ریزوتو)",
-        "amount": "۳۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 300,
+        "unit": "گرم"
       },
       {
         "item": "قارچ تازه (مانند کرمینی یا شیتاکه)",
-        "amount": "۳۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 300,
+        "unit": "گرم"
       },
       {
         "item": "پیاز کوچک",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه"
       },
       {
         "item": "کره بدون نمک",
-        "amount": "۵۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 50,
+        "unit": "گرم"
       },
       {
         "item": "روغن زیتون",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پنیر پارمزان رنده شده",
-        "amount": "۱۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم"
       },
       {
         "item": "آب مرغ یا سبزیجات داغ",
-        "amount": "۱.۲ تا ۱.۵ لیتر"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1.2,
+        "unit": "تا ۱.۵ لیتر"
       },
       {
         "item": "شراب سفید خشک",
-        "amount": "۱۰۰ میلی‌لیتر (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "میلی‌لیتر (اختیاری)"
       },
       {
         "item": "جعفری تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری (برای تزیین)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (برای تزیین)"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       }
     ],
     "recipeSteps": [
@@ -242,55 +316,81 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برای خمیر پیتزا (برای دو پیتزای متوسط)",
-        "amount": ""
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "آرد نان (یا آرد سفید چند منظوره)",
-        "amount": "۳۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 300,
+        "unit": "گرم"
       },
       {
         "item": "آب گرم",
-        "amount": "۲۰۰ میلی‌لیتر"
+        // Fix: Converted amount string to number and added unit
+        "amount": 200,
+        "unit": "میلی‌لیتر"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "شکر",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "مایه خمیر فوری",
-        "amount": "۷ گرم (۱ بسته)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 7,
+        "unit": "گرم (۱ بسته)"
       },
       {
         "item": "روغن زیتون",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "برای رویه پیتزا (برای یک پیتزا)",
-        "amount": ""
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سس گوجه‌فرنگی ساده",
-        "amount": "۱۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم"
       },
       {
         "item": "پنیر موزارلا تازه",
-        "amount": "۱۲۵ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 125,
+        "unit": "گرم"
       },
       {
         "item": "برگ ریحان تازه",
-        "amount": "۸-۱۰ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 8,
+        "unit": "تا ۱۰ عدد"
       },
       {
         "item": "روغن زیتون فوق بکر",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       }
     ],
     "recipeSteps": [
@@ -322,55 +422,79 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برای نیوکی",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سیب‌زمینی بزرگ (حدود ۱ کیلوگرم بعد از پوست کندن)",
-        "amount": "۴ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد"
       },
       {
         "item": "آرد سفید",
-        "amount": "۱۵۰-۲۰۰ گرم (ممکن است بیشتر یا کمتر نیاز باشد)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 150,
+        "unit": "تا ۲۰۰ گرم"
       },
       {
         "item": "تخم‌مرغ",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "برای سس پستو",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "ریحان تازه",
-        "amount": "۲ پیمانه (حدود ۵۰-۷۰ گرم برگ)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "پیمانه (حدود ۵۰-۷۰ گرم برگ)"
       },
       {
         "item": "پنیر پارمزان رنده شده",
-        "amount": "۱/۲ پیمانه (۵۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (۵۰ گرم)"
       },
       {
         "item": "دانه کاج (پاین نات)",
-        "amount": "۱/۴ پیمانه (۳۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "پیمانه (۳۰ گرم)"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه"
       },
       {
         "item": "روغن زیتون فوق بکر",
-        "amount": "۱/۲ پیمانه (۱۲۰ میلی‌لیتر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (۱۲۰ میلی‌لیتر)"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "۱/۴ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "قاشق چای‌خوری"
       }
     ],
     "recipeSteps": [
@@ -402,35 +526,51 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "فتوچینی",
-        "amount": "۴۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 400,
+        "unit": "گرم"
       },
       {
         "item": "کره",
-        "amount": "۱۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم"
       },
       {
         "item": "خامه پرچرب",
-        "amount": "۲۵۰ میلی‌لیتر"
+        // Fix: Converted amount string to number and added unit
+        "amount": 250,
+        "unit": "میلی‌لیتر"
       },
       {
         "item": "پنیر پارمزان رنده شده",
-        "amount": "۱۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 100,
+        "unit": "گرم"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه (ریز خرد شده)"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       },
       {
         "item": "فلفل سیاه تازه آسیاب شده",
-        "amount": "۱/۲ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       },
       {
         "item": "جعفری تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری (برای تزیین)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (برای تزیین)"
       }
     ],
     "recipeSteps": [
@@ -452,67 +592,99 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "ساق گوساله با استخوان (با مغز استخوان)",
-        "amount": "۴ تکه (حدود ۲۰۰-۲۵۰ گرم هر تکه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "تکه (حدود ۲۰۰-۲۵۰ گرم هر تکه)"
       },
       {
         "item": "آرد همه کاره",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "روغن زیتون",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "هویج متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "کرفس",
-        "amount": "۱ ساقه (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "ساقه (ریز خرد شده)"
       },
       {
         "item": "سیر",
-        "amount": "۳ حبه (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "حبه (ریز خرد شده)"
       },
       {
         "item": "شراب سفید خشک",
-        "amount": "۱/۲ پیمانه (در صورت تمایل، قابل حذف است)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (در صورت تمایل، قابل حذف است)"
       },
       {
         "item": "آب گوشت یا مرغ",
-        "amount": "۴ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "پیمانه"
       },
       {
         "item": "گوجه فرنگی خرد شده (کنسرو)",
-        "amount": "۴۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 400,
+        "unit": "گرم"
       },
       {
         "item": "رزماری تازه",
-        "amount": "۱ شاخه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "شاخه"
       },
       {
         "item": "برگ بو",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       },
       {
         "item": "پوست لیمو رنده شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "جعفری تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "۱/۲ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       }
     ],
     "recipeSteps": [
@@ -522,7 +694,7 @@ export const ITALIAN_DISHES: Dish[] = [
       "سیر را اضافه کنید و ۱ دقیقه دیگر تفت دهید تا عطر آن بلند شود.",
       "اگر از شراب سفید استفاده می‌کنید، آن را اضافه کرده و اجازه دهید ۲-۳ دقیقه بجوشد تا الکل آن تبخیر شود و ته قابلمه را با قاشق چوبی بتراشید.",
       "آب گوشت، گوجه فرنگی خرد شده، رزماری و برگ بو را اضافه کنید. هم بزنید و اجازه دهید به جوش آید.",
-      "تکه‌های گوشت را به آرامی به قابلمه برگردانید. حرارت را کم کنید، درب قابلمه را بگذارید و اجازه دهید برای ۲.۵ تا ۳ ساعت به آرامی بجوشد تا گوشت کاملا نرم و از استخوان جدا شود.",
+      "تکه‌های گوشت را به آرمانی به قابلمه برگردانید. حرارت را کم کنید، درب قابلمه را بگذارید و اجازه دهید برای ۲.۵ تا ۳ ساعت به آرمانی بجوشد تا گوشت کاملا نرم و از استخوان جدا شود.",
       "پس از پخت، شاخه رزماری و برگ بو را خارج کنید. طعم آن را بچشید و در صورت نیاز نمک و فلفل اضافه کنید.",
       "برای سرو، روی اوزوبوکو را با ترکیبی از پوست لیمو رنده شده و جعفری تازه خرد شده (گرمولاتا) تزیین کنید."
     ]
@@ -536,35 +708,51 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "پنه",
-        "amount": "۴۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 400,
+        "unit": "گرم"
       },
       {
         "item": "گوجه فرنگی رسیده",
-        "amount": "۸۰۰ گرم (یا ۲ قوطی کنسرو گوجه فرنگی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 800,
+        "unit": "گرم (یا ۲ قوطی کنسرو گوجه فرنگی خرد شده)"
       },
       {
         "item": "سیر",
-        "amount": "۴ حبه (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "حبه (ریز خرد شده)"
       },
       {
         "item": "فلفل قرمز خشک (چیلی فلکس)",
-        "amount": "۱/۲ تا ۱ قاشق چای‌خوری (به دلخواه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "تا ۱ قاشق چای‌خوری (به دلخواه)"
       },
       {
         "item": "روغن زیتون فرابکر",
-        "amount": "۴ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "جعفری تازه خرد شده",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "۱/۲ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       }
     ],
     "recipeSteps": [
@@ -586,41 +774,57 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "نان باگت یا چاباتا",
-        "amount": "۱ عدد (برش خورده به ۸-۱۰ تکه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (برش خورده به ۸-۱۰ تکه)"
       },
       {
         "item": "گوجه فرنگی رسیده و سفت",
-        "amount": "۴ عدد متوسط (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد متوسط (ریز خرد شده)"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه (۱ حبه برای مالیدن روی نان، ۱ حبه ریز خرد شده برای مخلوط گوجه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه (۱ حبه برای مالیدن روی نان، ۱ حبه ریز خرد شده)"
       },
       {
         "item": "ریحان تازه",
-        "amount": "۱۰-۱۲ برگ (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 10,
+        "unit": "تا ۱۲ برگ (ریز خرد شده)"
       },
       {
         "item": "روغن زیتون فرابکر",
-        "amount": "۴ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "سرکه بالزامیک",
-        "amount": "۱ قاشق غذاخوری (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری (اختیاری)"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       },
       {
         "item": "فلفل سیاه",
-        "amount": "۱/۴ قاشق چای‌خوری (به میزان لازم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "قاشق چای‌خوری (به میزان لازم)"
       }
     ],
     "recipeSteps": [
       "فر را با دمای ۲۰۰ درجه سانتی‌گراد (۴۰۰ درجه فارنهایت) گرم کنید. تکه‌های نان را روی سینی فر بچینید و به مدت ۵-۷ دقیقه در فر بگذارید تا طلایی و تست شوند. می‌توانید از گریل یا توستر نیز استفاده کنید.",
       "در یک کاسه، گوجه فرنگی‌های ریز خرد شده را با سیر ریز خرد شده، ریحان تازه خرد شده، ۳ قاشق غذاخوری روغن زیتون، سرکه بالزامیک (در صورت استفاده)، نمک و فلفل سیاه مخلوط کنید. خوب هم بزنید و اجازه دهید حداقل ۱۰-۱۵ دقیقه در دمای اتاق بماند تا طعم‌ها با هم ترکیب شوند.",
-      "پس از تست شدن نان‌ها، در حالی که هنوز گرم هستند، ۱ حبه سیر باقی مانده را از وسط نصف کرده و سطح هر تکه نان را به آرامی با آن بمالید تا عطر سیر به خورد نان برود.",
+      "پس از تست شدن نان‌ها، در حالی که هنوز گرم هستند، ۱ حبه سیر باقی مانده را از وسط نصف کرده و سطح هر تکه نان را به آرمانی با آن بمالید تا عطر سیر به خورد نان برود.",
       "یک قاشق از مخلوط گوجه فرنگی را روی هر تکه نان تست شده قرار دهید.",
       "بلافاصله سرو کنید و روی هر بروسکتا کمی روغن زیتون فرابکر بریزید."
     ]
@@ -634,46 +838,62 @@ export const ITALIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "تخم مرغ بزرگ",
-        "amount": "۳ عدد (زرده و سفیده جدا شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "عدد (زرده و سفیده جدا شده)"
       },
       {
         "item": "شکر ریز",
-        "amount": "۷۵ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 75,
+        "unit": "گرم"
       },
       {
         "item": "پنیر ماسکارپونه",
-        "amount": "۲۵۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 250,
+        "unit": "گرم"
       },
       {
         "item": "عصاره وانیل",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "اسپرسو یا قهوه غلیظ سرد شده",
-        "amount": "۲۰۰ میلی‌لیتر"
+        // Fix: Converted amount string to number and added unit
+        "amount": 200,
+        "unit": "میلی‌لیتر"
       },
       {
         "item": "لیکور قهوه یا روم (اختیاری)",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "بیسکویت لیدی فینگر (سافویاردی)",
-        "amount": "۲۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 200,
+        "unit": "گرم"
       },
       {
         "item": "پودر کاکائو تلخ",
-        "amount": "۲ قاشق غذاخوری (برای تزیین)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (برای تزیین)"
       }
     ],
     "recipeSteps": [
       "در یک کاسه ضد حرارت، زرده‌های تخم مرغ و نیمی از شکر (۳۷.۵ گرم) را با همزن برقی بزنید تا روشن و کرمی شود.",
-      "کاسه را روی یک قابلمه آب در حال جوش (روش بن ماری) قرار دهید، مراقب باشید ته کاسه با آب تماس نداشته باشد. به هم زدن ادامه دهید تا مخلوط داغ شود و کمی غلیظ شود (حدود ۵-۷ دقیقه). از روی حرارت برداشته و کنار بگذارید تا خنک شود.",
-      "پنیر ماسکارپونه و عصاره وانیل را به مخلوط زرده خنک شده اضافه کرده و به آرامی با لیسک مخلوط کنید تا یکدست شود.",
+      "کاسه را روی یک قابلمه آب در حال جوش (روش بن ماری) قرار دهید، مراقب باشید ته کاسه با آب تماس نداشته باشد. به هم زدن ادامه دهید تا مخلوط داغ شود و کمی غلیظ شود (حدود ۵-۷ دقیقه). از روی حرارت بردارید و کنار بگذارید تا خنک شود.",
+      "پنیر ماسکارپونه و عصاره وانیل را به مخلوط زرده خنک شده اضافه کرده و به آرمانی با لیسک مخلوط کنید تا یکدست شود.",
       "در یک کاسه تمیز دیگر، سفیده‌های تخم مرغ را با همزن برقی بزنید تا کف کند. سپس باقی مانده شکر (۳۷.۵ گرم) را به تدریج اضافه کرده و به هم زدن ادامه دهید تا سفیده سفت و براق شود و فرم بگیرد (مرنگ).",
-      "مرنگ را به آرامی و در چند مرحله به مخلوط ماسکارپونه اضافه کنید و به صورت دورانی فولد کنید تا پف آن نخوابد و کاملا ترکیب شود.",
+      "مرنگ را به آرمانی و در چند مرحله به مخلوط ماسکارپونه اضافه کنید و به صورت دورانی فولد کنید تا پف آن نخوابد و کاملا ترکیب شود.",
       "در یک ظرف کم عمق، اسپرسو سرد شده را با لیکور قهوه یا روم (در صورت استفاده) مخلوط کنید.",
       "بیسکویت‌های لیدی فینگر را یکی یکی و به سرعت در مخلوط قهوه فرو کنید (نباید زیاد خیس شوند) و در کف ظرف پیرکس یا قالب دسر مورد نظر خود بچینید تا یک لایه را بپوشانند.",
-      "نیمی از کرم ماسکارپونه را روی لایه بیسکویت‌ها بریزید و به آرامی پخش کنید.",
+      "نیمی از کرم ماسکارپونه را روی لایه بیسکویت‌ها بریزید و به آرمانی پخش کنید.",
       "یک لایه دیگر از بیسکویت‌های خیس شده در قهوه را روی کرم بچینید.",
       "بقیه کرم ماسکارپونه را روی لایه دوم بیسکویت‌ها بریزید و سطح آن را صاف کنید.",
       "ظرف دسر را حداقل ۴-۶ ساعت (ترجیحا یک شب) در یخچال قرار دهید تا تیرامیسو سفت شود و طعم‌ها به خورد هم بروند.",

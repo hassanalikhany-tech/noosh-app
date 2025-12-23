@@ -3,16 +3,6 @@ import { Dish, DayPlan, UserProfile, DAYS_OF_WEEK } from '../types';
 import { RecipeService } from '../services/recipeService';
 import { UserService } from '../services/userService';
 import { estimateCalories, estimateCookTime, getDishNature } from './recipeHelpers';
-import { CHALLENGES } from '../data/challenges';
-
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
 
 const normalize = (str: string) => {
   if (!str) return '';
@@ -21,88 +11,118 @@ const normalize = (str: string) => {
 
 const getAllowedDishes = (user: UserProfile, isQuickMode: boolean): Dish[] => {
   const allDishes = RecipeService.getAllDishes();
-  const challenge = user.activeChallengeId ? CHALLENGES.find(c => c.id === user.activeChallengeId) : null;
-  const dislikedIngs = (user.dislikedIngredients || []).map(i => normalize(i));
+  const dislikedIngredients = (user.dislikedIngredients || []).map(i => normalize(i));
 
   return allDishes.filter(dish => {
+    if ((user.blacklistedDishIds || []).includes(dish.id)) return false;
+
     const dishContent = normalize(dish.name + dish.description);
     const ingredientsText = dish.ingredients.map(ing => normalize(ing.item)).join(' ');
     
-    // ۱. چک کردن لیست سیاه دستی
-    if ((user.blacklistedDishIds || []).includes(dish.id)) return false;
-    
-    // ۲. چک کردن حساسیت‌ها و مواد ناخواسته (فیلتر هوشمند مواد اولیه)
-    if (dislikedIngs.length > 0) {
-      const hasBadIngredient = dislikedIngs.some(disliked => 
-        ingredientsText.includes(disliked) || dishContent.includes(disliked)
+    if (dislikedIngredients.length > 0) {
+      const hasForbiddenIngredient = dislikedIngredients.some(forbidden => 
+        ingredientsText.includes(forbidden) || dishContent.includes(forbidden)
       );
-      if (hasBadIngredient) return false;
+      if (hasForbiddenIngredient) return false;
     }
 
-    // ۳. چک کردن دسته‌بندی‌های حذف شده
-    if (user.excludedCategories.includes(dish.category)) return false;
-    
-    // ۴. مود فقط محبوب‌ها
-    if (user.onlyFavoritesMode && !(user.favoriteDishIds || []).includes(dish.id)) return false;
+    if ((user.excludedCategories || []).includes(dish.category)) return false;
 
-    // ۵. حالت رژیمی
-    if (user.dietMode) {
-      if (estimateCalories(dish) >= 500) return false;
-      if (['fastfood', 'dessert'].includes(dish.category)) return false;
+    const dishNature = getDishNature(dish);
+    if (user.preferredNatures && user.preferredNatures.length > 0) {
+      if (!user.preferredNatures.includes(dishNature.type)) return false;
     }
 
-    // ۶. غذاهای سریع
-    if (isQuickMode && estimateCookTime(dish) > 45) return false;
-    
-    // ۷. چالش‌های فعال
-    if (challenge) {
-      if (challenge.bannedCategories?.includes(dish.category)) return false;
-      const combinedFullText = dishContent + ingredientsText;
-      if (challenge.bannedKeywords?.some(k => combinedFullText.includes(normalize(k)))) return false;
-      if (challenge.requiredKeywords && !challenge.requiredKeywords.some(k => combinedFullText.includes(normalize(k)))) return false;
-    }
-    
+    if (user.dietMode && (dish.calories || estimateCalories(dish)) > 500) return false;
+    if (isQuickMode && (dish.cookTime || estimateCookTime(dish)) > 45) return false;
+
     return true;
   });
 };
 
-const pickUniqueDishes = (candidates: Dish[], count: number, history: string[], userNatures?: string[]): Dish[] => {
-  let filtered = candidates;
-  if (userNatures && userNatures.length > 0) {
-     const natureMatches = candidates.filter(d => userNatures.includes(getDishNature(d).type));
-     if (natureMatches.length >= count) filtered = natureMatches;
+const shuffleArray = <T>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
-  let pool = filtered.filter(d => !history.includes(d.id));
-  if (pool.length < count) pool = filtered;
-  return shuffleArray(pool).slice(0, count);
+  return newArray;
 };
 
-export const generateDailyPlan = (user: UserProfile, isQuickMode: boolean = false): { plan: DayPlan[], updatedUser: UserProfile } => {
+export const generateDailyPlan = async (user: UserProfile, isQuickMode: boolean = false): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
   const allowedDishes = getAllowedDishes(user, isQuickMode);
-  const selectedDishes = pickUniqueDishes(allowedDishes, 3, user.history, user.preferredNatures);
+  let pool = allowedDishes;
+  
+  if (user.onlyFavoritesMode && user.favoriteDishIds.length > 0) {
+    const favs = allowedDishes.filter(d => user.favoriteDishIds.includes(d.id));
+    if (favs.length > 0) pool = favs;
+  }
+
+  const shuffled = shuffleArray(pool.filter(d => !user.history.includes(d.id)));
+  const selectedDishes = (shuffled.length >= 3 ? shuffled : shuffleArray(pool)).slice(0, 3);
+
   const plan: DayPlan[] = selectedDishes.map((dish, index) => ({
-    dayName: index === 0 ? 'پیشنهاد اصلی' : index === 1 ? 'جایگزین اول' : 'جایگزین دوم (سبک)',
+    dayName: index === 0 ? 'پیشنهاد اصلی' : index === 1 ? 'جایگزین اول' : 'جایگزین دوم',
     dish: dish
   }));
-  return { plan, updatedUser: UserService.addToHistory(user.username, selectedDishes.map(d => d.id)) };
+
+  const newHistory = [...(user.history || []), ...selectedDishes.map(d => d.id)].slice(-20);
+  const updatedUser = await UserService.updateProfile(user.username, { 
+    history: newHistory,
+    weeklyPlan: [] // پاک کردن برنامه قبلی در صورت درخواست پیشنهاد روزانه
+  });
+
+  return { plan, updatedUser };
 };
 
-export const generateWeeklyPlan = (user: UserProfile, isQuickMode: boolean = false): { plan: DayPlan[], updatedUser: UserProfile } => {
+export const generateWeeklyPlan = async (user: UserProfile, isQuickMode: boolean = false): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
   const allowedDishes = getAllowedDishes(user, isQuickMode);
+  
+  // فیلتر کردن پایه بر اساس محبوب‌ها در صورت فعال بودن مود مربوطه
+  let basePool = allowedDishes;
+  if (user.onlyFavoritesMode && (user.favoriteDishIds || []).length > 0) {
+    const favs = allowedDishes.filter(d => user.favoriteDishIds.includes(d.id));
+    if (favs.length > 0) basePool = favs;
+  }
+
   const plan: DayPlan[] = [];
-  const selectedIds = new Set<string>();
-  const tempHistory = [...user.history];
-  const structure = [
-    { day: 'شنبه', cats: ['stew', 'local'] }, { day: 'یک‌شنبه', cats: ['polo'] },
-    { day: 'دوشنبه', cats: ['kuku', 'nani', 'soup'] }, { day: 'سه‌شنبه', cats: ['kabab', 'stew'] },
-    { day: 'چهارشنبه', cats: ['polo', 'international'] }, { day: 'پنج‌شنبه', cats: ['fastfood', 'nani'] },
-    { day: 'جمعه', cats: ['kabab', 'stew', 'local'] }
+  const selectedIds: string[] = [];
+
+  const dayConfigs = [
+    { day: 'شنبه', cats: ['stew', 'local'] },
+    { day: 'یک‌شنبه', cats: ['polo'] },
+    { day: 'دوشنبه', cats: ['nani', 'kuku'] },
+    { day: 'سه‌شنبه', cats: ['stew', 'kabab'] },
+    { day: 'چهارشنبه', cats: ['international', 'polo'] },
+    { day: 'پنج‌شنبه', cats: ['fastfood', 'nani'] },
+    { day: 'جمعه', cats: ['kabab', 'local'] }
   ];
-  structure.forEach(s => {
-    let pool = allowedDishes.filter(d => s.cats.includes(d.category) && !selectedIds.has(d.id));
-    if (pool.length === 0) pool = allowedDishes.filter(d => !selectedIds.has(d.id));
-    const d = pickUniqueDishes(pool, 1, tempHistory, user.preferredNatures)[0];
-    if(d) { plan.push({ dayName: s.day, dish: d }); selectedIds.add(d.id); tempHistory.push(d.id); }
+
+  for (const config of dayConfigs) {
+    // تلاش برای انتخاب از basePool (که ممکن است فقط محبوب‌ها باشد)
+    let pool = basePool.filter(d => config.cats.includes(d.category) && !selectedIds.includes(d.id));
+    
+    // اگر در آن دسته‌بندی خاص غذایی نبود، از کل basePool انتخاب کن
+    if (pool.length === 0) {
+      pool = basePool.filter(d => !selectedIds.includes(d.id));
+    }
+    
+    // اگر باز هم خالی بود (مثلاً محبوب‌ها تمام شدند)، از کل غذاهای مجاز انتخاب کن
+    if (pool.length === 0) {
+      pool = allowedDishes.filter(d => !selectedIds.includes(d.id));
+    }
+
+    const selected = shuffleArray(pool)[0];
+    if (selected) {
+      plan.push({ dayName: config.day, dish: selected });
+      selectedIds.push(selected.id);
+    }
+  }
+
+  const updatedUser = await UserService.updateProfile(user.username, { 
+    history: [...(user.history || []), ...selectedIds].slice(-30),
+    weeklyPlan: plan 
   });
-  return { plan, updatedUser: UserService.addToHistory(user.username, Array.from(selectedIds)) };
+
+  return { plan, updatedUser };
 };

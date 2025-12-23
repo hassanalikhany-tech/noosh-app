@@ -199,7 +199,8 @@ export const DEFAULT_DISHES: Dish[] = ${JSON.stringify(enrichedDishes, null, 2)}
         </div>
       )}
 
-      {viewingDish && <RecipeModal dish={viewingDish} isOpen={!!viewingDish} onClose={() => setViewingDish(null)} />}
+      {/* Fix: Pass missing 'user' prop as null to RecipeModal. */}
+      {viewingDish && <RecipeModal dish={viewingDish} isOpen={!!viewingDish} onClose={() => setViewingDish(null)} user={null} />}
       
       {renamingDish && (
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">

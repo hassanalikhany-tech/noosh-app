@@ -1,0 +1,12 @@
+
+import { Dish } from '../types';
+
+export const CAUCASUS_DISHES: Dish[] = [
+  { "id": "aze-1", "nationality": "az", "name": "Dushbara (دوشباره آذری)", "category": "international", "description": "دامپلینگ‌های بسیار ریز گوشت در سوپ مخصوص آذربایجان", "ingredients": [{ "item": "گوشت چرخ‌کرده", "amount": 300, "unit": "گرم" }, { "item": "آرد", "amount": 2, "unit": "پیمانه" }], "recipeSteps": ["خمیر را نازک باز کنید.", "گوشت را لای خمیرهای بسیار ریز بپیچید.", "در آب گوشت بپزید."] },
+  { "id": "aze-2", "nationality": "az", "name": "Lula Kebab (لوله کباب آذربایجان)", "category": "international", "description": "کباب کوبیده تند و تیز به سبک باکو", "ingredients": [{ "item": "گوشت گوسفندی", "amount": 500, "unit": "گرم" }, { "item": "پیاز", "amount": 2, "unit": "عدد" }], "recipeSteps": ["گوشت را با ادویه زیاد ورز دهید.", "به شکل لوله‌ای به سیخ بکشید و کباب کنید."] },
+  { "id": "aze-3", "nationality": "az", "name": "Shah Plov (شاه پلو آذری)", "category": "international", "description": "پلو مجلسی با ته‌دیگ نان لواش و میوه‌های خشک", "ingredients": [{ "item": "برنج", "amount": 3, "unit": "پیمانه" }, { "item": "نان لواش", "amount": 4, "unit": "عدد" }], "recipeSteps": ["ته قابلمه را با نان بپوشانید.", "برنج و گوشت و قیسی را داخل نان دم کنید."] },
+  { "id": "aze-4", "nationality": "az", "name": "Piti (پیتی باکو)", "category": "international", "description": "دیزی آذربایجانی با زعفران و آلو", "ingredients": [{ "item": "گوشت گوسفند", "amount": 300, "unit": "گرم" }, { "item": "نخود", "amount": 1, "unit": "پیمانه" }], "recipeSteps": ["در ظرف‌های سفالی تک‌نفره بپزید.", "با نان تلیت کنید."] },
+  { "id": "aze-5", "nationality": "az", "name": "Qutab (قطاب آذری)", "category": "international", "description": "نان میان‌پر با سبزیجات یا گوشت", "ingredients": [{ "item": "خمیر نان", "amount": 500, "unit": "گرم" }, { "item": "سبزیجات معطر", "amount": 200, "unit": "گرم" }], "recipeSteps": ["مواد را لای خمیر بگذارید.", "در تابه بدون روغن داغ کنید."] },
+  { "id": "aze-6", "nationality": "az", "name": "Badambura (بادام‌بوره آذری)", "category": "international", "description": "شیرینی لایه‌ای با مغز بادام", "ingredients": [{ "item": "بادام پودر شده", "amount": 200, "unit": "گرم" }], "recipeSteps": ["خمیر را لایه لایه کنید.", "با بادام پر کرده و در فر بپزید."] },
+  { "id": "aze-7", "nationality": "az", "name": "Saj Ichi (ساج ایچی آذربایجان)", "category": "international", "description": "تفت داده گوشت و سبزیجات روی ساج", "ingredients": [{ "item": "گوشت و مرغ", "amount": 500, "unit": "گرم" }], "recipeSteps": ["مواد را روی تابه بزرگ ساج سرخ کنید."] }
+];

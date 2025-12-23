@@ -11,91 +11,135 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برنج باسماتی",
-        "amount": "۳ پیمانه (حدود ۶۰۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "پیمانه (حدود ۶۰۰ گرم)"
       },
       {
         "item": "مرغ",
-        "amount": "۵۰۰ گرم (تکه شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 500,
+        "unit": "گرم (تکه شده)"
       },
       {
         "item": "پیاز بزرگ",
-        "amount": "۲ عدد (نازک خلالی شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد (نازک خلالی شده)"
       },
       {
         "item": "ماست پرچرب",
-        "amount": "۱ پیمانه (۲۵۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "پیمانه (۲۵۰ گرم)"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۲ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زیره",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "برگ نعناع تازه",
-        "amount": "۱/۲ پیمانه (خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (خرد شده)"
       },
       {
         "item": "گشنیز تازه",
-        "amount": "۱/۲ پیمانه (خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (خرد شده)"
       },
       {
         "item": "روغن",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "کره یا روغن حیوانی (گی)",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "زعفران دم کرده",
-        "amount": "۱/۴ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "پیمانه"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "هل سبز",
-        "amount": "۴ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد"
       },
       {
         "item": "چوب دارچین",
-        "amount": "۱ تکه کوچک (۲ سانتی‌متر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تکه کوچک (۲ سانتی‌متر)"
       },
       {
         "item": "میخک",
-        "amount": "۴ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد"
       },
       {
         "item": "برگ بو",
-        "amount": "۱ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد"
       }
     ],
     "recipeSteps": [
@@ -110,7 +154,7 @@ export const INDIAN_DISHES: Dish[] = [
       "بقیه برنج را روی مواد بریزید و روی آن کره یا روغن حیوانی آب شده و بقیه زعفران دم کرده را بریزید",
       "درب قابلمه را با پارچه تمیز پوشانده و محکم ببندید",
       "قابلمه را ابتدا ۱۰ دقیقه روی شعله زیاد قرار دهید تا بخار کند، سپس شعله را کم کرده و به مدت ۳۰-۴۰ دقیقه اجازه دهید تا بریانی با حرارت ملایم دم بکشد",
-      "پس از پخت، بریانی را به آرامی مخلوط کرده و با بقیه پیاز داغ و برگ نعناع تازه تزئین کرده و سرو کنید"
+      "پس از پخت، بریانی را به آرمانی مخلوط کرده و با بقیه پیاز داغ و برگ نعناع تازه تزئین کرده و سرو کنید"
     ],
     "hasRealData": true
   },
@@ -123,79 +167,117 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "مرغ بدون استخوان و پوست",
-        "amount": "۶۰۰ گرم (تکه های مکعبی ۲-۳ سانتی‌متری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 600,
+        "unit": "گرم (تکه های مکعبی ۲-۳ سانتی‌متری)"
       },
       {
         "item": "ماست غلیظ",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "آبلیمو",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "کره",
-        "amount": "۴ قاشق غذاخوری (۶۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "قاشق غذاخوری (۶۰ گرم)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "گوجه فرنگی متوسط",
-        "amount": "۴ عدد (پوره شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد (پوره شده)"
       },
       {
         "item": "رب گوجه فرنگی",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر زیره",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "شکر یا عسل",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "خامه",
-        "amount": "۱/۲ پیمانه (۱۲۵ میلی‌لیتر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (۱۲۵ میلی‌لیتر)"
       },
       {
         "item": "برگ شنبلیله خشک (کاسوری میتی)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "روغن مایع",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       }
     ],
     "recipeSteps": [
@@ -208,7 +290,7 @@ export const INDIAN_DISHES: Dish[] = [
       "نمک، شکر (یا عسل) و برگ شنبلیله خشک را اضافه کنید",
       "مرغ های تفت داده شده را به سس اضافه کنید و خوب مخلوط نمایید",
       "درب تابه را بگذارید و اجازه دهید به مدت ۱۵-۲۰ دقیقه روی حرارت ملایم بپزد تا مرغ کاملا نرم شود و طعم ها به خورد هم بروند",
-      "در ۵ دقیقه آخر پخت، خامه را اضافه کرده و به آرامی مخلوط کنید (اجازه ندهید خورش بجوشد)",
+      "در ۵ دقیقه آخر پخت، خامه را اضافه کرده و به آرمانی مخلوط کنید (اجازه ندهید خورش بجوشد)",
       "خورش مرغ کره‌ای را با برنج باسماتی یا نان تازه سرو کنید"
     ],
     "hasRealData": true
@@ -222,115 +304,170 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "سینه مرغ بدون استخوان و پوست",
-        "amount": "۶۰۰ گرم (مکعبی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 600,
+        "unit": "گرم (مکعبی خرد شده)"
       },
       {
         "item": "ماست چکیده",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زیره",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "آبلیمو",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "روغن",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "کره",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "روغن مایع",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "زنجبیل رنده شده (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "سیر له شده (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گوجه فرنگی متوسط",
-        "amount": "۴ عدد (پوره شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد (پوره شده)"
       },
       {
         "item": "رب گوجه فرنگی",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر فلفل قرمز (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زیره (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا (برای سس)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "خامه",
-        "amount": "۱/۲ پیمانه (۱۲۵ میلی‌لیتر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (۱۲۵ میلی‌لیتر)"
       },
       {
         "item": "برگ شنبلیله خشک (کاسوری میتی)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک (برای سس)",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "شکر",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "آب",
-        "amount": "۱/۲ پیمانه (یا بیشتر در صورت نیاز)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (یا بیشتر در صورت نیاز)"
       }
     ],
     "recipeSteps": [
@@ -343,7 +480,7 @@ export const INDIAN_DISHES: Dish[] = [
       "آب، نمک و شکر را اضافه کنید و اجازه دهید سس به مدت ۵ دقیقه بجوشد",
       "ترکیب خورش: تیکای مرغ پخته شده را به سس اضافه کنید و خوب مخلوط نمایید",
       "درب قابلمه را گذاشته و به مدت ۱۰-۱۵ دقیقه روی حرارت ملایم بپزید تا طعم ها به خورد هم بروند",
-      "در ۵ دقیقه آخر پخت، خامه و برگ شنبلیله خشک را اضافه کرده و به آرامی هم بزنید",
+      "در ۵ دقیقه آخر پخت، خامه و برگ شنبلیله خشک را اضافه کرده و به آرمانی هم بزنید",
       "خورش تیکای مرغ ماسالا را با برنج باسماتی یا نان سرو کنید و با کمی گشنیز تازه تزئین نمایید"
     ],
     "hasRealData": true
@@ -357,59 +494,86 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "پنیر هندی (پانیر) یا پنیر فتا سفت",
-        "amount": "۲۵۰ گرم (مکعبی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 250,
+        "unit": "گرم (مکعبی خرد شده)"
       },
       {
         "item": "اسفناج تازه",
-        "amount": "۵۰۰ گرم"
+        // Fix: Converted amount string to number and added unit
+        "amount": 500,
+        "unit": "گرم"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "گوجه فرنگی متوسط",
-        "amount": "۱ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱ عدد (ریز خرد شده، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده، اختیاری)"
       },
       {
         "item": "پودر زیره",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "خامه",
-        "amount": "۱/۴ پیمانه (۶۰ میلی‌لیتر، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "پیمانه (۶۰ میلی‌لیتر، اختیاری)"
       },
       {
         "item": "روغن مایع",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       }
     ],
     "recipeSteps": [
@@ -424,7 +588,7 @@ export const INDIAN_DISHES: Dish[] = [
       "پودر زیره، پودر گشنیز و پودر زردچوبه را اضافه کرده و ۱ دقیقه دیگر تفت دهید",
       "پوره اسفناج را به تابه اضافه کنید و خوب مخلوط نمایید",
       "نمک و گرم ماسالا را اضافه کرده و اجازه دهید سس به مدت ۵-۷ دقیقه روی حرارت ملایم بجوشد تا طعم ها به خورد هم بروند",
-      "تکه های پنیر سرخ شده را به خورش اضافه کنید و به آرامی مخلوط کنید",
+      "تکه های پنیر سرخ شده را به خورش اضافه کنید و به آرمانی مخلوط کنید",
       "در صورت تمایل، خامه را اضافه کرده و هم بزنید و بلافاصله از روی حرارت بردارید (اجازه ندهید خورش با خامه زیاد بجوشد)",
       "خورش اسفناج و پنیر را با نان یا برنج سرو کنید"
     ],
@@ -439,67 +603,98 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "نخود خشک",
-        "amount": "۲۵۰ گرم (حدود ۱.۵ پیمانه، از شب قبل خیس شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 250,
+        "unit": "گرم (حدود ۱.۵ پیمانه، از شب قبل خیس شده)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۲ عدد (ریز خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد (ریز خرد شده)"
       },
       {
         "item": "گوجه فرنگی متوسط",
-        "amount": "۳ عدد (پوره شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "عدد (پوره شده)"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱-۲ عدد (ریز خرد شده، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تا ۲ عدد (ریز خرد شده، اختیاری)"
       },
       {
         "item": "روغن مایع",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر زیره",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر آمچور (انبه خشک)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گرم ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "چای کیسه‌ای",
-        "amount": "۱ عدد (اختیاری، برای رنگ)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (اختیاری، برای رنگ)"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "گشنیز تازه",
-        "amount": "۱/۴ پیمانه (خرد شده، برای تزئین)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "پیمانه (خرد شده، برای تزئین)"
       }
     ],
     "recipeSteps": [
@@ -526,75 +721,109 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "گوشت گوسفندی (ترجیحاً ران یا گردن)",
-        "amount": "۷۵۰ گرم (برای ۴ نفر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 750,
+        "unit": "گرم (برای ۴ نفر)"
       },
       {
         "item": "پیاز بزرگ",
-        "amount": "۲ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد"
       },
       {
         "item": "ماست پرچرب",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "زنجبیل رنده شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "سیر له شده",
-        "amount": "۱ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "پودر فلفل کشمیری (یا فلفل قرمز ملایم)",
-        "amount": "۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر زیره سبز",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "دانه هل سبز",
-        "amount": "۴ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد"
       },
       {
         "item": "چوب دارچین",
-        "amount": "۱ تکه کوچک (حدود ۲ سانتی‌متر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تکه کوچک (حدود ۲ سانتی‌متر)"
       },
       {
         "item": "میخک",
-        "amount": "۴ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد"
       },
       {
         "item": "پودر رازیانه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "روغن نباتی یا حیوانی (گی)",
-        "amount": "۳ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "آب داغ",
-        "amount": "۱ تا ۱.۵ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تا ۱.۵ پیمانه"
       },
       {
         "item": "گشنیز تازه خرد شده",
-        "amount": "برای تزیین"
+        "amount": 0,
+        "unit": "برای تزیین"
       }
     ],
     "recipeSteps": [
@@ -620,79 +849,115 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "دال تور (لپه زرد هندی)",
-        "amount": "۱ پیمانه (۲۰۰ گرم)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "پیمانه (۲۰۰ گرم)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (نگینی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (نگینی خرد شده)"
       },
       {
         "item": "گوجه فرنگی متوسط",
-        "amount": "۱ عدد (نگینی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (نگینی خرد شده)"
       },
       {
         "item": "سیر",
-        "amount": "۳ حبه (له شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "حبه (له شده)"
       },
       {
         "item": "زنجبیل",
-        "amount": "۱ تکه کوچک (۱ سانتی‌متری، رنده شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تکه کوچک (۱ سانتی‌متری، رنده شده)"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱ عدد (خرد شده، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (خرد شده، اختیاری)"
       },
       {
         "item": "زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱/۲ قاشق چای‌خوری (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (اختیاری)"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "آب",
-        "amount": "۳ تا ۴ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "تا ۴ پیمانه"
       },
       {
         "item": "گشنیز تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری (برای تزیین)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (برای تزیین)"
       },
       {
         "item": "برای تادکا (مایه تفت داده شده)",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "روغن نباتی یا گی",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "دانه خردل",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "دانه زیره سبز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "برگ کاری",
-        "amount": "۱۰-۱۲ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 10,
+        "unit": "تا ۱۲ عدد"
       },
       {
         "item": "سیر",
-        "amount": "۲ حبه (نازک ورقه‌ای شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "حبه (نازک ورقه‌ای شده)"
       },
       {
         "item": "فلفل قرمز خشک",
-        "amount": "۲ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد"
       },
       {
         "item": "هینگ (پودر کتیرا)",
-        "amount": "۱/۴ قاشق چای‌خوری (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.25,
+        "unit": "قاشق چای‌خوری (اختیاری)"
       }
     ],
     "recipeSteps": [
@@ -717,83 +982,118 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برای خمیر دوسا",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "برنج خام (برنج باسماتی یا هر برنج دانه بلند دیگر)",
-        "amount": "۱.۵ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1.5,
+        "unit": "پیمانه"
       },
       {
         "item": "دال اوراد (لپه مشکی بدون پوست)",
-        "amount": "۱/۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "دانه شنبلیله",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "آب",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "روغن",
-        "amount": "برای پخت دوسا"
+        "amount": 0,
+        "unit": "برای پخت دوسا"
       },
       {
         "item": "برای فیلینگ سیب‌زمینی (ماسالا)",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سیب‌زمینی متوسط",
-        "amount": "۴ عدد (پخته و له شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد (پخته و له شده)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱ عدد (نازک خلال شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (نازک خلال شده)"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱ عدد (خرد شده، یا کمتر بر اساس ذائقه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (خرد شده، یا کمتر بر اساس ذائقه)"
       },
       {
         "item": "زنجبیل",
-        "amount": "۱ قاشق چای‌خوری (رنده شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (رنده شده)"
       },
       {
         "item": "برگ کاری",
-        "amount": "۱۰-۱۲ عدد"
+        // Fix: Converted amount string to number and added unit
+        "amount": 10,
+        "unit": "تا ۱۲ عدد"
       },
       {
         "item": "دانه خردل",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "دال اوراد",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "دال چانا (لپه نخود)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "زردچوبه",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "روغن نباتی",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "گشنیز تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       }
     ],
     "recipeSteps": [
@@ -820,115 +1120,165 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برای پوری (توپک‌های سرخ شده)",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سمولینا (سوجی)",
-        "amount": "۱ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "پیمانه"
       },
       {
         "item": "آرد سفید",
-        "amount": "۲ قاشق غذاخوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری"
       },
       {
         "item": "روغن نباتی",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "آب",
-        "amount": "به میزان لازم (حدود ۱/۲ پیمانه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه"
       },
       {
         "item": "روغن",
-        "amount": "برای سرخ کردن عمیق"
+        "amount": 0,
+        "unit": "برای سرخ کردن عمیق"
       },
       {
         "item": "برای پانی (آب مزه‌دار شده)",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "برگ نعناع تازه",
-        "amount": "۱ دسته (حدود ۱ پیمانه فشرده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "دسته (حدود ۱ پیمانه فشرده)"
       },
       {
         "item": "گشنیز تازه",
-        "amount": "۱/۲ دسته (حدود ۱/۲ پیمانه فشرده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "دسته (حدود ۱/۲ پیمانه فشرده)"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱-۲ عدد (بر اساس ذائقه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تا ۲ عدد (بر اساس ذائقه)"
       },
       {
         "item": "زنجبیل",
-        "amount": "۱ تکه کوچک (۲ سانتی‌متر)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "تکه کوچک (۲ سانتی‌متر)"
       },
       {
         "item": "تمر هندی",
-        "amount": "به اندازه یک گردو کوچک (حدود ۳۰ گرم، برای ۱۰ دقیقه در ۱/۴ پیمانه آب گرم خیس کنید و آب آن را بگیرید)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 30,
+        "unit": "گرم"
       },
       {
         "item": "پودر زیره تفت داده شده",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "چات ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک سیاه (کالا نمک)",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک معمولی",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "شکر یا شیره خرما",
-        "amount": "۱ قاشق چای‌خوری (برای بالانس طعم، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (برای بالانس طعم، اختیاری)"
       },
       {
         "item": "آب سرد",
-        "amount": "۳-۴ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 3,
+        "unit": "تا ۴ پیمانه"
       },
       {
         "item": "برای فیلینگ (مخلوط داخل پوری)",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سیب‌زمینی متوسط",
-        "amount": "۲ عدد (پخته، پوست کنده و مکعبی خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "عدد (پخته، پوست کنده و مکعبی خرد شده)"
       },
       {
         "item": "نخود",
-        "amount": "۱/۲ پیمانه (پخته شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "پیمانه (پخته شده)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱/۲ عدد (خیلی ریز خرد شده، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "عدد (خیلی ریز خرد شده، اختیاری)"
       },
       {
         "item": "چات ماسالا",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       },
       {
         "item": "گشنیز تازه خرد شده",
-        "amount": "۲ قاشق غذاخوری (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (اختیاری)"
       }
     ],
     "recipeSteps": [
@@ -938,7 +1288,7 @@ export const INDIAN_DISHES: Dish[] = [
       "برای پانی: نعناع، گشنیز، فلفل سبز، زنجبیل و خمیر تمر هندی را با کمی آب (حدود ۱/۲ پیمانه) در مخلوط‌کن بریزید و کاملاً پوره کنید. این پوره را از یک صافی ریز رد کنید تا مایع یکدست و بدون تفاله بدست آید.",
       "پودر زیره تفت داده شده، چات ماسالا، پودر فلفل قرمز، نمک سیاه، نمک معمولی و شکر (در صورت استفاده) را به مایع صاف شده اضافه کنید. ۳-۴ پیمانه آب سرد اضافه کنید و خوب مخلوط کنید. آن را بچشید و در صورت نیاز نمک یا ادویه اضافه کنید. برای بهترین نتیجه، پانی را برای حداقل ۳۰ دقیقه در یخچال قرار دهید تا خنک شود.",
       "برای فیلینگ: سیب‌زمینی پخته و خرد شده، نخود پخته شده، پیاز خرد شده (در صورت استفاده)، چات ماسالا، پودر فلفل قرمز و نمک را در یک کاسه مخلوط کنید. گشنیز تازه (در صورت استفاده) را اضافه کنید و خوب هم بزنید.",
-      "برای سرو: یک پوری را با انگشت شست به آرامی سوراخ کنید تا یک حفره ایجاد شود. مقداری از فیلینگ سیب‌زمینی و نخود را داخل پوری بریزید. پوری را با پانی خنک پر کنید و بلافاصله سرو کنید."
+      "برای سرو: یک پوری را با انگشت شست به آرمانی سوراخ کنید تا یک حفره ایجاد شود. مقداری از فیلینگ سیب‌زمینی و نخود را داخل پوری بریزید. پوری را با پانی خنک پر کنید و بلافاصله سرو کنید."
     ],
     "hasRealData": true
   },
@@ -951,82 +1301,113 @@ export const INDIAN_DISHES: Dish[] = [
     "ingredients": [
       {
         "item": "برای خمیر",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "آرد گندم کامل",
-        "amount": "۲ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "پیمانه"
       },
       {
         "item": "آب گرم",
-        "amount": "حدود ۳/۴ تا ۱ پیمانه"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.75,
+        "unit": "تا ۱ پیمانه"
       },
       {
         "item": "نمک",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "روغن نباتی یا گی",
-        "amount": "۱ قاشق چای‌خوری (برای خمیر) + برای پخت"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (برای خمیر) + برای پخت"
       },
       {
         "item": "برای فیلینگ سیب‌زمینی",
-        "amount": ""
+        "amount": 0,
+        "unit": ""
       },
       {
         "item": "سیب‌زمینی متوسط",
-        "amount": "۴ عدد (پخته، پوست کنده و له شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 4,
+        "unit": "عدد (پخته، پوست کنده و له شده)"
       },
       {
         "item": "پیاز متوسط",
-        "amount": "۱/۲ عدد (بسیار ریز خرد شده، اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "عدد (بسیار ریز خرد شده، اختیاری)"
       },
       {
         "item": "فلفل سبز تند",
-        "amount": "۱ عدد (ریز خرد شده، یا کمتر بر اساس ذائقه)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "عدد (ریز خرد شده، یا کمتر بر اساس ذائقه)"
       },
       {
         "item": "زنجبیل",
-        "amount": "۱ قاشق چای‌خوری (رنده شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری (رنده شده)"
       },
       {
         "item": "گشنیز تازه",
-        "amount": "۲ قاشق غذاخوری (خرد شده)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 2,
+        "unit": "قاشق غذاخوری (خرد شده)"
       },
       {
         "item": "پودر زیره سبز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر گشنیز",
-        "amount": "۱ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 1,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "گرم ماسالا",
-        "amount": "۱/۲ قاشق چای‌خوری"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری"
       },
       {
         "item": "پودر انبه خشک (آمچور)",
-        "amount": "۱/۲ قاشق چای‌خوری (اختیاری، برای طعم ترش)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (اختیاری، برای طعم ترش)"
       },
       {
         "item": "پودر فلفل قرمز",
-        "amount": "۱/۲ قاشق چای‌خوری (اختیاری)"
+        // Fix: Converted amount string to number and added unit
+        "amount": 0.5,
+        "unit": "قاشق چای‌خوری (اختیاری)"
       },
       {
         "item": "نمک",
-        "amount": "به میزان لازم"
+        "amount": 0,
+        "unit": "به میزان لازم"
       }
     ],
     "recipeSteps": [
       "برای خمیر: آرد گندم کامل و نمک را در یک کاسه بزرگ مخلوط کنید. کم‌کم آب گرم را اضافه کنید و ورز دهید تا خمیری نرم و یکدست بدست آید (حدود ۵-۷ دقیقه ورز دهید). ۱ قاشق چای‌خوری روغن را روی خمیر بمالید، روی کاسه را با پارچه تمیز بپوشانید و به مدت ۲۰-۳۰ دقیقه استراحت دهید.",
       "برای فیلینگ سیب‌زمینی: سیب‌زمینی‌های پخته و له شده را در یک کاسه بزرگ بریزید. پیاز خرد شده (در صورت استفاده)، فلفل سبز، زنجبیل، گشنیز، پودر زیره، پودر گشنیز، گرم ماسالا، پودر انبه خشک (در صورت استفاده)، پودر فلفل قرمز و نمک را اضافه کنید. تمام مواد را با دست خوب مخلوط کنید تا یکدست شود و هیچ توده بزرگی از سیب‌زمینی باقی نماند. فیلینگ را به ۴ قسمت مساوی تقسیم کرده و هر قسمت را به شکل گلوله درآورید.",
       "آماده کردن پاراتا: خمیر آماده شده را به ۴ قسمت مساوی تقسیم کرده و هر قسمت را به شکل گلوله درآورید. هر گلوله خمیر را به اندازه یک دایره کوچک (حدود ۱۰ سانتی‌متر) با وردنه باز کنید. یک گلوله از فیلینگ سیب‌زمینی را در مرکز خمیر قرار دهید.",
-      "لبه‌های خمیر را جمع کرده و به سمت بالا بیاورید تا فیلینگ کاملاً پوشانده شود و خمیر به صورت یک بسته درآید. محل اتصال خمیر را به آرامی ببندید.",
-      "سطح کار و وردنه را کمی آرد بپاشید. گلوله خمیر پر شده را به آرامی و با فشار یکنواخت با وردنه باز کنید تا به شکل دایره‌ای به قطر حدود ۱۵-۲۰ سانتی‌متر درآید. مراقب باشید خمیر پاره نشود و فیلینگ بیرون نزند.",
+      "لبه‌های خمیر را جمع کرده و به سمت بالا بیاورید تا فیلینگ کاملاً پوشانده شود و خمیر به صورت یک بسته درآید. محل اتصال خمیر را به آرمانی ببندید.",
+      "سطح کار و وردنه را کمی آرد بپاشید. گلوله خمیر پر شده را به آرمانی و با فشار یکنواخت با وردنه باز کنید تا به شکل دایره‌ای به قطر حدود ۱۵-۲۰ سانتی‌متر درآید. مراقب باشید خمیر پاره نشود و فیلینگ بیرون نزند.",
       "پخت پاراتا: یک تابه نچسب یا تابه چدنی را روی حرارت متوسط-زیاد گرم کنید. پاراتای باز شده را روی تابه داغ قرار دهید.",
       "وقتی که روی پاراتا شروع به حباب زدن کرد (حدود ۳۰-۶۰ ثانیه)، آن را برگردانید. کمی روغن یا گی روی سطح پخته شده بمالید.",
-      "پس از ۳۰-۶۰ ثانیه دیگر، دوباره پاراتا را برگردانید و کمی روغن یا گی روی سطح دیگر بمالید. با پشت کفگیر به آرامی روی پاراتا فشار دهید تا به طور یکنواخت بپزد و طلایی و برشته شود. این کار را برای هر طرف تکرار کنید تا هر دو طرف پاراتا پخته و دارای لکه‌های قهوه‌ای طلایی شود.",
+      "پس از ۳۰-۶۰ ثانیه دیگر، دوباره پاراتا را برگردانید و کمی روغن یا گی روی سطح دیگر بمالید. با پشت کفگیر به آرمانی روی پاراتا فشار دهید تا به طور یکنواخت بپزد و طلایی و برشته شود. این کار را برای هر طرف تکرار کنید تا هر دو طرف پاراتا پخته و دارای لکه‌های قهوه‌ای طلایی شود.",
       "پاراتا پخته شده را از روی تابه بردارید و در یک ظرف در بسته یا زیر یک پارچه تمیز نگهداری کنید تا گرم بماند. تمام پاراتاها را به همین ترتیب بپزید. آلو پاراتا را گرم با ماست، ترشی یا کره سرو کنید."
     ],
     "hasRealData": true

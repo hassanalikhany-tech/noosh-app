@@ -1,7 +1,8 @@
 
 export interface Ingredient {
   item: string;
-  amount: string;
+  amount: number; // تغییر از رشته به عدد برای محاسبات ریاضی
+  unit: string;   // واحد مجزا (گرم، عدد، پیمانه و ...)
 }
 
 export type DishCategory = 
@@ -74,7 +75,8 @@ export const CATEGORY_LABELS: Record<DishCategory, string> = {
 export interface ShoppingItem {
   id: string;
   name: string;
-  amount?: string;
+  amount?: number; // مقدار عددی برای جمع زدن
+  unit?: string;   // واحد
   checked: boolean;
   fromRecipe?: string;
 }
@@ -100,7 +102,7 @@ export interface UserProfile {
   subscriptionExpiry: number; 
   blacklistedDishIds: string[]; 
   favoriteDishIds: string[];
-  dislikedIngredients: string[]; // فیلد جدید برای حساسیت‌ها
+  dislikedIngredients: string[];
   excludedCategories: DishCategory[]; 
   preferredNatures: NatureType[];
   history: string[];
@@ -111,4 +113,5 @@ export interface UserProfile {
   customShoppingList?: ShoppingItem[]; 
   hasCompletedSetup?: boolean;
   onlyFavoritesMode?: boolean;
+  weeklyPlan?: DayPlan[]; 
 }

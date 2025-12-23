@@ -13,14 +13,13 @@ interface SubscriptionProps {
 const Subscription: React.FC<SubscriptionProps> = ({ user, onUpdateUser, onLogout }) => {
   const [loading, setLoading] = useState(false);
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setLoading(true);
     // Simulate API call delay
-    setTimeout(() => {
-      const updatedUser = UserService.extendSubscription(user.username, 30);
-      onUpdateUser(updatedUser);
-      setLoading(false);
-    }, 1500);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const updatedUser = await UserService.extendSubscription(user.username, 30);
+    onUpdateUser(updatedUser);
+    setLoading(false);
   };
 
   return (

@@ -24,17 +24,17 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
   
   const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (user) {
-        UserService.toggleFavorite(user.username, plan.dish.id);
+        await UserService.toggleFavorite(user.username, plan.dish.id);
     }
   };
 
-  const handleToggleBlacklist = (e: React.MouseEvent) => {
+  const handleToggleBlacklist = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (user) {
-        UserService.toggleBlacklist(user.username, plan.dish.id);
+        await UserService.toggleBlacklist(user.username, plan.dish.id);
     }
   };
 
@@ -97,7 +97,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
           </button>
         </div>
       </div>
-      <RecipeModal dish={plan.dish} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <RecipeModal dish={plan.dish} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={user} />
     </>
   );
 };

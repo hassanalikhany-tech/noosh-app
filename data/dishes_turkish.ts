@@ -1,4 +1,3 @@
-
 import { Dish } from '../types';
 
 export const TURKISH_DISHES: Dish[] = [
@@ -9,19 +8,20 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "اسکندر کباب اصیل ترکی",
     "ingredients": [
-      { "item": "گوشت گوسفندی یا گوساله (برش‌های نازک دونری)", "amount": "۵۰۰ گرم" },
-      { "item": "نان پیده", "amount": "۴ عدد (یا ۲ عدد نان لواش بزرگ)" },
-      { "item": "رب گوجه‌فرنگی", "amount": "۲ قاشق غذاخوری" },
-      { "item": "گوجه‌فرنگی له شده یا رنده شده", "amount": "۱ پیمانه" },
-      { "item": "کره", "amount": "۱۰۰ گرم" },
-      { "item": "ماست ساده", "amount": "۱ پیمانه" },
-      { "item": "سیر", "amount": "۲ حبه، له شده" },
-      { "item": "فلفل سبز", "amount": "۲ عدد متوسط" },
-      { "item": "گوجه‌فرنگی", "amount": "۲ عدد متوسط (برای تزئین)" },
-      { "item": "نمک", "amount": "۱ قاشق چای‌خوری" },
-      { "item": "فلفل سیاه", "amount": "۱/۲ قاشق چای‌خوری" },
-      { "item": "فلفل قرمز پرک (پول بیبر)", "amount": "۱ قاشق چای‌خوری" },
-      { "item": "روغن مایع", "amount": "۲ قاشق غذاخوری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی یا گوساله (برش‌های نازک دونری)", "amount": 500, "unit": "گرم" },
+      { "item": "نان پیده", "amount": 4, "unit": "عدد" },
+      { "item": "رب گوجه‌فرنگی", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "گوجه‌فرنگی له شده یا رنده شده", "amount": 1, "unit": "پیمانه" },
+      { "item": "کره", "amount": 100, "unit": "گرم" },
+      { "item": "ماست ساده", "amount": 1, "unit": "پیمانه" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" },
+      { "item": "فلفل سبز", "amount": 2, "unit": "عدد متوسط" },
+      { "item": "گوجه‌فرنگی", "amount": 2, "unit": "عدد متوسط (برای تزئین)" },
+      { "item": "نمک", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "فلفل سیاه", "amount": 0.5, "unit": "قاشق چای‌خوری" },
+      { "item": "فلفل قرمز پرک (پول بیبر)", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "روغن مایع", "amount": 2, "unit": "قاشق غذاخوری" }
     ],
     "recipeSteps": [
       "ابتدا گوشت را آماده کنید. اگر گوشت از قبل برش خورده نیست، آن را بسیار نازک برش دهید و در تابه با ۲ قاشق روغن مایع تفت دهید تا کاملا پخته و کمی برشته شود.",
@@ -48,22 +48,23 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "لاهماجون، نان نازک و ترد با روکش گوشت",
     "ingredients": [
-      { "item": "آرد گندم", "amount": "۳ پیمانه (۳۶۰ گرم)" },
-      { "item": "آب ولرم", "amount": "۱ پیمانه (۲۴۰ میلی‌لیتر)" },
-      { "item": "خمیرمایه فوری", "amount": "۱ قاشق چای‌خوری" },
-      { "item": "شکر", "amount": "۱/۲ قاشق چای‌خوری" },
-      { "item": "نمک", "amount": "۱ قاشق چای‌خوری" },
-      { "item": "روغن زیتون", "amount": "۲ قاشق غذاخوری" },
-      { "item": "گوشت چرخ‌کرده (گاو یا گوسفند با چربی متوسط)", "amount": "۲۵۰ گرم" },
-      { "item": "پیاز", "amount": "۱ عدد متوسط، بسیار ریز خرد یا رنده شده" },
-      { "item": "فلفل سبز", "amount": "۱ عدد متوسط، بسیار ریز خرد شده" },
-      { "item": "فلفل قرمز", "amount": "۱/۲ عدد متوسط، بسیار ریز خرد شده" },
-      { "item": "رب گوجه‌فرنگی", "amount": "۲ قاشق غذاخوری" },
-      { "item": "گوجه‌فرنگی له شده", "amount": "۱/۲ پیمانه (۱۲۰ گرم)" },
-      { "item": "سیر", "amount": "۲ حبه، له شده" },
-      { "item": "جعفری تازه", "amount": "۱/۴ پیمانه، ریز خرد شده" },
-      { "item": "ادویه‌جات (نمک، فلفل، زیره، پاپریکا)", "amount": "به میزان لازم" },
-      { "item": "فلفل قرمز پرک (پول بیبر)", "amount": "۱/۲ قاشق چای‌خوری (اختیاری)" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "آرد گندم", "amount": 360, "unit": "گرم" },
+      { "item": "آب ولرم", "amount": 240, "unit": "میلی‌لیتر" },
+      { "item": "خمیرمایه فوری", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "شکر", "amount": 0.5, "unit": "قاشق چای‌خوری" },
+      { "item": "نمک", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "روغن زیتون", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "گوشت چرخ‌کرده (گاو یا گوسفند با چربی متوسط)", "amount": 250, "unit": "گرم" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد متوسط" },
+      { "item": "فلفل سبز", "amount": 1, "unit": "عدد متوسط" },
+      { "item": "فلفل قرمز", "amount": 0.5, "unit": "عدد متوسط" },
+      { "item": "رب گوجه‌فرنگی", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "گوجه‌فرنگی له شده", "amount": 0.5, "unit": "پیمانه (۱۲۰ گرم)" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" },
+      { "item": "جعفری تازه", "amount": 0.25, "unit": "پیمانه" },
+      { "item": "ادویه‌جات (نمک، فلفل، زیره، پاپریکا)", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "فلفل قرمز پرک (پول بیبر)", "amount": 0.5, "unit": "قاشق چای‌خوری" }
     ],
     "recipeSteps": [
       "ابتدا خمیر را آماده کنید: در یک کاسه کوچک، شکر و مخمر را به آب ولرم اضافه کنید، هم بزنید و ۱۰ دقیقه بگذارید تا فعال شود.",
@@ -86,16 +87,17 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "مانتی، دامپلینگ‌های کوچک گوشتی با سس ماست",
     "ingredients": [
-      { "item": "آرد گندم", "amount": "۲ پیمانه" },
-      { "item": "تخم‌مرغ", "amount": "۱ عدد بزرگ" },
-      { "item": "آب", "amount": "۱/۲ پیمانه" },
-      { "item": "گوشت چرخ‌کرده", "amount": "۲۰۰ گرم" },
-      { "item": "پیاز", "amount": "۱ عدد کوچک، رنده شده" },
-      { "item": "ماست ساده", "amount": "۱.۵ پیمانه" },
-      { "item": "سیر", "amount": "۲ حبه" },
-      { "item": "کره", "amount": "۶۰ گرم" },
-      { "item": "رب گوجه‌فرنگی", "amount": "۱ قاشق غذاخوری" },
-      { "item": "نعناع خشک و پول بیبر", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "آرد گندم", "amount": 2, "unit": "پیمانه" },
+      { "item": "تخم‌مرغ", "amount": 1, "unit": "عدد بزرگ" },
+      { "item": "آب", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "گوشت چرخ‌کرده", "amount": 200, "unit": "گرم" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد کوچک" },
+      { "item": "ماست ساده", "amount": 1.5, "unit": "پیمانه" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" },
+      { "item": "کره", "amount": 60, "unit": "گرم" },
+      { "item": "رب گوجه‌فرنگی", "amount": 1, "unit": "قاشق غذاخوری" },
+      { "item": "نعناع خشک و پول بیبر", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "خمیر را با مخلوط کردن آرد، تخم‌مرغ، آب و نمک آماده کنید و ورز دهید. ۳۰ دقیقه استراحت دهید.",
@@ -115,13 +117,14 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "منمن، املت گوجه و فلفل محبوب صبحانه",
     "ingredients": [
-      { "item": "گوجه‌فرنگی", "amount": "۴ عدد متوسط" },
-      { "item": "فلفل سبز", "amount": "۲ عدد متوسط" },
-      { "item": "پیاز", "amount": "۱ عدد متوسط" },
-      { "item": "تخم‌مرغ", "amount": "۶ عدد" },
-      { "item": "روغن زیتون", "amount": "۳ قاشق غذاخوری" },
-      { "item": "نمک و فلفل سیاه", "amount": "به میزان لازم" },
-      { "item": "پول بیبر", "amount": "۱/۲ قاشق چای‌خوری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوجه‌فرنگی", "amount": 4, "unit": "عدد متوسط" },
+      { "item": "فلفل سبز", "amount": 2, "unit": "عدد متوسط" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد متوسط" },
+      { "item": "تخم‌مرغ", "amount": 6, "unit": "عدد" },
+      { "item": "روغن زیتون", "amount": 3, "unit": "قاشق غذاخوری" },
+      { "item": "نمک و فلفل سیاه", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "پول بیبر", "amount": 0.5, "unit": "قاشق چای‌خوری" }
     ],
     "recipeSteps": [
       "پیاز و فلفل سبز را خرد کرده و در روغن زیتون تفت دهید تا نرم شوند.",
@@ -139,13 +142,14 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "خوراک لوبیا سفید غلیظ و جاافتاده",
     "ingredients": [
-      { "item": "لوبیا سفید", "amount": "۱.۵ پیمانه (خیس شده)" },
-      { "item": "گوشت خورشتی", "amount": "۳۰۰ گرم" },
-      { "item": "پیاز", "amount": "۱ عدد بزرگ" },
-      { "item": "رب گوجه‌فرنگی", "amount": "۲ قاشق غذاخوری" },
-      { "item": "گوجه‌فرنگی پوره شده", "amount": "۱/۲ پیمانه" },
-      { "item": "روغن", "amount": "۳ قاشق غذاخوری" },
-      { "item": "فلفل سبز (اختیاری)", "amount": "۱ عدد" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "لوبیا سفید", "amount": 1.5, "unit": "پیمانه (خیس شده)" },
+      { "item": "گوشت خورشتی", "amount": 300, "unit": "گرم" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد بزرگ" },
+      { "item": "رب گوجه‌فرنگی", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "گوجه‌فرنگی پوره شده", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "روغن", "amount": 3, "unit": "قاشق غذاخوری" },
+      { "item": "فلفل سبز (اختیاری)", "amount": 1, "unit": "عدد" }
     ],
     "recipeSteps": [
       "لوبیاها را نیم‌پز کنید.",
@@ -163,12 +167,13 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "کباب پخته شده در کوزه سفالی",
     "ingredients": [
-      { "item": "گوشت خورشتی", "amount": "۶۰۰ گرم" },
-      { "item": "پیاز، فلفل سبز، گوجه‌فرنگی", "amount": "از هر کدام ۲ عدد" },
-      { "item": "سیر", "amount": "۴ حبه" },
-      { "item": "قارچ", "amount": "۲۰۰ گرم" },
-      { "item": "رب گوجه‌فرنگی", "amount": "۲ قاشق غذاخوری" },
-      { "item": "کره", "amount": "۵۰ گرم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت خورشتی", "amount": 600, "unit": "گرم" },
+      { "item": "پیاز، فلفل سبز، گوجه‌فرنگی", "amount": 2, "unit": "عدد از هر کدام" },
+      { "item": "سیر", "amount": 4, "unit": "حبه" },
+      { "item": "قارچ", "amount": 200, "unit": "گرم" },
+      { "item": "رب گوجه‌فرنگی", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "کره", "amount": 50, "unit": "گرم" }
     ],
     "recipeSteps": [
       "تمام مواد را خرد کرده و با ادویه و رب مخلوط کنید.",
@@ -185,12 +190,13 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "خوراک گوشت روی پوره بادمجان خامه‌ای",
     "ingredients": [
-      { "item": "گوشت خورشتی", "amount": "۵۰۰ گرم" },
-      { "item": "بادمجان", "amount": "۴ عدد" },
-      { "item": "شیر", "amount": "۱ پیمانه" },
-      { "item": "آرد", "amount": "۲ قاشق غذاخوری" },
-      { "item": "پنیر پیتزا یا کاشار", "amount": "۱/۲ پیمانه" },
-      { "item": "کره", "amount": "۲ قاشق غذاخوری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت خورشتی", "amount": 500, "unit": "گرم" },
+      { "item": "بادمجان", "amount": 4, "unit": "عدد" },
+      { "item": "شیر", "amount": 1, "unit": "پیمانه" },
+      { "item": "آرد", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "پنیر پیتزا یا کاشار", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "کره", "amount": 2, "unit": "قاشق غذاخوری" }
     ],
     "recipeSteps": [
       "خوراک گوشت را با پیاز و رب گوجه تهیه کنید.",
@@ -207,11 +213,12 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "پیده گوشت یا پنیر",
     "ingredients": [
-      { "item": "خمیر نان (آرد، آب، مخمر)", "amount": "۵۰۰ گرم" },
-      { "item": "گوشت چرخ‌کرده", "amount": "۲۰۰ گرم" },
-      { "item": "پیاز و فلفل دلمه‌ای", "amount": "۱ عدد از هر کدام" },
-      { "item": "پنیر پیتزا", "amount": "۲۰۰ گرم" },
-      { "item": "جعفری", "amount": "مقداری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "خمیر نان (آرد، آب، مخمر)", "amount": 500, "unit": "گرم" },
+      { "item": "گوشت چرخ‌کرده", "amount": 200, "unit": "گرم" },
+      { "item": "پیاز و فلفل دلمه‌ای", "amount": 1, "unit": "عدد از هر کدام" },
+      { "item": "پنیر پیتزا", "amount": 200, "unit": "گرم" },
+      { "item": "جعفری", "amount": 0, "unit": "مقداری" }
     ],
     "recipeSteps": [
       "خمیر را آماده کرده و به شکل بیضی باز کنید.",
@@ -228,10 +235,11 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "خوراک سنتی در ظرف سفالی",
     "ingredients": [
-      { "item": "گوشت خورشتی", "amount": "۵۰۰ گرم" },
-      { "item": "بادمجان، کدو، سیب‌زمینی", "amount": "از هر کدام ۲ عدد" },
-      { "item": "لوبیا سبز", "amount": "۱ پیمانه" },
-      { "item": "سیر و پیاز", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت خورشتی", "amount": 500, "unit": "گرم" },
+      { "item": "بادمجان، کدو، سیب‌زمینی", "amount": 2, "unit": "عدد از هر کدام" },
+      { "item": "لوبیا سبز", "amount": 1, "unit": "پیمانه" },
+      { "item": "سیر و پیاز", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "گوشت را تفت دهید.",
@@ -247,11 +255,12 @@ export const TURKISH_DISHES: Dish[] = [
     "nationality": "tr",
     "description": "کباب پیچیده شده در نان با سس گوجه",
     "ingredients": [
-      { "item": "گوشت چرخ‌کرده", "amount": "۶۰۰ گرم" },
-      { "item": "نان لواش", "amount": "۴ عدد" },
-      { "item": "سیر و جعفری", "amount": "مقداری" },
-      { "item": "سس گوجه‌فرنگی", "amount": "۱ پیمانه" },
-      { "item": "ماست چکیده", "amount": "برای سرو" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت چرخ‌کرده", "amount": 600, "unit": "گرم" },
+      { "item": "نان لواش", "amount": 4, "unit": "عدد" },
+      { "item": "سیر و جعفری", "amount": 0, "unit": "مقداری" },
+      { "item": "سس گوجه‌فرنگی", "amount": 1, "unit": "پیمانه" },
+      { "item": "ماست چکیده", "amount": 0, "unit": "برای سرو" }
     ],
     "recipeSteps": [
       "کباب کوبیده را با سیر و جعفری مزه‌دار کرده و به سیخ بکشید و کباب کنید.",

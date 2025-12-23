@@ -4,23 +4,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Noosh-app | Smart Cooking Assistant</title>
+    <meta name="color-scheme" content="light">
+    <title>NOOSH APP | دستیار تخصصی آشپزی</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              navy: {
+                900: '#0f172a',
+                950: '#020617',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
+      :root {
+        color-scheme: dark;
+      }
       body {
         font-family: 'Vazirmatn', sans-serif;
-        background-color: #f8fafc;
+        background-color: #020617 !important;
+        color: #f8fafc !important;
         overflow-x: hidden;
       }
       ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #475569; }
+      
       .animate-enter { animation: enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
       @keyframes enter { to { opacity: 1; transform: translateY(0); } }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+      }
+      .animate-float {
+        animation: float 4s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
       .card-3d { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-      .card-3d:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1); }
+      .card-3d:hover { transform: translateY(-5px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3); }
+      
+      .dark-input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+      .dark-input:focus {
+        border-color: #2dd4bf;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      @media print {
+        .no-print { display: none !important; }
+        body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+        #root { background: white !important; }
+        .print-only { display: block !important; }
+      }
+      .print-only { display: none; }
     </style>
   <script type="importmap">
 {
@@ -29,7 +82,8 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
+    "react": "https://esm.sh/react@^19.2.3",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/"
   }
 }
 </script>

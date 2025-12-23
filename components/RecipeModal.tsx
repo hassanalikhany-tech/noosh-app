@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChefHat, Users, AlertCircle, Plus, Minus, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck } from 'lucide-react';
-import { Dish, ShoppingItem } from '../types';
+import { X, ChefHat, Users, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck } from 'lucide-react';
+import { Dish, ShoppingItem, UserProfile } from '../types';
 import DishVisual from './DishVisual';
 import { UserService } from '../services/userService';
 import { estimateCalories, estimateCookTime, getDifficulty, getDishNature } from '../utils/recipeHelpers';
@@ -11,20 +11,18 @@ interface RecipeModalProps {
   dish: Dish;
   isOpen: boolean;
   onClose: () => void;
+  user: UserProfile | null;
 }
 
 const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن'];
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
+const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }) => {
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
   const hasIngredients = dish.ingredients && dish.ingredients.length > 0;
   
-  const user = UserService.getCurrentUser();
   const defaultServings = user?.familySize || 4;
-  const [servings, setServings] = useState(4);
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // استفاده از دیتای غنی‌شده دیتابیس یا تخمین
   const calories = dish.calories || estimateCalories(dish);
   const time = dish.cookTime || estimateCookTime(dish);
   const difficulty = dish.difficulty || getDifficulty(dish);
@@ -32,17 +30,16 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setServings(defaultServings);
       setAddedToCart(false);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-  }, [isOpen, defaultServings]);
+  }, [isOpen]);
 
   const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
-  const handleAddAllToCart = () => {
+  const handleAddAllToCart = async () => {
     if (!user || !dish.ingredients) return;
     const currentList = user.customShoppingList || [];
     const newItems: ShoppingItem[] = dish.ingredients
@@ -50,10 +47,12 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
       .map(ing => ({
         id: Date.now() + Math.random().toString(),
         name: ing.item,
+        amount: ing.amount,
+        unit: ing.unit,
         checked: false,
         fromRecipe: dish.name
       }));
-    UserService.updateShoppingList(user.username, [...currentList, ...newItems]);
+    await UserService.updateShoppingList(user.username, [...currentList, ...newItems]);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -87,7 +86,12 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose }) => {
               <div>
                 <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2 text-teal-700"><Users size={20} /><h3 className="text-xl font-bold">مواد لازم</h3></div></div>
                 <ul className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
-                  {dish.ingredients.map((ing, idx) => (<li key={idx} className="flex justify-between border-b border-gray-200 last:border-0 pb-2"><span>{ing.item}</span><span className="text-teal-700 font-bold">{ing.amount}</span></li>))}
+                  {dish.ingredients.map((ing, idx) => (
+                    <li key={idx} className="flex justify-between border-b border-gray-200 last:border-0 pb-2">
+                      <span>{ing.item}</span>
+                      <span className="text-teal-700 font-bold">{toPersianDigits(ing.amount)} {ing.unit}</span>
+                    </li>
+                  ))}
                 </ul>
                 <button onClick={handleAddAllToCart} disabled={addedToCart} className={`w-full py-3 border rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${addedToCart ? 'bg-emerald-500 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'}`}>{addedToCart ? <><Check size={18} /> اضافه شد</> : <><PlusCircle size={18} /> افزودن به سبد</>}</button>
               </div>

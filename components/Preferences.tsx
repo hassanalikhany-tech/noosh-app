@@ -14,61 +14,61 @@ interface PreferencesProps {
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout }) => {
   const [ingInput, setIngInput] = useState('');
   
-  const toggleCategory = (cat: DishCategory) => {
+  const toggleCategory = async (cat: DishCategory) => {
     let newExcluded = [...user.excludedCategories];
     if (newExcluded.includes(cat)) {
       newExcluded = newExcluded.filter(c => c !== cat);
     } else {
       newExcluded.push(cat);
     }
-    const updatedUser = UserService.updatePreferences(user.username, { excludedCategories: newExcluded });
+    const updatedUser = await UserService.updatePreferences(user.username, { excludedCategories: newExcluded });
     onUpdateUser(updatedUser);
   };
 
-  const toggleDietMode = () => {
-    const updatedUser = UserService.updatePreferences(user.username, { dietMode: !user.dietMode });
+  const toggleDietMode = async () => {
+    const updatedUser = await UserService.updatePreferences(user.username, { dietMode: !user.dietMode });
     onUpdateUser(updatedUser);
   };
 
-  const toggleNature = (nature: NatureType) => {
+  const toggleNature = async (nature: NatureType) => {
     let newNatures = [...(user.preferredNatures || [])];
     if (newNatures.includes(nature)) {
       if (newNatures.length > 1) newNatures = newNatures.filter(n => n !== nature);
     } else {
       newNatures.push(nature);
     }
-    const updatedUser = UserService.updatePreferences(user.username, { preferredNatures: newNatures });
+    const updatedUser = await UserService.updatePreferences(user.username, { preferredNatures: newNatures });
     onUpdateUser(updatedUser);
   };
 
-  const addDislikedIng = () => {
+  const addDislikedIng = async () => {
     if (!ingInput.trim()) return;
     const current = user.dislikedIngredients || [];
     if (current.includes(ingInput.trim())) return;
-    const updatedUser = UserService.updatePreferences(user.username, { dislikedIngredients: [...current, ingInput.trim()] });
+    const updatedUser = await UserService.updatePreferences(user.username, { dislikedIngredients: [...current, ingInput.trim()] });
     onUpdateUser(updatedUser);
     setIngInput('');
   };
 
-  const removeDislikedIng = (ing: string) => {
+  const removeDislikedIng = async (ing: string) => {
     const current = user.dislikedIngredients || [];
-    const updatedUser = UserService.updatePreferences(user.username, { dislikedIngredients: current.filter(i => i !== ing) });
+    const updatedUser = await UserService.updatePreferences(user.username, { dislikedIngredients: current.filter(i => i !== ing) });
     onUpdateUser(updatedUser);
   };
 
-  const toggleFavorite = (dishId: string) => {
-    const updatedUser = UserService.toggleFavorite(user.username, dishId);
+  const toggleFavorite = async (dishId: string) => {
+    const updatedUser = await UserService.toggleFavorite(user.username, dishId);
     onUpdateUser(updatedUser);
   };
 
-  const handleRemoveFromBlacklist = (dishId: string) => {
-    const updatedUser = UserService.toggleBlacklist(user.username, dishId);
+  const handleRemoveFromBlacklist = async (dishId: string) => {
+    const updatedUser = await UserService.toggleBlacklist(user.username, dishId);
     onUpdateUser(updatedUser);
   };
 
-  const changeFamilySize = (newSize: number) => {
+  const changeFamilySize = async (newSize: number) => {
     if (newSize < 1 || newSize > 20) return;
-    const updatedUser = UserService.updatePreferences(user.username, { familySize: newSize });
+    const updatedUser = await UserService.updatePreferences(user.username, { familySize: newSize });
     onUpdateUser(updatedUser);
   };
 

@@ -1,5 +1,3 @@
-
-
 import { Dish } from '../types';
 
 export const VARIED_DISHES: Dish[] = [
@@ -10,15 +8,16 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "دیزی اصیل با گوشت گوسفندی، نخود، لوبیا و دنبه",
     "ingredients": [
-      { "item": "گوشت گوسفندی با استخوان و دنبه", "amount": "500 گرم" },
-      { "item": "نخود و لوبیا سفید", "amount": "1 پیمانه (خیس شده)" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "سیب زمینی", "amount": "2 عدد" },
-      { "item": "گوجه فرنگی", "amount": "2 عدد" },
-      { "item": "رب گوجه فرنگی", "amount": "2 قاشق غذاخوری" },
-      { "item": "لیمو عمانی", "amount": "2 عدد" },
-      { "item": "سیر", "amount": "2 حبه" },
-      { "item": "مرزه خشک", "amount": "1 قاشق غذاخوری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی با استخوان و دنبه", "amount": 500, "unit": "گرم" },
+      { "item": "نخود و لوبیا سفید (خیس شده)", "amount": 1, "unit": "پیمانه" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "سیب زمینی", "amount": 2, "unit": "عدد" },
+      { "item": "گوجه فرنگی", "amount": 2, "unit": "عدد" },
+      { "item": "رب گوجه فرنگی", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "لیمو عمانی", "amount": 2, "unit": "عدد" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" },
+      { "item": "مرزه خشک", "amount": 1, "unit": "قاشق غذاخوری" }
     ],
     "recipeSteps": [
       "نخود و لوبیا را از شب قبل خیس کنید.",
@@ -36,12 +35,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت سبزی‌دار سنتی",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "500 گرم" },
-      { "item": "لوبیا قرمز (یا چشم بلبلی)", "amount": "1 پیمانه" },
-      { "item": "سبزی (تره، جعفری، شنبلیله)", "amount": "300 گرم" },
-      { "item": "پیاز", "amount": "1 عدد" },
-      { "item": "لیمو عمانی", "amount": "3 عدد" },
-      { "item": "سیب زمینی", "amount": "2 عدد" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 500, "unit": "گرم" },
+      { "item": "لوبیا قرمز (یا چشم بلبلی)", "amount": 1, "unit": "پیمانه" },
+      { "item": "سبزی (تره، جعفری، شنبلیله)", "amount": 300, "unit": "گرم" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" },
+      { "item": "لیمو عمانی", "amount": 3, "unit": "عدد" },
+      { "item": "سیب زمینی", "amount": 2, "unit": "عدد" }
     ],
     "recipeSteps": [
       "گوشت و لوبیا و پیاز را بپزید.",
@@ -57,12 +57,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت سفید مقوی با کشک",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "400 گرم" },
-      { "item": "نخود و لوبیا سفید", "amount": "1 پیمانه" },
-      { "item": "بادمجان سرخ شده", "amount": "2 عدد" },
-      { "item": "کشک غلیظ", "amount": "1 پیمانه" },
-      { "item": "پیاز و سیر داغ", "amount": "به میزان لازم" },
-      { "item": "نعناع داغ", "amount": "2 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 400, "unit": "گرم" },
+      { "item": "نخود و لوبیا سفید", "amount": 1, "unit": "پیمانه" },
+      { "item": "بادمجان سرخ شده", "amount": 2, "unit": "عدد" },
+      { "item": "کشک غلیظ", "amount": 1, "unit": "پیمانه" },
+      { "item": "پیاز و سیر داغ", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "نعناع داغ", "amount": 2, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "گوشت و حبوبات را بپزید.",
@@ -77,11 +78,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت سنتی قم با کلم قمری",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "500 گرم" },
-      { "item": "کلم قمری (قنبید)", "amount": "2 عدد درشت" },
-      { "item": "نخود و لوبیا سفید", "amount": "1 پیمانه" },
-      { "item": "رب گوجه", "amount": "2 قاشق" },
-      { "item": "پیاز", "amount": "1 عدد" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 500, "unit": "گرم" },
+      { "item": "کلم قمری (قنبید) (درشت)", "amount": 2, "unit": "عدد" },
+      { "item": "نخود و لوبیا سفید", "amount": 1, "unit": "پیمانه" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" }
     ],
     "recipeSteps": [
       "گوشت و حبوبات را بپزید.",
@@ -96,11 +98,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "دیزی سبک با گوشت مرغ",
     "ingredients": [
-      { "item": "مرغ کامل یا ران و سینه", "amount": "800 گرم" },
-      { "item": "نخود و لوبیا چیتی", "amount": "1 پیمانه" },
-      { "item": "سیب زمینی", "amount": "2 عدد" },
-      { "item": "پیاز", "amount": "1 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "مرغ کامل یا ران و سینه", "amount": 800, "unit": "گرم" },
+      { "item": "نخود و لوبیا چیتی", "amount": 1, "unit": "پیمانه" },
+      { "item": "سیب زمینی", "amount": 2, "unit": "عدد" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "حبوبات را جداگانه نیم‌پز کنید.",
@@ -115,11 +118,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت با طعم ترش غوره",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "500 گرم" },
-      { "item": "نخود و لوبیا", "amount": "1 پیمانه" },
-      { "item": "غوره تازه یا فریز شده", "amount": "1/2 پیمانه" },
-      { "item": "سیب زمینی", "amount": "2 عدد" },
-      { "item": "رب گوجه", "amount": "1 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 500, "unit": "گرم" },
+      { "item": "نخود و لوبیا", "amount": 1, "unit": "پیمانه" },
+      { "item": "غوره تازه یا فریز شده", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "سیب زمینی", "amount": 2, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 1, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "مانند آبگوشت سنتی گوشت و حبوبات را بپزید.",
@@ -133,11 +137,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت سریع و خوش‌عطر",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "400 گرم" },
-      { "item": "لپه", "amount": "1 پیمانه" },
-      { "item": "لیمو عمانی", "amount": "4 عدد" },
-      { "item": "سیب زمینی", "amount": "2 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 400, "unit": "گرم" },
+      { "item": "لپه", "amount": 1, "unit": "پیمانه" },
+      { "item": "لیمو عمانی", "amount": 4, "unit": "عدد" },
+      { "item": "سیب زمینی", "amount": 2, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "گوشت و پیاز را تفت دهید و بپزید.",
@@ -152,10 +157,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "آبگوشت با انواع میوه‌های خشک",
     "ingredients": [
-      { "item": "گوشت گوسفندی", "amount": "500 گرم" },
-      { "item": "نخود و لوبیا", "amount": "1 پیمانه" },
-      { "item": "میوه خشک (آلو، زردآلو، سیب، گیلاس)", "amount": "1 پیمانه" },
-      { "item": "پیاز", "amount": "1 عدد" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی", "amount": 500, "unit": "گرم" },
+      { "item": "نخود و لوبیا", "amount": 1, "unit": "پیمانه" },
+      { "item": "میوه خشک (آلو، زردآلو، سیب، گیلاس)", "amount": 1, "unit": "پیمانه" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" }
     ],
     "recipeSteps": [
       "گوشت و حبوبات را بپزید.",
@@ -171,13 +177,14 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک لایه‌ای گوشت و سبزیجات",
     "ingredients": [
-      { "item": "گوشت گوسفندی ورقه شده", "amount": "400 گرم" },
-      { "item": "پیاز حلقه شده", "amount": "2 عدد" },
-      { "item": "سیب زمینی حلقه شده", "amount": "2 عدد" },
-      { "item": "هویج حلقه شده", "amount": "2 عدد" },
-      { "item": "به حلقه شده", "amount": "1 عدد" },
-      { "item": "آلو بخارا", "amount": "10 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت گوسفندی ورقه شده", "amount": 400, "unit": "گرم" },
+      { "item": "پیاز حلقه شده", "amount": 2, "unit": "عدد" },
+      { "item": "سیب زمینی حلقه شده", "amount": 2, "unit": "عدد" },
+      { "item": "هویج حلقه شده", "amount": 2, "unit": "عدد" },
+      { "item": "به حلقه شده", "amount": 1, "unit": "عدد" },
+      { "item": "آلو بخارا", "amount": 10, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "کف قابلمه کمی روغن ریخته و به ترتیب: پیاز، گوشت، هویج، به، آلو و سیب زمینی را لایه لایه بچینید.",
@@ -192,11 +199,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "غذای فوری و مقوی با کشک و گردو",
     "ingredients": [
-      { "item": "کشک غلیظ", "amount": "2 پیمانه" },
-      { "item": "گردو خرد شده", "amount": "1/2 پیمانه" },
-      { "item": "پیاز داغ فراوان", "amount": "3 قاشق" },
-      { "item": "نعناع خشک", "amount": "2 قاشق" },
-      { "item": "سیر داغ", "amount": "1 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "کشک غلیظ", "amount": 2, "unit": "پیمانه" },
+      { "item": "گردو خرد شده", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "پیاز داغ فراوان", "amount": 3, "unit": "قاشق" },
+      { "item": "نعناع خشک", "amount": 2, "unit": "قاشق" },
+      { "item": "سیر داغ", "amount": 1, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "پیاز داغ، سیر داغ، نعناع و گردو را کمی تفت دهید.",
@@ -211,12 +219,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "غذای قدیمی و سریع ایرانی",
     "ingredients": [
-      { "item": "پیاز", "amount": "2 عدد درشت" },
-      { "item": "تخم مرغ", "amount": "3 عدد" },
-      { "item": "شنبلیله خشک", "amount": "1 قاشق" },
-      { "item": "آرد", "amount": "1 قاشق" },
-      { "item": "سیب زمینی", "amount": "2 عدد نگینی" },
-      { "item": "رب گوجه (اختیاری)", "amount": "1 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "پیاز (درشت)", "amount": 2, "unit": "عدد" },
+      { "item": "تخم مرغ", "amount": 3, "unit": "عدد" },
+      { "item": "شنبلیله خشک", "amount": 1, "unit": "قاشق" },
+      { "item": "آرد", "amount": 1, "unit": "قاشق" },
+      { "item": "سیب زمینی نگینی", "amount": 2, "unit": "عدد" },
+      { "item": "رب گوجه (اختیاری)", "amount": 1, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "پیاز را خلالی کرده و طلایی کنید. آرد و شنبلیله را تفت دهید.",
@@ -231,11 +240,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "اشکنه با طعم کشک",
     "ingredients": [
-      { "item": "پیاز داغ", "amount": "3 قاشق" },
-      { "item": "کشک ساییده", "amount": "1 پیمانه" },
-      { "item": "تخم مرغ", "amount": "2 عدد" },
-      { "item": "نعناع خشک", "amount": "1 قاشق" },
-      { "item": "گردو", "amount": "دلخواه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "پیاز داغ", "amount": 3, "unit": "قاشق" },
+      { "item": "کشک ساییده", "amount": 1, "unit": "پیمانه" },
+      { "item": "تخم مرغ", "amount": 2, "unit": "عدد" },
+      { "item": "نعناع خشک", "amount": 1, "unit": "قاشق" },
+      { "item": "گردو", "amount": 0, "unit": "به میزان دلخواه" }
     ],
     "recipeSteps": [
       "پیاز داغ و نعناع را تفت دهید. آب اضافه کنید.",
@@ -249,12 +259,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک شمالی تند و لذیذ",
     "ingredients": [
-      { "item": "گوشت چرخ‌کرده یا تکه‌ای ریز", "amount": "300 گرم" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "گوجه فرنگی", "amount": "4 عدد" },
-      { "item": "سیر", "amount": "2 حبه" },
-      { "item": "رب گوجه", "amount": "1 قاشق" },
-      { "item": "تخم مرغ (اختیاری)", "amount": "2 عدد" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت چرخ‌کرده یا تکه‌ای ریز", "amount": 300, "unit": "گرم" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "گوجه فرنگی", "amount": 4, "unit": "عدد" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" },
+      { "item": "رب گوجه", "amount": 1, "unit": "قاشق" },
+      { "item": "تخم مرغ (اختیاری)", "amount": 2, "unit": "عدد" }
     ],
     "recipeSteps": [
       "پیاز و سیر را تفت دهید. گوشت را اضافه کرده و سرخ کنید.",
@@ -269,11 +280,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "واویشکا با سینه مرغ",
     "ingredients": [
-      { "item": "سینه مرغ نگینی", "amount": "400 گرم" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "فلفل دلمه‌ای", "amount": "1 عدد" },
-      { "item": "گوجه فرنگی", "amount": "3 عدد" },
-      { "item": "زعفران", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سینه مرغ نگینی", "amount": 400, "unit": "گرم" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "فلفل دلمه‌ای", "amount": 1, "unit": "عدد" },
+      { "item": "گوجه فرنگی", "amount": 3, "unit": "عدد" },
+      { "item": "زعفران", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "مرغ نگینی را با پیاز تفت دهید. فلفل دلمه‌ای را اضافه کنید.",
@@ -287,10 +299,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک جگر سنتی (حسرت‌الملوک)",
     "ingredients": [
-      { "item": "جگر سفید و سیاه گوسفندی", "amount": "500 گرم" },
-      { "item": "پیاز فراوان", "amount": "3 عدد" },
-      { "item": "رب گوجه یا گوجه فرنگی", "amount": "2 قاشق" },
-      { "item": "سیب زمینی (اختیاری)", "amount": "2 عدد نگینی" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "جگر سفید و سیاه گوسفندی", "amount": 500, "unit": "گرم" },
+      { "item": "پیاز فراوان", "amount": 3, "unit": "عدد" },
+      { "item": "رب گوجه یا گوجه فرنگی", "amount": 2, "unit": "قاشق" },
+      { "item": "سیب زمینی نگینی (اختیاری)", "amount": 2, "unit": "عدد" }
     ],
     "recipeSteps": [
       "جگر سفید را دیرپزتر است، ابتدا با کمی آب بپزید و خرد کنید.",
@@ -305,12 +318,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک لوبیا گرم و غلیظ",
     "ingredients": [
-      { "item": "لوبیا چیتی", "amount": "2 پیمانه" },
-      { "item": "پیاز", "amount": "1 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" },
-      { "item": "قارچ (اختیاری)", "amount": "5 عدد" },
-      { "item": "سیب زمینی (اختیاری)", "amount": "1 عدد" },
-      { "item": "آبلیمو و گلپر", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "لوبیا چیتی", "amount": 2, "unit": "پیمانه" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" },
+      { "item": "قارچ (اختیاری)", "amount": 5, "unit": "عدد" },
+      { "item": "سیب زمینی (اختیاری)", "amount": 1, "unit": "عدد" },
+      { "item": "آبلیمو و گلپر", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "لوبیا را که خیس کرده‌اید بپزید.",
@@ -325,11 +339,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک عدس مقوی (صبحانه یا شام)",
     "ingredients": [
-      { "item": "عدس", "amount": "2 پیمانه" },
-      { "item": "پیاز داغ", "amount": "3 قاشق" },
-      { "item": "آرد (برای لعاب)", "amount": "1 قاشق" },
-      { "item": "سیب زمینی", "amount": "1 عدد" },
-      { "item": "گلپر و نمک", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "عدس", "amount": 2, "unit": "پیمانه" },
+      { "item": "پیاز داغ", "amount": 3, "unit": "قاشق" },
+      { "item": "آرد (برای لعاب)", "amount": 1, "unit": "قاشق" },
+      { "item": "سیب زمینی", "amount": 1, "unit": "عدد" },
+      { "item": "گلپر و نمک", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "عدس را بپزید. سیب زمینی را نگینی یا درسته (برای له کردن) اضافه کنید.",
@@ -343,10 +358,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک اسفناج و تخم مرغ",
     "ingredients": [
-      { "item": "اسفناج تازه", "amount": "500 گرم" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "تخم مرغ", "amount": "3 عدد" },
-      { "item": "سیر", "amount": "2 حبه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "اسفناج تازه", "amount": 500, "unit": "گرم" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "تخم مرغ", "amount": 3, "unit": "عدد" },
+      { "item": "سیر", "amount": 2, "unit": "حبه" }
     ],
     "recipeSteps": [
       "پیاز را تفت دهید. اسفناج خرد شده را اضافه کنید تا آبش کشیده شود.",
@@ -360,10 +376,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک سیب زمینی و پیاز",
     "ingredients": [
-      { "item": "سیب زمینی (آلو)", "amount": "4 عدد" },
-      { "item": "پیاز", "amount": "3 عدد" },
-      { "item": "رب گوجه", "amount": "1 قاشق" },
-      { "item": "نعناع خشک", "amount": "1 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سیب زمینی (آلو)", "amount": 4, "unit": "عدد" },
+      { "item": "پیاز", "amount": 3, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 1, "unit": "قاشق" },
+      { "item": "نعناع خشک", "amount": 1, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "سیب زمینی‌ها را آب‌پز و مکعبی خرد کنید.",
@@ -378,13 +395,14 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک تند عدس قرمز",
     "ingredients": [
-      { "item": "عدس قرمز (دال)", "amount": "1.5 پیمانه" },
-      { "item": "سیر", "amount": "4 حبه" },
-      { "item": "پیاز", "amount": "1 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" },
-      { "item": "تمر هندی", "amount": "1/4 پیمانه" },
-      { "item": "سیب زمینی", "amount": "1 عدد" },
-      { "item": "فلفل قرمز", "amount": "فراوان" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "عدس قرمز (دال)", "amount": 1.5, "unit": "پیمانه" },
+      { "item": "سیر", "amount": 4, "unit": "حبه" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" },
+      { "item": "تمر هندی", "amount": 0.25, "unit": "پیمانه" },
+      { "item": "سیب زمینی", "amount": 1, "unit": "عدد" },
+      { "item": "فلفل قرمز", "amount": 0, "unit": "فراوان" }
     ],
     "recipeSteps": [
       "پیاز و سیر را تفت دهید. دال عدس شسته شده و سیب زمینی را اضافه کنید.",
@@ -398,11 +416,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "fastfood",
     "description": "خوراک سوسیس و سیب زمینی تند",
     "ingredients": [
-      { "item": "سوسیس کوکتل یا آلمانی", "amount": "400 گرم" },
-      { "item": "پیاز", "amount": "3 عدد درشت" },
-      { "item": "سیب زمینی", "amount": "2 عدد (نگینی سرخ شده)" },
-      { "item": "رب گوجه", "amount": "3 قاشق" },
-      { "item": "فلفل قرمز و سیاه", "amount": "فراوان" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سوسیس کوکتل یا آلمانی", "amount": 400, "unit": "گرم" },
+      { "item": "پیاز (درشت)", "amount": 3, "unit": "عدد" },
+      { "item": "سیب زمینی (نگینی سرخ شده)", "amount": 2, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 3, "unit": "قاشق" },
+      { "item": "فلفل قرمز و سیاه", "amount": 0, "unit": "فراوان" }
     ],
     "recipeSteps": [
       "پیاز را خلالی درشت خرد و تفت دهید. سوسیس حلقه‌ای را اضافه و سرخ کنید.",
@@ -416,12 +435,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "سمبوسه سیب زمینی جنوبی",
     "ingredients": [
-      { "item": "نان لواش", "amount": "10 تکه" },
-      { "item": "سیب زمینی پخته", "amount": "4 عدد" },
-      { "item": "جعفری خرد شده", "amount": "1 پیمانه" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "تمرهندی یا سرکه", "amount": "کمی برای مزه" },
-      { "item": "فلفل قرمز", "amount": "فراوان" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "نان لواش", "amount": 10, "unit": "تکه" },
+      { "item": "سیب زمینی پخته", "amount": 4, "unit": "عدد" },
+      { "item": "جعفری خرد شده", "amount": 1, "unit": "پیمانه" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "تمرهندی یا سرکه", "amount": 0, "unit": "کمی برای مزه" },
+      { "item": "فلفل قرمز", "amount": 0, "unit": "فراوان" }
     ],
     "recipeSteps": [
       "سیب زمینی پخته را له کنید. با پیاز سرخ شده، جعفری و ادویه تند مخلوط کنید.",
@@ -435,11 +455,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "بریان سنتی اصفهان",
     "ingredients": [
-      { "item": "گوشت سردست و دنده", "amount": "500 گرم" },
-      { "item": "جگر سفید (شش)", "amount": "200 گرم" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "دارچین، نعناع خشک، زعفران", "amount": "به میزان لازم" },
-      { "item": "گردو و خلال بادام", "amount": "برای تزیین" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "گوشت سردست و دنده", "amount": 500, "unit": "گرم" },
+      { "item": "جگر سفید (شش)", "amount": 200, "unit": "گرم" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "ادویه‌جات (دارچین، نعناع خشک، زعفران)", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "گردو و خلال بادام (برای تزیین)", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "گوشت را با پیاز بپزید و چرخ کنید. با ادویه‌ها ورز دهید.",
@@ -454,11 +475,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "غذای سنتی و سنگین",
     "ingredients": [
-      { "item": "کله و پاچه گوسفند", "amount": "1 دست کامل" },
-      { "item": "پیاز", "amount": "3 عدد" },
-      { "item": "سیر", "amount": "1 بوته" },
-      { "item": "زردچوبه، فلفل سیاه، دارچین", "amount": "به میزان لازم" },
-      { "item": "نخود (اختیاری)", "amount": "1/2 پیمانه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "کله و پاچه گوسفند (کامل)", "amount": 1, "unit": "دست" },
+      { "item": "پیاز", "amount": 3, "unit": "عدد" },
+      { "item": "سیر (بوته)", "amount": 1, "unit": "بوته" },
+      { "item": "ادویه‌جات (زردچوبه، فلفل سیاه، دارچین)", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "نخود (اختیاری)", "amount": 0.5, "unit": "پیمانه" }
     ],
     "recipeSteps": [
       "کله پاچه را بسیار تمیز بشویید.",
@@ -473,10 +495,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "خوراک سیرابی مقوی",
     "ingredients": [
-      { "item": "سیرابی و شیردان تمیز شده", "amount": "1 دست" },
-      { "item": "پیاز", "amount": "2 عدد" },
-      { "item": "سیر", "amount": "5 حبه" },
-      { "item": "زردچوبه و نمک", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سیرابی و شیردان تمیز شده", "amount": 1, "unit": "دست" },
+      { "item": "پیاز", "amount": 2, "unit": "عدد" },
+      { "item": "سیر", "amount": 5, "unit": "حبه" },
+      { "item": "زردچوبه و نمک", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "سیرابی را برش زده و با پیاز و سیر و آب فراوان بپزید (زمان پخت طولانی).",
@@ -490,10 +513,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک زبان گوساله با سس قارچ",
     "ingredients": [
-      { "item": "زبان گوساله", "amount": "1 عدد" },
-      { "item": "پیاز و سیر و برگ بو", "amount": "برای پخت زبان" },
-      { "item": "قارچ", "amount": "200 گرم" },
-      { "item": "رب گوجه", "amount": "1 قاشق" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "زبان گوساله", "amount": 1, "unit": "عدد" },
+      { "item": "پیاز و سیر و برگ بو (برای پخت)", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "قارچ", "amount": 200, "unit": "گرم" },
+      { "item": "رب گوجه", "amount": 1, "unit": "قاشق" }
     ],
     "recipeSteps": [
       "زبان را با پیاز و برگ بو کامل بپزید (چندین ساعت). پوست آن را بکنید و حلقه کنید.",
@@ -507,10 +531,11 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "خوراک مغز لذیذ",
     "ingredients": [
-      { "item": "مغز گوسفند یا گوساله", "amount": "2 عدد" },
-      { "item": "پیاز", "amount": "1 عدد" },
-      { "item": "آبلیمو و جعفری", "amount": "برای سرو" },
-      { "item": "نمک و زردچوبه", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "مغز گوسفند یا گوساله", "amount": 2, "unit": "عدد" },
+      { "item": "پیاز", "amount": 1, "unit": "عدد" },
+      { "item": "آبلیمو و جعفری (برای سرو)", "amount": 0, "unit": "به میزان لازم" },
+      { "item": "نمک و زردچوبه", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "مغز را در آب جوش انداخته و رگ و ریشه را بگیرید.",
@@ -525,12 +550,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "سالاد الویه کلاسیک",
     "ingredients": [
-      { "item": "سیب زمینی پخته", "amount": "4 عدد" },
-      { "item": "تخم مرغ پخته", "amount": "3 عدد" },
-      { "item": "سینه مرغ پخته", "amount": "1 عدد" },
-      { "item": "خیارشور", "amount": "200 گرم" },
-      { "item": "نخود فرنگی", "amount": "1/2 پیمانه" },
-      { "item": "سس مایونز", "amount": "1 پیمانه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سیب زمینی پخته", "amount": 4, "unit": "عدد" },
+      { "item": "تخم مرغ پخته", "amount": 3, "unit": "عدد" },
+      { "item": "سینه مرغ پخته", "amount": 1, "unit": "عدد" },
+      { "item": "خیارشور", "amount": 200, "unit": "گرم" },
+      { "item": "نخود فرنگی", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "سس مایونز", "amount": 1, "unit": "پیمانه" }
     ],
     "recipeSteps": [
       "سیب زمینی و تخم مرغ را رنده کنید. مرغ را ریش کنید.",
@@ -545,12 +571,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "کشک بادمجان مجلسی",
     "ingredients": [
-      { "item": "بادمجان", "amount": "5 عدد" },
-      { "item": "کشک", "amount": "1 پیمانه" },
-      { "item": "پیاز داغ", "amount": "4 قاشق" },
-      { "item": "سیر داغ", "amount": "2 قاشق" },
-      { "item": "نعناع داغ", "amount": "2 قاشق" },
-      { "item": "گردو", "amount": "دلخواه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "بادمجان", "amount": 5, "unit": "عدد" },
+      { "item": "کشک", "amount": 1, "unit": "پیمانه" },
+      { "item": "پیاز داغ", "amount": 4, "unit": "قاشق" },
+      { "item": "سیر داغ", "amount": 2, "unit": "قاشق" },
+      { "item": "نعناع داغ", "amount": 2, "unit": "قاشق" },
+      { "item": "گردو", "amount": 0, "unit": "به میزان دلخواه" }
     ],
     "recipeSteps": [
       "بادمجان‌ها را پوست گرفته و سرخ کنید.",
@@ -565,11 +592,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "میرزا قاسمی گیلانی با بادمجان کبابی",
     "ingredients": [
-      { "item": "بادمجان", "amount": "5 عدد" },
-      { "item": "گوجه فرنگی", "amount": "3 عدد" },
-      { "item": "سیر", "amount": "1 بوته" },
-      { "item": "تخم مرغ", "amount": "3 عدد" },
-      { "item": "روغن و نمک و زردچوبه", "amount": "به میزان لازم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "بادمجان", "amount": 5, "unit": "عدد" },
+      { "item": "گوجه فرنگی", "amount": 3, "unit": "عدد" },
+      { "item": "سیر (بوته)", "amount": 1, "unit": "بوته" },
+      { "item": "تخم مرغ", "amount": 3, "unit": "عدد" },
+      { "item": "روغن و نمک و زردچوبه", "amount": 0, "unit": "به میزان لازم" }
     ],
     "recipeSteps": [
       "بادمجان‌ها را کبابی کنید و پوست بگیرید.",
@@ -584,11 +612,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "خورشت باقلاقاتق گیلانی",
     "ingredients": [
-      { "item": "لوبیا کشاورزی (پاچ باقلا)", "amount": "2 پیمانه" },
-      { "item": "شوید خشک", "amount": "2 قاشق" },
-      { "item": "تخم مرغ", "amount": "2 عدد" },
-      { "item": "سیر", "amount": "4 حبه" },
-      { "item": "کره یا روغن", "amount": "50 گرم" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "لوبیا کشاورزی (پاچ باقلا)", "amount": 2, "unit": "پیمانه" },
+      { "item": "شوید خشک", "amount": 2, "unit": "قاشق" },
+      { "item": "تخم مرغ", "amount": 2, "unit": "عدد" },
+      { "item": "سیر", "amount": 4, "unit": "حبه" },
+      { "item": "کره یا روغن", "amount": 50, "unit": "گرم" }
     ],
     "recipeSteps": [
       "سیر و شوید را تفت دهید، باقلا پوست گرفته را اضافه کنید.",
@@ -602,11 +631,12 @@ export const VARIED_DISHES: Dish[] = [
     "category": "kuku",
     "description": "کوکو سیب‌زمینی با مغز گوشت و قارچ",
     "ingredients": [
-      { "item": "سیب زمینی پخته", "amount": "4 عدد" },
-      { "item": "تخم مرغ", "amount": "2 عدد" },
-      { "item": "گوشت چرخ‌کرده", "amount": "200 گرم" },
-      { "item": "قارچ و فلفل دلمه‌ای", "amount": "1 پیمانه" },
-      { "item": "پنیر پیتزا (اختیاری)", "amount": "مقداری" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "سیب زمینی پخته", "amount": 4, "unit": "عدد" },
+      { "item": "تخم مرغ", "amount": 2, "unit": "عدد" },
+      { "item": "گوشت چرخ‌کرده", "amount": 200, "unit": "گرم" },
+      { "item": "قارچ و فلفل دلمه‌ای", "amount": 1, "unit": "پیمانه" },
+      { "item": "پنیر پیتزا (اختیاری)", "amount": 0, "unit": "به میزان دلخواه" }
     ],
     "recipeSteps": [
       "مایه گوشتی (مانند مایه ماکارونی) تهیه کنید.",
@@ -621,12 +651,13 @@ export const VARIED_DISHES: Dish[] = [
     "category": "nani",
     "description": "پیراشکی گوشت خانگی",
     "ingredients": [
-      { "item": "خمیر پیراشکی", "amount": "1 بسته" },
-      { "item": "گوشت چرخ‌کرده", "amount": "300 گرم" },
-      { "item": "قارچ", "amount": "200 گرم" },
-      { "item": "فلفل دلمه‌ای", "amount": "1 عدد" },
-      { "item": "رب گوجه", "amount": "2 قاشق" },
-      { "item": "پنیر پیتزا", "amount": "دلخواه" }
+      // Fix: Converted amount strings to number and unit
+      { "item": "خمیر پیراشکی", "amount": 1, "unit": "بسته" },
+      { "item": "گوشت چرخ‌کرده", "amount": 300, "unit": "گرم" },
+      { "item": "قارچ", "amount": 200, "unit": "گرم" },
+      { "item": "فلفل دلمه‌ای", "amount": 1, "unit": "عدد" },
+      { "item": "رب گوجه", "amount": 2, "unit": "قاشق" },
+      { "item": "پنیر پیتزا", "amount": 0, "unit": "به میزان دلخواه" }
     ],
     "recipeSteps": [
       "مایه گوشتی را با پیاز، قارچ و فلفل دلمه تفت دهید.",
@@ -640,42 +671,16 @@ export const VARIED_DISHES: Dish[] = [
     "category": "local",
     "description": "نان برنجی گیلانی (نسخه غذایی با تخم‌مرغ)",
     "ingredients": [
-      {
-        "item": "آرد برنج",
-        "amount": "۲ پیمانه"
-      },
-      {
-        "item": "تخم مرغ",
-        "amount": "۲ عدد بزرگ"
-      },
-      {
-        "item": "ماست پرچرب",
-        "amount": "۱/۲ پیمانه"
-      },
-      {
-        "item": "روغن مایع یا کره ذوب شده",
-        "amount": "۱/۴ پیمانه"
-      },
-      {
-        "item": "شکر",
-        "amount": "۲ قاشق غذاخوری"
-      },
-      {
-        "item": "نمک",
-        "amount": "۱ قاشق چای‌خوری"
-      },
-      {
-        "item": "بیکینگ پودر",
-        "amount": "۱ قاشق چای‌خوری"
-      },
-      {
-        "item": "آب ولرم (در صورت نیاز)",
-        "amount": "۲ تا ۴ قاشق غذاخوری"
-      },
-      {
-        "item": "کنجد یا سیاه‌دانه برای تزیین (اختیاری)",
-        "amount": "۱ قاشق غذاخوری"
-      }
+      // Fix: Converted amount strings to number and unit
+      { "item": "آرد برنج", "amount": 2, "unit": "پیمانه" },
+      { "item": "تخم مرغ (بزرگ)", "amount": 2, "unit": "عدد" },
+      { "item": "ماست پرچرب", "amount": 0.5, "unit": "پیمانه" },
+      { "item": "روغن مایع یا کره ذوب شده", "amount": 0.25, "unit": "پیمانه" },
+      { "item": "شکر", "amount": 2, "unit": "قاشق غذاخوری" },
+      { "item": "نمک", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "بیکینگ پودر", "amount": 1, "unit": "قاشق چای‌خوری" },
+      { "item": "آب ولرم (در صورت نیاز)", "amount": 3, "unit": "قاشق غذاخوری" },
+      { "item": "کنجد یا سیاه‌دانه (اختیاری)", "amount": 1, "unit": "قاشق غذاخوری" }
     ],
     "recipeSteps": [
       "آرد برنج، بیکینگ پودر و نمک را در یک کاسه بزرگ با هم مخلوط کنید",

@@ -1,225 +1,239 @@
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendEmailVerification
+} from "firebase/auth";
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  updateDoc,
+  collection,
+  getDocs,
+  deleteDoc
+} from "firebase/firestore";
+import { auth, db } from "./firebase";
+import { UserProfile, ShoppingItem } from "../types";
 
-import { UserProfile, ShoppingItem } from '../types';
-
-const USERS_STORAGE_KEY = 'pmp_users_db_v2'; 
-const CURRENT_USER_KEY = 'pmp_current_username_v2';
-
-const getUsersDB = (): Record<string, UserProfile> => {
-  try {
-    const data = localStorage.getItem(USERS_STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
-  } catch {
-    return {};
-  }
+const notifyUpdate = () => {
+  window.dispatchEvent(new Event('user-data-updated'));
 };
 
-const saveUsersDB = (db: Record<string, UserProfile>) => {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(db));
-  window.dispatchEvent(new CustomEvent('user-data-updated'));
-};
+const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string): UserProfile => ({
+  username: user.email ? user.email.split('@')[0] : user.uid.slice(0, 8),
+  fullName: fullName || user.displayName || "کاربر نوش",
+  passwordCode: "PROTECTED",
+  email: user.email || "",
+  phoneNumber: phoneNumber || "",
+  subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000), // ۱ سال هدیه اولیه
+  blacklistedDishIds: [],
+  favoriteDishIds: [],
+  dislikedIngredients: [],
+  excludedCategories: [],
+  preferredNatures: ['hot', 'cold', 'balanced'],
+  history: [],
+  familySize: 4,
+  hasCompletedSetup: false,
+  customShoppingList: [],
+  isAdmin: false
+});
 
 export const UserService = {
-  login: (identifier: string, code: string): { success: boolean; user?: UserProfile; message?: string } => {
-    const db = getUsersDB();
-    
-    if (identifier === 'admin' && code === 'admin') {
-      const adminUser: UserProfile = {
-        username: 'admin',
-        fullName: 'مدیر سیستم',
-        passwordCode: 'admin',
-        subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000),
-        blacklistedDishIds: [],
-        favoriteDishIds: [],
-        // Fix: Added missing required property dislikedIngredients
-        dislikedIngredients: [],
-        excludedCategories: [],
-        preferredNatures: ['hot', 'cold', 'balanced'],
-        history: [],
-        familySize: 4,
-        isAdmin: true,
-        customShoppingList: [],
-        hasCompletedSetup: true
+  /**
+   * ورود به سیستم - محدودیت تایید ایمیل برداشته شد تا مدیر بتواند وارد شود
+   */
+  login: async (email: string, password: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // جستجوی پروفایل در دیتابیس
+      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+      
+      if (!userDoc.exists()) {
+        const newProfile = createDefaultProfile(firebaseUser, "");
+        await setDoc(doc(db, "users", firebaseUser.uid), newProfile);
+        // Fix: satisfy inferred type for Login.tsx result.needsVerification
+        return { success: true, user: newProfile, needsVerification: false };
+      }
+
+      const userData = userDoc.data() as UserProfile;
+      
+      // Fix: Check verification for non-admins and return needsVerification for Login.tsx logic
+      if (!userData.isAdmin && !firebaseUser.emailVerified) {
+        return { 
+          success: false, 
+          message: "لطفاً ابتدا ایمیل خود را تایید کنید.", 
+          needsVerification: true 
+        };
+      }
+
+      // Fix: satisfy inferred type for Login.tsx result.needsVerification
+      return { success: true, user: userData, needsVerification: false };
+    } catch (error: any) {
+      console.error(error);
+      // Fix: satisfy inferred type for Login.tsx result.needsVerification
+      return { 
+        success: false, 
+        message: "ایمیل یا رمز عبور اشتباه است.", 
+        needsVerification: false 
       };
-      db['admin'] = adminUser;
-      saveUsersDB(db);
-      localStorage.setItem(CURRENT_USER_KEY, 'admin');
-      return { success: true, user: adminUser };
-    }
-
-    const user = Object.values(db).find(u => u.username === identifier || u.email === identifier);
-
-    if (!user) return { success: false, message: 'حساب کاربری با این مشخصات یافت نشد.' };
-
-    if (user.passwordCode === code) {
-      if (!user.favoriteDishIds) user.favoriteDishIds = [];
-      if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
-      db[user.username] = user; 
-      saveUsersDB(db);
-      localStorage.setItem(CURRENT_USER_KEY, user.username);
-      return { success: true, user };
-    } else {
-      return { success: false, message: 'رمز عبور اشتباه است.' };
     }
   },
 
-  register: (data: { username: string; code: string; fullName: string; email?: string; phoneNumber?: string; avatar?: string }): { success: boolean; user?: UserProfile; message?: string } => {
-    const db = getUsersDB();
-    if (db[data.username] || data.username === 'admin') return { success: false, message: 'این نام کاربری قبلاً گرفته شده است.' };
-
-    const newUser: UserProfile = {
-      username: data.username,
-      fullName: data.fullName,
-      passwordCode: data.code,
-      email: data.email,
-      phoneNumber: data.phoneNumber,
-      avatar: data.avatar,
-      subscriptionExpiry: Date.now() + (30 * 24 * 60 * 60 * 1000), 
-      blacklistedDishIds: [],
-      favoriteDishIds: [],
-      // Fix: Added missing required property dislikedIngredients
-      dislikedIngredients: [],
-      excludedCategories: [],
-      preferredNatures: ['hot', 'cold', 'balanced'],
-      history: [],
-      familySize: 4,
-      customShoppingList: [],
-      hasCompletedSetup: false
-    };
-
-    db[data.username] = newUser;
-    saveUsersDB(db);
-    localStorage.setItem(CURRENT_USER_KEY, data.username);
-    return { success: true, user: newUser };
-  },
-
-  logout: () => localStorage.removeItem(CURRENT_USER_KEY),
-
-  getCurrentUser: (): UserProfile | null => {
-    const username = localStorage.getItem(CURRENT_USER_KEY);
-    if (!username) return null;
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-        if (!user.favoriteDishIds) user.favoriteDishIds = [];
-        if (!user.blacklistedDishIds) user.blacklistedDishIds = [];
+  resendVerificationEmail: async (email: string, password: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      return { success: true, message: "لینک تایید مجدداً ارسال شد." };
+    } catch (error: any) {
+      return { success: false, message: "خطا در ارسال مجدد ایمیل." };
     }
-    return user || null;
   },
 
-  toggleFavorite: (username: string, dishId: string): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      const favorites = user.favoriteDishIds || [];
-      if (favorites.includes(dishId)) {
-        user.favoriteDishIds = favorites.filter(id => id !== dishId);
+  loginWithGoogle: async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data() as UserProfile;
+        return { success: true, user: data };
       } else {
-        user.favoriteDishIds = [...favorites, dishId];
-        // اگر لایک شد، از دیس‌لایک خارج شود
-        user.blacklistedDishIds = (user.blacklistedDishIds || []).filter(id => id !== dishId);
+        const newUser = createDefaultProfile(user, user.displayName || "");
+        await setDoc(userDocRef, newUser);
+        return { success: true, user: newUser };
       }
-      saveUsersDB(db);
-      return user;
+    } catch (error: any) {
+      return { success: false, message: "خطا در اتصال به حساب گوگل." };
     }
-    throw new Error('User not found');
   },
 
-  toggleBlacklist: (username: string, dishId: string): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      const blacklist = user.blacklistedDishIds || [];
-      if (blacklist.includes(dishId)) {
-        user.blacklistedDishIds = blacklist.filter(id => id !== dishId);
-      } else {
-        user.blacklistedDishIds = [...blacklist, dishId];
-        // اگر دیس‌لایک شد، از لایک‌ها خارج شود
-        user.favoriteDishIds = (user.favoriteDishIds || []).filter(id => id !== dishId);
+  register: async (data: any) => {
+    try {
+      const { email, password, fullName, phoneNumber } = data;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // ارسال ایمیل تایید به صورت اختیاری در پس‌زمینه
+      sendEmailVerification(firebaseUser).catch(e => console.log("Verification email fail", e));
+      
+      const newUser = createDefaultProfile(firebaseUser, fullName, phoneNumber);
+      await setDoc(doc(db, "users", firebaseUser.uid), newUser);
+
+      return { success: true, user: newUser };
+    } catch (error: any) {
+      return { success: false, message: "خطا در ثبت‌نام." };
+    }
+  },
+
+  getCurrentUser: async (): Promise<UserProfile | null> => {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        unsubscribe();
+        if (user) {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            resolve(userDoc.data() as UserProfile);
+          } else {
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  },
+
+  /**
+   * فعال‌سازی دسترسی مدیریت برای کاربر فعلی (شما)
+   */
+  seedAdmin: async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data() as UserProfile;
+      // اگر کاربر وارد شده ادمین نیست، او را ادمین کن
+      if (!data.isAdmin) {
+        await updateDoc(userDocRef, { isAdmin: true });
+        notifyUpdate();
       }
-      saveUsersDB(db);
-      return user;
     }
-    throw new Error('User not found');
   },
 
-  addToBlacklist: (username: string, dishIds: string[]): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      const currentBlacklist = user.blacklistedDishIds || [];
-      const newBlacklistSet = new Set([...currentBlacklist, ...dishIds]);
-      user.blacklistedDishIds = Array.from(newBlacklistSet);
-      user.favoriteDishIds = (user.favoriteDishIds || []).filter(id => !dishIds.includes(id));
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+  updateProfile: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not logged in");
+    await updateDoc(doc(db, "users", user.uid), updates);
+    const updated = await getDoc(doc(db, "users", user.uid));
+    const data = updated.data() as UserProfile;
+    notifyUpdate();
+    return data;
   },
 
-  removeFromBlacklist: (username: string, dishId: string): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      user.blacklistedDishIds = (user.blacklistedDishIds || []).filter(id => id !== dishId);
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+  updatePreferences: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
+    return UserService.updateProfile(username, updates);
   },
 
-  updatePreferences: (username: string, updates: Partial<UserProfile>): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      Object.assign(user, updates);
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+  toggleFavorite: async (username: string, dishId: string): Promise<UserProfile> => {
+    const user = await UserService.getCurrentUser();
+    if (!user) throw new Error("User not found");
+    const favorites = user.favoriteDishIds?.includes(dishId) 
+      ? user.favoriteDishIds.filter(id => id !== dishId)
+      : [...(user.favoriteDishIds || []), dishId];
+    return UserService.updateProfile(username, { favoriteDishIds: favorites });
   },
 
-  isSubscriptionValid: (user: UserProfile): boolean => user.isAdmin || user.subscriptionExpiry > Date.now(),
-  getAllUsers: (): UserProfile[] => Object.values(getUsersDB()),
-  extendSubscription: (username: string, days: number): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      const now = Date.now();
-      const baseTime = user.subscriptionExpiry > now ? user.subscriptionExpiry : now;
-      user.subscriptionExpiry = baseTime + (days * 24 * 60 * 60 * 1000);
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+  toggleBlacklist: async (username: string, dishId: string): Promise<UserProfile> => {
+    const user = await UserService.getCurrentUser();
+    if (!user) throw new Error("User not found");
+    const blacklist = user.blacklistedDishIds?.includes(dishId)
+      ? user.blacklistedDishIds.filter(id => id !== dishId)
+      : [...(user.blacklistedDishIds || []), dishId];
+    return UserService.updateProfile(username, { blacklistedDishIds: blacklist });
   },
 
-  deleteUser: (username: string) => {
-    const db = getUsersDB();
-    delete db[username];
-    saveUsersDB(db);
+  updateShoppingList: async (username: string, items: ShoppingItem[]): Promise<UserProfile> => {
+    return UserService.updateProfile(username, { customShoppingList: items });
   },
 
-  addToHistory: (username: string, dishIds: string[]): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      const currentHistory = user.history || [];
-      user.history = [...currentHistory, ...dishIds].slice(-100);
-      saveUsersDB(db);
-      return user;
-    }
-    throw new Error('User not found');
+  extendSubscription: async (username: string, days: number): Promise<UserProfile> => {
+    const user = await UserService.getCurrentUser();
+    if (!user) throw new Error("User not found");
+    const currentExpiry = user.subscriptionExpiry || Date.now();
+    const newExpiry = Math.max(currentExpiry, Date.now()) + (days * 24 * 60 * 60 * 1000);
+    return UserService.updateProfile(username, { subscriptionExpiry: newExpiry });
   },
 
-  updateShoppingList: (username: string, items: ShoppingItem[]): UserProfile => {
-    const db = getUsersDB();
-    const user = db[username];
-    if (user) {
-      user.customShoppingList = items;
-      saveUsersDB(db);
-      window.dispatchEvent(new Event('cart-updated'));
-      return user;
-    }
-    throw new Error('User not found');
+  getAllUsers: async (): Promise<UserProfile[]> => {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    return querySnapshot.docs.map(d => d.data() as UserProfile);
+  },
+
+  deleteUser: async (username: string): Promise<void> => {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    const userDoc = querySnapshot.docs.find(d => (d.data() as UserProfile).username === username);
+    if (userDoc) await deleteDoc(userDoc.ref);
+  },
+
+  logout: async () => {
+    await signOut(auth);
+  },
+
+  isSubscriptionValid: (user: UserProfile): boolean => {
+    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
   }
 };

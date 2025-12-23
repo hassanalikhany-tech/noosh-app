@@ -13,13 +13,13 @@ interface ChallengesProps {
 
 const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify }) => {
   
-  const toggleChallenge = (id: string) => {
+  const toggleChallenge = async (id: string) => {
     const selectedChallenge = CHALLENGES.find(c => c.id === id);
     if (!selectedChallenge) return;
 
     if (user.activeChallengeId === id) {
       // Deactivate
-      const updatedUser = UserService.updatePreferences(user.username, { activeChallengeId: undefined });
+      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: undefined });
       onUpdateUser(updatedUser);
       onNotify(
         'چالش غیرفعال شد',
@@ -29,7 +29,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
       );
     } else {
       // Activate
-      const updatedUser = UserService.updatePreferences(user.username, { activeChallengeId: id });
+      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: id });
       onUpdateUser(updatedUser);
       onNotify(
         `چالش ${selectedChallenge.title} فعال شد`,
