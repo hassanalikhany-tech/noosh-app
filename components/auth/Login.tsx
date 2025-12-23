@@ -36,9 +36,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-    setSuccessMessage('');
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError('');
   };
 
   const handleResendEmail = async () => {
@@ -79,18 +79,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     if (isLoading) return;
     
+    // پاکسازی فاصله‌های خالی احتمالی
+    const email = formData.email.trim();
+    const password = formData.password; // رمز عبور نباید تریم شود چون ممکن است فاصله جزئی از آن باشد
+
     setError('');
     setSuccessMessage('');
     setShowResend(false);
 
-    // Client-side validation to prevent auth/missing-password
-    if (!formData.email || !formData.password) {
-      setError('لطفاً آدرس ایمیل و رمز عبور خود را وارد کنید.');
+    // اعتبارسنجی دقیق برای جلوگیری از auth/missing-password
+    if (!email) {
+      setError('لطفاً آدرس ایمیل خود را وارد کنید.');
+      return;
+    }
+    if (!password) {
+      setError('لطفاً رمز عبور خود را وارد کنید.');
       return;
     }
 
-    if (mode === 'register' && !formData.fullName) {
-      setError('تکمیل تمامی فیلدها برای ثبت‌نام الزامی است.');
+    if (mode === 'register' && !formData.fullName.trim()) {
+      setError('نام و نام خانوادگی الزامی است.');
       return;
     }
 
@@ -98,7 +106,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     try {
       if (mode === 'login') {
-        const result = await UserService.login(formData.email, formData.password);
+        const result = await UserService.login(email, password);
         if (result.success && result.user) {
           onLogin(result.user);
         } else {
@@ -106,17 +114,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           if (result.needsVerification) setShowResend(true);
         }
       } else {
-        const result = await UserService.register(formData);
+        const result = await UserService.register({ ...formData, email });
         if (result.success) {
           setSuccessMessage('حساب شما ساخته شد! اکنون می‌توانید وارد شوید.');
           setMode('login');
-          setFormData({ ...formData, password: '' });
+          setFormData(prev => ({ ...prev, password: '' }));
         } else {
           setError(result.message || 'خطا در ثبت‌نام');
         }
       }
-    } catch (err) {
-      setError('خطای غیرمنتظره در سیستم رخ داد.');
+    } catch (err: any) {
+      console.error("Critical Auth Error:", err);
+      setError('خطای سیستمی: ' + (err.message || 'نامشخص'));
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +135,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6">
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5">
         
-        {/* بخش برندینگ (سرمه‌ای متالیک) */}
+        {/* بخش برندینگ */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_8s_infinite] pointer-events-none"></div>
@@ -145,7 +154,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* بخش فرم (سفید خالص) */}
+        {/* بخش فرم */}
         <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-hidden">
           
           <div className="md:hidden flex flex-col items-center mb-6 gap-2 animate-enter flex-shrink-0">
@@ -177,6 +186,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <input 
                     type="text" 
                     name="fullName" 
+                    autoComplete="name"
                     value={formData.fullName} 
                     onChange={handleInputChange} 
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-slate-800 placeholder:text-slate-400" 
@@ -191,6 +201,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <input 
                     type="tel" 
                     name="phoneNumber" 
+                    autoComplete="tel"
                     value={formData.phoneNumber} 
                     onChange={handleInputChange} 
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
@@ -207,6 +218,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input 
                 type="email" 
                 name="email" 
+                autoComplete="email"
                 value={formData.email} 
                 onChange={handleInputChange} 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
@@ -221,6 +233,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input 
                 type="password" 
                 name="password" 
+                autoComplete={mode === 'login' ? "current-password" : "new-password"}
                 value={formData.password} 
                 onChange={handleInputChange} 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 

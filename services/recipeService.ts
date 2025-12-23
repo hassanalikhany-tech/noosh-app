@@ -53,7 +53,8 @@ export const RecipeService = {
 
   syncFromCloud: async () => {
     try {
-      const snapshot = await getDocs(collection(db, "dishes"));
+      // تغییر نام کالکشن به foods
+      const snapshot = await getDocs(collection(db, "foods"));
       if (!snapshot.empty) {
         const cloudDishes = snapshot.docs.map(d => d.data() as Dish);
         for (const dish of cloudDishes) {
@@ -72,9 +73,10 @@ export const RecipeService = {
 
   testConnection: async () => {
     try {
-      const q = query(collection(db, "dishes"), limit(1));
+      // تست روی کالکشن foods
+      const q = query(collection(db, "foods"), limit(1));
       await getDocs(q);
-      return { success: true, message: "اتصال با فایربیس برقرار است." };
+      return { success: true, message: "اتصال با دیتابیس (foods) برقرار است." };
     } catch (error: any) {
       console.error("Conn Test Fail:", error);
       return { success: false, message: `خطای اتصال: ${error.code || error.message}` };
@@ -107,7 +109,8 @@ export const RecipeService = {
 
   getRealCloudCount: async () => {
     try {
-      const coll = collection(db, "dishes");
+      // شمارش در کالکشن foods
+      const coll = collection(db, "foods");
       const snapshot = await getCountFromServer(coll);
       return snapshot.data().count;
     } catch (e) {
@@ -133,7 +136,6 @@ export const RecipeService = {
     }
   },
 
-  // روش جدید: آپلود تکی و هوشمند
   syncAllToFirebase: async (onProgress?: (p: number) => void) => {
     if (!auth.currentUser) {
       return { success: false, message: "شما لاگین نکرده‌اید." };
@@ -149,12 +151,12 @@ export const RecipeService = {
       let successCount = 0;
       let errorCount = 0;
 
-      // به جای Batch از حلقه تکی استفاده می‌کنیم برای اطمینان ۱۰۰٪
       for (let i = 0; i < allDishes.length; i++) {
         const dish = allDishes[i];
         try {
           const cleaned = cleanObject(dish);
-          const dishRef = doc(db, "dishes", dish.id);
+          // ذخیره در کالکشن foods
+          const dishRef = doc(db, "foods", dish.id);
           await setDoc(dishRef, cleaned, { merge: true });
           successCount++;
         } catch (e) {
@@ -163,8 +165,6 @@ export const RecipeService = {
         }
         
         if (onProgress) onProgress(Math.round(((i + 1) / allDishes.length) * 100));
-        
-        // وقفه بسیار کوتاه برای جلوگیری از مسدود شدن مرورگر
         if (i % 10 === 0) await new Promise(r => setTimeout(r, 50));
       }
       
@@ -172,7 +172,7 @@ export const RecipeService = {
         success: successCount > 0, 
         count: successCount, 
         errors: errorCount,
-        message: errorCount > 0 ? `تعداد ${successCount} غذا آپلود شد اما ${errorCount} مورد خطا داشت.` : "همگام‌سازی کامل شد."
+        message: errorCount > 0 ? `تعداد ${successCount} غذا آپلود شد اما ${errorCount} مورد خطا داشت.` : "همگام‌سازی با کالکشن foods کامل شد."
       };
     } catch (error: any) {
       return { success: false, message: error.message };
