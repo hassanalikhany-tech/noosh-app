@@ -5,31 +5,25 @@ import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
 import { 
   doc, 
   collection, 
-  writeBatch, 
+  setDoc, 
   getDocs,
-  getCountFromServer
+  getCountFromServer,
+  query,
+  limit
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
 
 let cachedDishes: Dish[] = [...DEFAULT_DISHES];
 
-// تابع بسیار دقیق برای حذف مقادیر غیرمجاز از شیء قبل از ارسال به فایربیس
 const cleanObject = (obj: any): any => {
-  if (Array.isArray(obj)) {
-    return obj.map(item => cleanObject(item));
-  }
+  if (Array.isArray(obj)) return obj.map(item => cleanObject(item));
   if (obj !== null && typeof obj === 'object') {
     const newObj: any = {};
     Object.keys(obj).forEach(key => {
       const val = obj[key];
-      // فایربیس اجازه ذخیره undefined را نمی‌دهد
       if (val !== undefined && val !== null) {
-        if (typeof val === 'object') {
-          newObj[key] = cleanObject(val);
-        } else {
-          newObj[key] = val;
-        }
+        newObj[key] = cleanObject(val);
       }
     });
     return newObj;
@@ -72,7 +66,18 @@ export const RecipeService = {
         window.dispatchEvent(new CustomEvent('recipes-updated', { detail: cachedDishes }));
       }
     } catch (e) {
-      console.warn("Cloud sync failed:", e);
+      console.warn("Cloud sync failed (Check Security Rules):", e);
+    }
+  },
+
+  testConnection: async () => {
+    try {
+      const q = query(collection(db, "dishes"), limit(1));
+      await getDocs(q);
+      return { success: true, message: "اتصال با فایربیس برقرار است." };
+    } catch (error: any) {
+      console.error("Conn Test Fail:", error);
+      return { success: false, message: `خطای اتصال: ${error.code || error.message}` };
     }
   },
 
@@ -106,7 +111,6 @@ export const RecipeService = {
       const snapshot = await getCountFromServer(coll);
       return snapshot.data().count;
     } catch (e) {
-      console.error("Count Error:", e);
       return 0;
     }
   },
@@ -129,52 +133,49 @@ export const RecipeService = {
     }
   },
 
-  syncAllToFirebase: async () => {
+  // روش جدید: آپلود تکی و هوشمند
+  syncAllToFirebase: async (onProgress?: (p: number) => void) => {
     if (!auth.currentUser) {
-      return { success: false, message: "شما وارد حساب کاربری نشده‌اید." };
+      return { success: false, message: "شما لاگین نکرده‌اید." };
     }
 
     try {
       const dishMap = new Map();
-      // اول کدهای پیش‌فرض را می‌گیرم
-      DEFAULT_DISHES.forEach(d => {
-        if (d && d.id) dishMap.set(d.id, d);
-      });
-      // بعد کش آفلاین را (اگر تغییراتی داشته)
+      DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
       const offlineDishes = await DB.getAll('dishes');
-      offlineDishes.forEach(d => {
-        if (d && d.id) dishMap.set(d.id, d);
-      });
+      offlineDishes.forEach(d => dishMap.set(d.id, d));
       
-      const allDishes = Array.from(dishMap.values());
-      console.log(`Starting sync for ${allDishes.length} dishes...`);
-      
-      const chunkSize = 25; // دسته‌های کوچک‌تر برای اطمینان بیشتر از موفقیت
-      let processedCount = 0;
+      const allDishes = Array.from(dishMap.values()).filter(d => d && d.id);
+      let successCount = 0;
+      let errorCount = 0;
 
-      for (let i = 0; i < allDishes.length; i += chunkSize) {
-        const batch = writeBatch(db);
-        const chunk = allDishes.slice(i, i + chunkSize);
-        
-        chunk.forEach((dish) => {
+      // به جای Batch از حلقه تکی استفاده می‌کنیم برای اطمینان ۱۰۰٪
+      for (let i = 0; i < allDishes.length; i++) {
+        const dish = allDishes[i];
+        try {
           const cleaned = cleanObject(dish);
           const dishRef = doc(db, "dishes", dish.id);
-          batch.set(dishRef, cleaned, { merge: true });
-        });
+          await setDoc(dishRef, cleaned, { merge: true });
+          successCount++;
+        } catch (e) {
+          console.error(`Error uploading dish ${dish.id}:`, e);
+          errorCount++;
+        }
         
-        await batch.commit();
-        processedCount += chunk.length;
-        console.log(`Sync progress: ${processedCount}/${allDishes.length}`);
+        if (onProgress) onProgress(Math.round(((i + 1) / allDishes.length) * 100));
+        
+        // وقفه بسیار کوتاه برای جلوگیری از مسدود شدن مرورگر
+        if (i % 10 === 0) await new Promise(r => setTimeout(r, 50));
       }
       
-      return { success: true, count: processedCount };
+      return { 
+        success: successCount > 0, 
+        count: successCount, 
+        errors: errorCount,
+        message: errorCount > 0 ? `تعداد ${successCount} غذا آپلود شد اما ${errorCount} مورد خطا داشت.` : "همگام‌سازی کامل شد."
+      };
     } catch (error: any) {
-      console.error("Firebase Sync Critical Error:", error);
-      let customMsg = error.message;
-      if (error.code === 'permission-denied') {
-        customMsg = "دسترسی نوشتن در دیتابیس رد شد. مطمئن شوید ادمین هستید.";
-      }
-      return { success: false, message: customMsg };
+      return { success: false, message: error.message };
     }
   }
 };

@@ -82,6 +82,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
     setSuccessMessage('');
     setShowResend(false);
+
+    // Client-side validation to prevent auth/missing-password
+    if (!formData.email || !formData.password) {
+      setError('لطفاً آدرس ایمیل و رمز عبور خود را وارد کنید.');
+      return;
+    }
+
+    if (mode === 'register' && !formData.fullName) {
+      setError('تکمیل تمامی فیلدها برای ثبت‌نام الزامی است.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -94,14 +106,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           if (result.needsVerification) setShowResend(true);
         }
       } else {
-        if (!formData.fullName || !formData.email || !formData.password) {
-          setError('تکمیل تمامی فیلدهای ستاره‌دار الزامی است.');
-          setIsLoading(false);
-          return;
-        }
         const result = await UserService.register(formData);
         if (result.success) {
-          setSuccessMessage('حساب شما ساخته شد! یک ایمیل تایید برایتان ارسال کردیم. لطفاً پس از تایید لینک داخل ایمیل، از این قسمت وارد شوید.');
+          setSuccessMessage('حساب شما ساخته شد! اکنون می‌توانید وارد شوید.');
           setMode('login');
           setFormData({ ...formData, password: '' });
         } else {
