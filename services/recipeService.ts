@@ -9,7 +9,9 @@ import {
   getDocs,
   getCountFromServer,
   query,
-  limit
+  limit,
+  deleteDoc,
+  writeBatch
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
@@ -37,10 +39,8 @@ export const RecipeService = {
       const offlineDishes = await DB.getAll('dishes');
       const dishMap = new Map();
       
-      // ابتدا لیست پیش‌فرض را بارگذاری می‌کنیم
       DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
       
-      // سپس لیست آفلاین را اضافه می‌کنیم (اگر دیتای آفلاین مراحل پخت بیشتری داشت، اولویت دارد)
       if (offlineDishes && offlineDishes.length > 0) {
         offlineDishes.forEach(d => {
           const existing = dishMap.get(d.id);
@@ -66,6 +66,12 @@ export const RecipeService = {
       const snapshot = await getDocs(collection(db, "dishes"));
       if (!snapshot.empty) {
         const cloudDishes = snapshot.docs.map(d => d.data() as Dish);
+        
+        // پاکسازی کش محلی قبل از بازنویسی از ابر (برای حذف تکراری‌های احتمالی)
+        const dbInstance = await DB.init();
+        const tx = dbInstance.transaction('dishes', 'readwrite');
+        tx.objectStore('dishes').clear();
+
         for (const dish of cloudDishes) {
           await DB.put('dishes', dish);
         }
@@ -73,7 +79,6 @@ export const RecipeService = {
         const dishMap = new Map();
         DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
         
-        // اولویت با داده‌های ابری است اگر رسپی کامل‌تری داشته باشند
         cloudDishes.forEach(d => {
            const existing = dishMap.get(d.id);
            if (!existing || (d.recipeSteps && d.recipeSteps.length >= existing.recipeSteps.length)) {
@@ -86,6 +91,21 @@ export const RecipeService = {
       }
     } catch (e) {
       console.warn("Cloud sync failed:", e);
+    }
+  },
+
+  purgeCloudDatabase: async () => {
+    if (!auth.currentUser) return { success: false, message: "دسترسی مدیریت ندارید." };
+    try {
+      const snapshot = await getDocs(collection(db, "dishes"));
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      return { success: true, message: "دیتابیس ابری با موفقیت پاکسازی شد." };
+    } catch (e: any) {
+      return { success: false, message: "خطا در پاکسازی: " + e.message };
     }
   },
 
@@ -133,54 +153,32 @@ export const RecipeService = {
     }
   },
 
-  clearLocalCache: async () => {
-    try {
-      const dbInstance = await DB.init();
-      return new Promise((resolve) => {
-        const transaction = dbInstance.transaction('dishes', 'readwrite');
-        const store = transaction.objectStore('dishes');
-        const request = store.clear();
-        request.onsuccess = () => {
-          cachedDishes = [...DEFAULT_DISHES];
-          window.dispatchEvent(new CustomEvent('recipes-updated', { detail: cachedDishes }));
-          resolve(true);
-        };
-      });
-    } catch {
-      return false;
-    }
-  },
-
   syncAllToFirebase: async (onProgress?: (p: number) => void) => {
     if (!auth.currentUser) return { success: false, message: "شما لاگین نکرده‌اید." };
 
     try {
       const allDishes = RecipeService.getAllDishes();
       let successCount = 0;
-      let errorCount = 0;
 
       for (let i = 0; i < allDishes.length; i++) {
         const dish = allDishes[i];
-        // فقط اگر دیتای غنی داشته باشد آپلود کن
-        if (dish.recipeSteps && dish.recipeSteps.length > 2) {
+        if (dish.recipeSteps && dish.recipeSteps.length > 1) {
           try {
             const cleaned = cleanObject(dish);
             const dishRef = doc(db, "dishes", dish.id);
             await setDoc(dishRef, cleaned, { merge: true });
             successCount++;
-          } catch (e) {
-            errorCount++;
-          }
+          } catch (e) {}
         }
         
         if (onProgress) onProgress(Math.round(((i + 1) / allDishes.length) * 100));
-        if (i % 10 === 0) await new Promise(r => setTimeout(r, 50));
+        if (i % 10 === 0) await new Promise(r => setTimeout(r, 20));
       }
       
       return { 
         success: true, 
         count: successCount, 
-        message: "همگام‌سازی داده‌های غنی با موفقیت انجام شد."
+        message: `تعداد ${successCount} غذا با موفقیت آپلود شد.`
       };
     } catch (error: any) {
       return { success: false, message: error.message };
