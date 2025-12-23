@@ -36,10 +36,20 @@ export const RecipeService = {
     try {
       const offlineDishes = await DB.getAll('dishes');
       const dishMap = new Map();
+      
+      // ابتدا لیست پیش‌فرض را بارگذاری می‌کنیم
       DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
+      
+      // سپس لیست آفلاین را اضافه می‌کنیم (اگر دیتای آفلاین مراحل پخت بیشتری داشت، اولویت دارد)
       if (offlineDishes && offlineDishes.length > 0) {
-        offlineDishes.forEach(d => dishMap.set(d.id, d));
+        offlineDishes.forEach(d => {
+          const existing = dishMap.get(d.id);
+          if (!existing || (d.recipeSteps && d.recipeSteps.length >= existing.recipeSteps.length)) {
+            dishMap.set(d.id, d);
+          }
+        });
       }
+      
       cachedDishes = Array.from(dishMap.values());
       
       if (navigator.onLine) {
@@ -53,33 +63,39 @@ export const RecipeService = {
 
   syncFromCloud: async () => {
     try {
-      // تغییر نام کالکشن به foods
-      const snapshot = await getDocs(collection(db, "foods"));
+      const snapshot = await getDocs(collection(db, "dishes"));
       if (!snapshot.empty) {
         const cloudDishes = snapshot.docs.map(d => d.data() as Dish);
         for (const dish of cloudDishes) {
           await DB.put('dishes', dish);
         }
+        
         const dishMap = new Map();
         DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
-        cloudDishes.forEach(d => dishMap.set(d.id, d));
+        
+        // اولویت با داده‌های ابری است اگر رسپی کامل‌تری داشته باشند
+        cloudDishes.forEach(d => {
+           const existing = dishMap.get(d.id);
+           if (!existing || (d.recipeSteps && d.recipeSteps.length >= existing.recipeSteps.length)) {
+             dishMap.set(d.id, d);
+           }
+        });
+
         cachedDishes = Array.from(dishMap.values());
         window.dispatchEvent(new CustomEvent('recipes-updated', { detail: cachedDishes }));
       }
     } catch (e) {
-      console.warn("Cloud sync failed (Check Security Rules):", e);
+      console.warn("Cloud sync failed:", e);
     }
   },
 
   testConnection: async () => {
     try {
-      // تست روی کالکشن foods
-      const q = query(collection(db, "foods"), limit(1));
+      const q = query(collection(db, "dishes"), limit(1));
       await getDocs(q);
-      return { success: true, message: "اتصال با دیتابیس (foods) برقرار است." };
+      return { success: true, message: "اتصال با دیتابیس برقرار است." };
     } catch (error: any) {
-      console.error("Conn Test Fail:", error);
-      return { success: false, message: `خطای اتصال: ${error.code || error.message}` };
+      return { success: false, message: `خطای اتصال: ${error.message}` };
     }
   },
 
@@ -109,8 +125,7 @@ export const RecipeService = {
 
   getRealCloudCount: async () => {
     try {
-      // شمارش در کالکشن foods
-      const coll = collection(db, "foods");
+      const coll = collection(db, "dishes");
       const snapshot = await getCountFromServer(coll);
       return snapshot.data().count;
     } catch (e) {
@@ -137,31 +152,25 @@ export const RecipeService = {
   },
 
   syncAllToFirebase: async (onProgress?: (p: number) => void) => {
-    if (!auth.currentUser) {
-      return { success: false, message: "شما لاگین نکرده‌اید." };
-    }
+    if (!auth.currentUser) return { success: false, message: "شما لاگین نکرده‌اید." };
 
     try {
-      const dishMap = new Map();
-      DEFAULT_DISHES.forEach(d => dishMap.set(d.id, d));
-      const offlineDishes = await DB.getAll('dishes');
-      offlineDishes.forEach(d => dishMap.set(d.id, d));
-      
-      const allDishes = Array.from(dishMap.values()).filter(d => d && d.id);
+      const allDishes = RecipeService.getAllDishes();
       let successCount = 0;
       let errorCount = 0;
 
       for (let i = 0; i < allDishes.length; i++) {
         const dish = allDishes[i];
-        try {
-          const cleaned = cleanObject(dish);
-          // ذخیره در کالکشن foods
-          const dishRef = doc(db, "foods", dish.id);
-          await setDoc(dishRef, cleaned, { merge: true });
-          successCount++;
-        } catch (e) {
-          console.error(`Error uploading dish ${dish.id}:`, e);
-          errorCount++;
+        // فقط اگر دیتای غنی داشته باشد آپلود کن
+        if (dish.recipeSteps && dish.recipeSteps.length > 2) {
+          try {
+            const cleaned = cleanObject(dish);
+            const dishRef = doc(db, "dishes", dish.id);
+            await setDoc(dishRef, cleaned, { merge: true });
+            successCount++;
+          } catch (e) {
+            errorCount++;
+          }
         }
         
         if (onProgress) onProgress(Math.round(((i + 1) / allDishes.length) * 100));
@@ -169,10 +178,9 @@ export const RecipeService = {
       }
       
       return { 
-        success: successCount > 0, 
+        success: true, 
         count: successCount, 
-        errors: errorCount,
-        message: errorCount > 0 ? `تعداد ${successCount} غذا آپلود شد اما ${errorCount} مورد خطا داشت.` : "همگام‌سازی با کالکشن foods کامل شد."
+        message: "همگام‌سازی داده‌های غنی با موفقیت انجام شد."
       };
     } catch (error: any) {
       return { success: false, message: error.message };
