@@ -1,30 +1,15 @@
-
 import { Challenge } from '../types';
-import { Droplets, Leaf, Dumbbell, Zap, Heart } from 'lucide-react';
+import { Leaf, Dumbbell, Heart } from 'lucide-react';
 
 export const CHALLENGES: Challenge[] = [
   {
-    id: 'no-oil',
-    title: 'هفته بدون سرخ‌کردنی',
-    description: 'در این هفته فقط غذاهای آب‌پز، کبابی یا بخارپز مصرف کنید. کوکو و کتلت ممنوع!',
-    icon: Droplets,
-    color: 'bg-blue-500',
-    bannedCategories: ['kuku', 'fastfood'],
-    bannedKeywords: ['سرخ شده', 'سرخ کنید', 'تفت دهید', 'روغن فراوان', 'سرخ‌کردنی']
-  },
-  {
     id: 'vegan-week',
     title: 'هفته گیاه‌خواری',
-    description: 'یک هفته بدون گوشت قرمز، مرغ، ماهی و محصولات حیوانی سنگین. تمرکز روی سبزیجات و حبوبات.',
+    description: 'یک هفته بدون گوشت قرمز، مرغ و ماهی. تمرکز روی سبزیجات و حبوبات.',
     icon: Leaf,
     color: 'bg-emerald-500',
-    bannedCategories: ['kabab', 'stew', 'polo', 'dolma', 'fastfood'], 
-    // Super strict keyword list to ensure no meat slips through
-    bannedKeywords: [
-      'گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'پاچه', 'سیرابی', 'جگر', 
-      'شینسل', 'کباب', 'فیله', 'ژامبون', 'بوقلمون', 'اردک', 'ماهیچه', 'مغز', 'زبان',
-      'چلو گوشت', 'خورشت', 'کوفته', 'دلمه', 'گردن', 'راسته'
-    ] 
+    bannedCategories: ['kabab', 'stew', 'polo', 'fastfood'], 
+    bannedKeywords: ['گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'کباب', 'فیله'] 
   },
   {
     id: 'protein-power',
@@ -35,20 +20,11 @@ export const CHALLENGES: Challenge[] = [
     requiredKeywords: ['گوشت', 'مرغ', 'ماهی', 'تخم مرغ', 'عدس', 'لوبیا', 'نخود']
   },
   {
-    id: 'light-dinner',
-    title: 'شام سبک',
-    description: 'تمرکز بر روی سوپ‌ها، آش‌ها و خوراک‌های ساده برای هضم راحت‌تر در شب.',
-    icon: Zap,
-    color: 'bg-amber-500',
-    bannedCategories: ['polo', 'stew', 'kabab', 'dolma']
-  },
-  {
     id: 'sugar-free',
     title: 'حذف قند و شکر',
-    description: 'حذف کامل دسرها و غذاهایی که در آن‌ها از شکر یا قند مصنوعی استفاده شده است.',
+    description: 'در این هفته از مصرف غذاهایی که در دستور پخت آن‌ها شکر یا قند وجود دارد پرهیز کنید.',
     icon: Heart,
     color: 'bg-purple-500',
-    bannedCategories: ['dessert'],
-    bannedKeywords: ['شکر', 'قند', 'نبات', 'شیرینی', 'پولکی']
+    bannedKeywords: ['شکر', 'قند', 'نبات', 'پولکی']
   }
 ];

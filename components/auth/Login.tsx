@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckCircle2, RefreshCw } from 'lucide-react';
 import { UserService } from '../../services/userService';
@@ -79,15 +78,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     if (isLoading) return;
     
-    // پاکسازی فاصله‌های خالی احتمالی
     const email = formData.email.trim();
-    const password = formData.password; // رمز عبور نباید تریم شود چون ممکن است فاصله جزئی از آن باشد
+    const password = formData.password;
 
     setError('');
     setSuccessMessage('');
     setShowResend(false);
 
-    // اعتبارسنجی دقیق برای جلوگیری از auth/missing-password
     if (!email) {
       setError('لطفاً آدرس ایمیل خود را وارد کنید.');
       return;
@@ -132,12 +129,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6">
-      <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5">
+    <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
+      {/* پترن پس‌زمینه */}
+      <div className="bg-noosh-pattern" style={{ opacity: 0.08 }}></div>
+      
+      <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
         
         {/* بخش برندینگ */}
-        <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative">
+        <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
+          <div className="bg-noosh-pattern" style={{ opacity: 0.1 }}></div>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_8s_infinite] pointer-events-none"></div>
           
           <div className="relative z-10 text-center space-y-8">
@@ -176,7 +177,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1">
+          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1 relative z-10">
             {mode === 'register' && (
               <>
                 <div className="space-y-1">

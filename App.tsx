@@ -1,12 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, CalendarRange, Heart, Clock, Trash2, Sparkles, ShieldCheck, Printer } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, CalendarRange, Heart, Clock, Trash2, Sparkles, ShieldCheck, Printer, Lock } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
 import { DayPlan, UserProfile } from './types';
 import { UserService } from './services/userService';
 import { RecipeService } from './services/recipeService';
-import { estimateCalories, getDishNature } from './utils/recipeHelpers';
 import MealCard from './components/MealCard';
 import ShoppingList from './components/ShoppingList';
 import PantryChef from './components/PantryChef';
@@ -52,7 +49,7 @@ const App: React.FC = () => {
       const updated = await UserService.getCurrentUser();
       if (updated) {
         setCurrentUser({ ...updated });
-        if (updated.weeklyPlan && updated.weeklyPlan.length > 0) {
+        if (updated.weeklyPlan) {
           setDisplayPlan(updated.weeklyPlan);
         }
       }
@@ -63,7 +60,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleGenerate = async () => {
-    if (!currentUser) return;
+    if (!currentUser || (!currentUser.isApproved && !currentUser.isAdmin)) return;
     setLoadingType('daily');
     const { plan, updatedUser } = await generateDailyPlan(currentUser, isQuickMode);
     setDisplayPlan(plan);
@@ -72,7 +69,7 @@ const App: React.FC = () => {
   };
 
   const handleGenerateWeekly = async () => {
-    if (!currentUser) return;
+    if (!currentUser || (!currentUser.isApproved && !currentUser.isAdmin)) return;
     setLoadingType('weekly');
     const { plan, updatedUser } = await generateWeeklyPlan(currentUser, isQuickMode);
     setDisplayPlan(plan);
@@ -104,8 +101,6 @@ const App: React.FC = () => {
     setDisplayPlan([]);
   };
 
-  const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
-
   if (isInitializing) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-950">
@@ -129,13 +124,32 @@ const App: React.FC = () => {
 
   const isWeeklyView = displayPlan.length > 3;
   const isGenerating = !!loadingType;
+  const isUserNotApproved = !currentUser.isApproved && !currentUser.isAdmin;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col text-right dir-rtl relative">
-      <div className="sticky top-0 z-40 shadow-2xl no-print">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col text-right dir-rtl relative overflow-x-hidden">
+      {/* لایه پترن لوگو */}
+      <div className="bg-noosh-pattern"></div>
+      
+      {isUserNotApproved && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-6 pointer-events-none">
+           <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl max-w-md text-center border-t-8 border-amber-500 animate-enter pointer-events-auto relative z-10">
+              <div className="w-20 h-20 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-4 ring-amber-100">
+                <Lock size={40} />
+              </div>
+              <h2 className="text-2xl font-black text-slate-800 mb-4">در انتظار تایید مدیریت</h2>
+              <p className="text-slate-500 font-bold leading-relaxed mb-8">
+                حساب شما با موفقیت ساخته شد، اما برای استفاده از امکانات هوشمند اپلیکیشن "نوش" باید توسط مدیریت تایید شوید.
+              </p>
+              <button onClick={handleLogout} className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all">
+                 خروج از حساب کاربری
+              </button>
+           </div>
+        </div>
+      )}
+
+      <div className={`sticky top-0 z-40 shadow-2xl no-print ${isUserNotApproved ? 'grayscale pointer-events-none opacity-50' : ''}`}>
         <header className="bg-slate-950 text-white h-[75px] flex items-center border-b border-white/5 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_5s_infinite] pointer-events-none"></div>
-          
           <div className="container mx-auto px-4 flex justify-between items-center relative z-10">
             <div className="flex items-center gap-3">
                 <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-10 h-10 object-contain drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" />
@@ -177,37 +191,36 @@ const App: React.FC = () => {
         </nav>
       </div>
 
-      <main className="container mx-auto px-4 py-8 flex-grow no-print">
+      <main className={`container mx-auto px-4 py-8 flex-grow no-print relative z-10 ${isUserNotApproved ? 'grayscale pointer-events-none opacity-50 blur-[1px]' : ''}`}>
         {viewMode === 'plan' && (
           <div className="space-y-8 animate-enter">
             <div className="flex flex-col items-center gap-6">
               <div className="flex justify-center gap-3">
                 <button onClick={() => UserService.updateProfile(currentUser.username, { onlyFavoritesMode: !currentUser.onlyFavoritesMode })} 
-                  className={`px-4 py-2 rounded-xl font-black text-[10px] flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 'bg-white text-slate-500 border border-slate-100'}`}>
+                  className={`px-4 py-2 rounded-xl font-black text-[10px] flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-500 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-100'}`}>
                   <Heart size={14} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} /> فقط محبوب‌ها
                 </button>
                 <button onClick={() => setIsQuickMode(!isQuickMode)} 
-                  className={`px-4 py-2 rounded-xl font-black text-[10px] flex items-center gap-2 transition-all ${isQuickMode ? 'bg-amber-500 text-white shadow-lg shadow-amber-100' : 'bg-white text-slate-500 border border-slate-100'}`}>
-                  <Clock size={14} /> غذاهای سریع
+                  className={`px-4 py-2 rounded-xl font-black text-[10px] flex items-center gap-2 transition-all ${isQuickMode ? 'bg-amber-500 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-100'}`}>
+                  <span className="flex items-center gap-1.5"><Clock size={14} /> غذاهای سریع</span>
                 </button>
               </div>
 
               <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-2xl">
                  <button onClick={handleGenerateWeekly} disabled={isGenerating} className="flex-1 px-8 py-5 bg-teal-600 text-white rounded-3xl font-black shadow-xl shadow-teal-100 hover:bg-teal-700 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70 group relative overflow-hidden">
-                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    {loadingType === 'weekly' ? <RefreshCw size={24} className="animate-spin relative z-10" /> : <CalendarRange size={24} className="relative z-10" />} 
-                    <span className="relative z-10">برنامه ریزی کل هفته</span>
-                    <Sparkles size={16} className="absolute top-2 left-2 text-teal-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {loadingType === 'weekly' ? <RefreshCw size={24} className="animate-spin" /> : <CalendarRange size={24} />} 
+                    <span>برنامه ریزی کل هفته</span>
+                    <Sparkles size={16} className="absolute top-2 left-2 text-teal-200" />
                  </button>
-                 <button onClick={handleGenerate} disabled={isGenerating} className="flex-1 px-8 py-5 bg-white text-teal-700 border-2 border-teal-600 rounded-3xl font-black shadow-lg hover:bg-teal-50 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70">
-                    <RefreshCw size={24} className={loadingType === 'daily' ? "animate-spin" : ""} /> <span>پیشنهاد روزانه</span>
+                 <button onClick={handleGenerate} disabled={isGenerating} className="flex-1 px-8 py-5 bg-white text-teal-700 border-2 border-teal-600 rounded-3xl font-black shadow-lg hover:bg-teal-50 transition-all flex items-center justify-center gap-3 active:scale-95">
+                    {loadingType === 'daily' ? <RefreshCw size={24} className="animate-spin" /> : <RefreshCw size={24} />} <span>پیشنهاد روزانه</span>
                  </button>
               </div>
             </div>
 
             {displayPlan.length > 0 ? (
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl">
                   <h2 className="text-2xl font-black text-slate-800">
                     {isWeeklyView ? '📅 برنامه غذایی هفته شما' : '✨ پیشنهادات امروز شما'}
                   </h2>
@@ -231,12 +244,12 @@ const App: React.FC = () => {
               </div>
             ) : (
               !isGenerating && (
-                <div className="flex flex-col items-center py-20 bg-white rounded-[3rem] border-4 border-dashed border-slate-100 opacity-60">
-                   <div className="bg-teal-50 p-8 rounded-full text-teal-600 mb-6">
+                <div className="flex flex-col items-center py-20 bg-white/80 backdrop-blur-sm rounded-[3rem] border-4 border-dashed border-slate-100 opacity-80 shadow-inner">
+                   <div className="bg-teal-50 p-8 rounded-full text-teal-600 mb-6 shadow-lg shadow-teal-50">
                       <ChefHat size={64} />
                    </div>
-                   <p className="text-slate-400 font-bold text-lg">هنوز برنامه‌ای تنظیم نشده است.</p>
-                   <p className="text-slate-400 text-sm mt-2">از دکمه‌های بالا برای دریافت پیشنهاد استفاده کنید.</p>
+                   <p className="text-slate-500 font-black text-xl">هنوز برنامه‌ای تنظیم نشده است.</p>
+                   <p className="text-slate-400 font-bold text-sm mt-2">از دکمه‌های بالا برای دریافت پیشنهاد استفاده کنید.</p>
                 </div>
               )
             )}
@@ -248,69 +261,15 @@ const App: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {currentUser.isAdmin && !isAdminMode && (
-        <button 
-          onClick={() => setIsAdminMode(true)}
-          className="fixed bottom-6 left-6 z-[100] w-14 h-14 bg-slate-950 text-teal-400 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all border-2 border-teal-400/30 group no-print"
-          title="بازگشت به پنل مدیریت"
-        >
-          <ShieldCheck size={28} />
-          <span className="absolute right-full mr-3 px-3 py-1 bg-slate-800 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">پنل مدیریت</span>
-        </button>
-      )}
-
       {isShoppingListOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-enter h-[85vh]" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-50 hover:bg-gray-200 transition-colors"><X size={20} /></button>
+              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-50 transition-colors hover:bg-gray-200"><X size={20} /></button>
               <div className="h-full overflow-y-auto">
                 <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
               </div>
            </div>
         </div>
-      )}
-
-      {/* بخش چاپی برنامه غذایی */}
-      {createPortal(
-        <div className="print-only p-8 bg-white text-black text-right dir-rtl font-sans" style={{ color: 'black' }}>
-          <div className="text-center mb-10 pb-6 border-b-2 border-black">
-            <h1 className="text-4xl font-black mb-2">برنامه غذایی اختصاصی نوش</h1>
-            <p className="text-lg">نام کاربر: {currentUser.fullName || currentUser.username} | تاریخ: {new Date().toLocaleDateString('fa-IR')}</p>
-          </div>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid black' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f1f5f9' }}>
-                <th style={{ border: '2px solid black', padding: '12px', textAlign: 'center', width: '15%' }}>روز / نوبت</th>
-                <th style={{ border: '2px solid black', padding: '12px', textAlign: 'right', width: '30%' }}>نام غذا</th>
-                <th style={{ border: '2px solid black', padding: '12px', textAlign: 'center', width: '10%' }}>طبع</th>
-                <th style={{ border: '2px solid black', padding: '12px', textAlign: 'center', width: '10%' }}>کالری</th>
-                <th style={{ border: '2px solid black', padding: '12px', textAlign: 'right', width: '35%' }}>توضیحات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayPlan.map((plan, index) => {
-                const natureInfo = plan.dish.nature ? { label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
-                const calories = plan.dish.calories || estimateCalories(plan.dish);
-                return (
-                  <tr key={index}>
-                    <td style={{ border: '1px solid black', padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>{plan.dayName}</td>
-                    <td style={{ border: '1px solid black', padding: '10px', fontWeight: 'bold' }}>{plan.dish.name}</td>
-                    <td style={{ border: '1px solid black', padding: '10px', textAlign: 'center' }}>{natureInfo.label}</td>
-                    <td style={{ border: '1px solid black', padding: '10px', textAlign: 'center' }}>{toPersianDigits(calories)}</td>
-                    <td style={{ border: '1px solid black', padding: '10px', fontSize: '11px', lineHeight: '1.5' }}>{plan.dish.description}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          
-          <div className="mt-12 pt-6 border-t border-dashed border-gray-400 text-center text-sm">
-            <p>نوش جان! تهیه شده توسط اپلیکیشن نوش</p>
-            <p className="mt-1">همراه سلامتی و آسایش شما</p>
-          </div>
-        </div>,
-        document.body
       )}
     </div>
   );

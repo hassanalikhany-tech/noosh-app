@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, LogOut, Trash2, CalendarPlus, Users, Search, FileJson, ExternalLink, GitMerge, Save, Image as ImageIcon, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, LogOut, Trash2, CalendarPlus, Users, Search, FileJson, ExternalLink, GitMerge, Save, Image as ImageIcon, CheckCircle, XCircle } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 import DatabaseManager from './DatabaseManager';
@@ -15,7 +15,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp }) => {
   const [activeTab, setActiveTab] = useState<'users' | 'database' | 'duplicates' | 'backup' | 'images'>('users');
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -34,6 +34,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
     }
   };
 
+  const handleToggleApproval = async (uid: string, currentStatus: boolean) => {
+    await UserService.toggleUserApproval(uid, currentStatus);
+    const allUsers = await UserService.getAllUsers();
+    setUsers(allUsers);
+  };
+
   const handleExtend = async (username: string) => {
     await UserService.extendSubscription(username, 30);
     const allUsers = await UserService.getAllUsers();
@@ -44,7 +50,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
   const filteredUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()) || u.fullName.includes(searchTerm));
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-100 flex flex-col dir-rtl text-right">
       <header className="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4">
@@ -52,8 +58,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
               <ShieldCheck size={28} />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight uppercase">NOOSH APP CONTROL CENTER</h1>
-              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">System Administrator Access</p>
+              <h1 className="text-xl font-black tracking-tight uppercase">پنل کنترل هوشمند نوش</h1>
+              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">دسترسی مدیر سیستم</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -131,24 +137,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                 <table className="w-full text-right text-sm">
                   <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[10px] tracking-widest">
                     <tr>
-                      <th className="p-5">نام و نام خانوادگی</th>
-                      <th className="p-5">شناسه کاربری (ایمیل)</th>
+                      <th className="p-5">نام کاربر</th>
+                      <th className="p-5">شناسه (ایمیل)</th>
+                      <th className="p-5">تایید مدیریت</th>
                       <th className="p-5">وضعیت اشتراک</th>
-                      <th className="p-5 text-center">عملیات مدیریت</th>
+                      <th className="p-5 text-center">عملیات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredUsers.length > 0 ? filteredUsers.map(user => (
-                      <tr key={user.username} className="hover:bg-slate-50/80 transition-colors group">
+                      <tr key={user.uid} className="hover:bg-slate-50/80 transition-colors group">
                         <td className="p-5 font-black text-slate-800">{user.fullName}</td>
-                        <td className="p-5 dir-ltr text-right text-slate-500 font-mono text-xs">{user.username}</td>
+                        <td className="p-5 dir-ltr text-right text-slate-500 font-mono text-xs">{user.email}</td>
+                        <td className="p-5">
+                          <button 
+                            onClick={() => handleToggleApproval(user.uid, !!user.isApproved)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-black text-[10px] transition-all ${
+                              user.isApproved 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                              : 'bg-rose-50 text-rose-600 border border-rose-100'
+                            }`}
+                          >
+                            {user.isApproved ? <CheckCircle size={14}/> : <XCircle size={14}/>}
+                            {user.isApproved ? 'تایید شده' : 'در انتظار تایید'}
+                          </button>
+                        </td>
                         <td className="p-5">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
                             UserService.isSubscriptionValid(user) 
-                            ? 'bg-emerald-100 text-emerald-700' 
-                            : 'bg-rose-100 text-rose-700'
+                            ? 'bg-blue-50 text-blue-700 border border-blue-100' 
+                            : 'bg-slate-100 text-slate-500'
                           }`}>
-                            {UserService.isSubscriptionValid(user) ? 'فعال' : 'منقضی شده'}
+                            {UserService.isSubscriptionValid(user) ? 'دارای اشتراک' : 'بدون اشتراک'}
                           </span>
                         </td>
                         <td className="p-5 flex justify-center gap-2">
@@ -170,7 +190,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                       </tr>
                     )) : (
                       <tr>
-                        <td colSpan={4} className="p-20 text-center text-slate-400 font-bold italic">هیچ کاربری یافت نشد.</td>
+                        <td colSpan={5} className="p-20 text-center text-slate-400 font-bold italic">هیچ کاربری یافت نشد.</td>
                       </tr>
                     )}
                   </tbody>
@@ -185,10 +205,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         {activeTab === 'database' && <DatabaseManager />}
         {activeTab === 'backup' && <BackupManager />}
       </main>
-      
-      <footer className="p-6 text-center text-slate-400 text-[10px] font-bold">
-        NOOSH APP ADMINISTRATION INTERFACE &copy; 2025
-      </footer>
     </div>
   );
 };

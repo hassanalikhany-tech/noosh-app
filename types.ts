@@ -1,24 +1,18 @@
-
 export interface Ingredient {
   item: string;
-  amount: number; // تغییر از رشته به عدد برای محاسبات ریاضی
-  unit: string;   // واحد مجزا (گرم، عدد، پیمانه و ...)
+  amount: number;
+  unit: string;
 }
 
 export type DishCategory = 
-  | 'stew' 
-  | 'polo' 
-  | 'kabab' 
   | 'ash' 
+  | 'polo' 
+  | 'khorak' 
+  | 'stew' 
   | 'soup' 
-  | 'kuku' 
-  | 'dolma' 
-  | 'local' 
-  | 'nani' 
   | 'fastfood'
-  | 'dessert'
-  | 'international'
-  | 'other';
+  | 'kabab'
+  | 'international';
 
 export type NatureType = 'hot' | 'cold' | 'balanced';
 
@@ -57,26 +51,21 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const CATEGORY_LABELS: Record<DishCategory, string> = {
-  stew: 'خورش‌ها',
-  polo: 'پلو و چلو',
-  kabab: 'کباب‌ها',
-  ash: 'آش‌ها',
-  soup: 'سوپ‌ها',
-  kuku: 'کوکو و املت',
-  dolma: 'دلمه و کوفته',
-  local: 'غذاهای محلی',
-  nani: 'نانی و خوراک',
-  fastfood: 'ساندویچ و فست‌فود',
-  dessert: 'دسر',
-  international: 'غذاهای ملل',
-  other: 'سایر'
+  ash: 'آش',
+  polo: 'پلو',
+  khorak: 'خوراک',
+  stew: 'خورش',
+  soup: 'سوپ',
+  fastfood: 'فست فود',
+  kabab: 'کباب',
+  international: 'بین المللی'
 };
 
 export interface ShoppingItem {
   id: string;
   name: string;
-  amount?: number; // مقدار عددی برای جمع زدن
-  unit?: string;   // واحد
+  amount?: number;
+  unit?: string;
   checked: boolean;
   fromRecipe?: string;
 }
@@ -108,6 +97,7 @@ export interface UserProfile {
   history: string[];
   familySize: number;
   isAdmin?: boolean;
+  isApproved?: boolean; 
   dietMode?: boolean; 
   activeChallengeId?: string; 
   customShoppingList?: ShoppingItem[]; 
