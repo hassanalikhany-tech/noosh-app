@@ -22,7 +22,7 @@
         }
       }
     </script>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
       :root {
         color-scheme: light;
@@ -71,28 +71,47 @@
         filter: grayscale(1);
       }
 
+      /* تنظیمات پیشرفته چاپ */
+      .print-only {
+        display: none !important; /* مخفی‌سازی کامل در حالت نمایشگر */
+      }
+
       @media print {
         @page {
           size: A4;
           margin: 1cm;
         }
         .no-print { display: none !important; }
-        .print-only { display: block !important; }
-        body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
-        .bg-noosh-pattern { display: none; }
-        main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+        
+        /* نمایش فقط موردی که کلاس active-print دارد */
+        .print-only.active-print { 
+          display: block !important; 
+          background: white !important;
+          color: black !important;
+          position: relative !important;
+          z-index: 9999 !important;
+        }
+
+        body { background: white !important; padding: 0 !important; margin: 0 !important; }
+        .bg-noosh-pattern { display: none !important; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
         th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: right; line-height: 1.6; }
-        th { background-color: #f8fafc !important; font-weight: 900; color: #1e293b; }
-        tr:nth-child(even) { background-color: #fcfcfc; }
+        th { background-color: #f8fafc !important; font-weight: 900; }
         
-        .print-brand { display: flex !important; align-items: center; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
+        .print-brand { 
+          display: flex !important; 
+          align-items: center; 
+          justify-content: space-between; 
+          border-bottom: 2px solid #0f172a; 
+          padding-bottom: 15px; 
+          margin-bottom: 20px; 
+          direction: rtl !important;
+        }
       }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      .print-only { display: none; }
     </style>
   <script type="importmap">
 {

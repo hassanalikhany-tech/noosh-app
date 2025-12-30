@@ -9,9 +9,10 @@ interface ShoppingListProps {
   weeklyPlan: DayPlan[]; 
   user: UserProfile;
   onUpdateUser: (user: UserProfile) => void;
+  onPrintInternal?: () => void;
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateUser }) => {
+const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateUser, onPrintInternal }) => {
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -47,7 +48,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
       return;
     }
 
-    const aggregated = new Map<string, { name: string, amount: number, unit: string }>();
+    const aggregated = new Map<string, { name: string, amount: number, unit: string, dish: string }>();
 
     weeklyPlan.forEach(plan => {
       plan.dish.ingredients.forEach(ing => {
@@ -56,9 +57,9 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         const amount = ing.amount || 0;
         
         if (current) {
-          aggregated.set(key, { ...current, amount: current.amount + amount });
+          aggregated.set(key, { ...current, amount: current.amount + amount, dish: current.dish.includes(plan.dish.name) ? current.dish : current.dish + '، ' + plan.dish.name });
         } else {
-          aggregated.set(key, { name: ing.item.trim(), amount: amount, unit: ing.unit });
+          aggregated.set(key, { name: ing.item.trim(), amount: amount, unit: ing.unit, dish: plan.dish.name });
         }
       });
     });
@@ -70,7 +71,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         amount: data.amount,
         unit: data.unit,
         checked: false,
-        fromRecipe: 'برنامه هفتگی'
+        fromRecipe: data.dish
       };
     });
 
@@ -109,7 +110,13 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     return text;
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    if (onPrintInternal) {
+      onPrintInternal();
+    } else {
+      window.print();
+    }
+  };
 
   const handleSMS = () => {
     const text = getRawListText();

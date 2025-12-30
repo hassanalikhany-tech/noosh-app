@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Printer, Lock, LayoutDashboard, Calendar, Leaf, Settings2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Utensils, Flame, Info } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
-import { DayPlan, UserProfile } from './types';
+import { DayPlan, UserProfile, ShoppingItem } from './types';
 import { UserService } from './services/userService';
 import { RecipeService } from './services/recipeService';
 import { CHALLENGES } from './data/challenges';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [showTrustBanner, setShowTrustBanner] = useState(false);
+  const [activePrintSource, setActivePrintSource] = useState<'plan' | 'shopping' | null>(null);
   const bannerTimerRef = useRef<any | null>(null);
   const planResultsRef = useRef<HTMLDivElement>(null);
 
@@ -101,8 +102,20 @@ const App: React.FC = () => {
     UserService.updateProfile(currentUser.username, { weeklyPlan: [] }).then(updatedUser => setCurrentUser(updatedUser));
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrintPlan = () => {
+    setActivePrintSource('plan');
+    setTimeout(() => {
+      window.print();
+      setActivePrintSource(null);
+    }, 100);
+  };
+
+  const handlePrintShopping = () => {
+    setActivePrintSource('shopping');
+    setTimeout(() => {
+      window.print();
+      setActivePrintSource(null);
+    }, 100);
   };
 
   const handleToggleFilter = (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
@@ -140,83 +153,129 @@ const App: React.FC = () => {
     ? Array.from(new Set(currentUser.blacklistedDishIds.filter(id => typeof id === 'string' && id.trim() !== ''))).length 
     : 0;
 
-  // --- کامپوننت مخصوص چاپ ---
-  const PrintTemplate = () => (
-    <div className="print-only w-full bg-white p-4">
-      <div className="print-brand flex items-center justify-between mb-8 border-b-2 border-slate-900 pb-4">
-        <div className="flex items-center gap-4">
-          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain" />
-          <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black italic text-slate-900 uppercase">NOOSH</span>
-              <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Kitchen Assistant</span>
+  // --- هدر مشترک چاپ ---
+  const PrintHeader = ({ title, subtitle }: { title: string, subtitle: string }) => (
+    <div className="print-brand flex items-center justify-between mb-8 border-b-2 border-slate-900 pb-4">
+      <div className="flex items-center gap-4">
+        <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain" />
+        <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-black italic text-slate-900 uppercase">NOOSH</span>
+            <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
           </div>
-        </div>
-        <div className="text-right">
-          <h1 className="text-xl font-black text-slate-800 mb-1">برنامه غذایی اختصاصی</h1>
-          <p className="text-sm font-bold text-teal-600 italic">نوش جان! سفره‌ای رنگین برای سلامتی شما</p>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Kitchen Assistant</span>
         </div>
       </div>
-
-      <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-         نام کاربر: {currentUser?.fullName || currentUser?.username} | تاریخ تهیه: {new Date().toLocaleDateString('fa-IR')}
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th className="w-20">روز / نوبت</th>
-            <th className="w-40">نام غذا</th>
-            <th className="w-32">طبع و مصلح</th>
-            <th className="w-24">کالری و زمان</th>
-            <th>خلاصه توضیحات و مواد کلیدی</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayPlan.map((plan, idx) => {
-            const natureInfo = plan.dish.nature ? { type: plan.dish.nature, label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
-            const cal = plan.dish.calories || estimateCalories(plan.dish);
-            const time = plan.dish.cookTime || estimateCookTime(plan.dish);
-            
-            return (
-              <tr key={idx}>
-                <td className="font-black text-center">{plan.dayName}</td>
-                <td className="font-black text-teal-700 text-lg">{plan.dish.name}</td>
-                <td>
-                  <div className="font-bold">طبع: {natureInfo.label}</div>
-                  <div className="text-[9px] text-slate-500">مصلح: {plan.dish.mosleh || 'نیاز ندارد'}</div>
-                </td>
-                <td className="text-center">
-                  <div className="font-bold">{toPersianDigits(cal)} کالری</div>
-                  <div className="text-[9px] text-slate-500">{toPersianDigits(time)} دقیقه پخت</div>
-                </td>
-                <td className="text-justify text-[10px]">
-                  <p className="mb-1">{plan.dish.description}</p>
-                  <div className="font-bold text-slate-700">مواد اصلی: {plan.dish.ingredients?.slice(0, 5).map(i => i.item).join('، ')} ...</div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
-        <p className="text-[10px] font-bold text-slate-400">
-          این برنامه با توجه به محدودیت‌ها و سلیقه شخصی شما در اپلیکیشن نوش تهیه شده است.
-          <br/>
-          www.nooshapp.ir | دستیار هوشمند آشپزی شما
-        </p>
+      <div className="text-right">
+        <h1 className="text-xl font-black text-slate-800 mb-1">{title}</h1>
+        <p className="text-sm font-bold text-teal-600 italic">{subtitle}</p>
       </div>
     </div>
   );
 
-  return (
-    <div className="min-h-screen flex flex-col font-sans text-right dir-rtl">
-      {/* رندر قالب چاپ */}
-      <PrintTemplate />
+  // --- قالب چاپ برنامه غذایی ---
+  const PrintPlanTemplate = () => {
+    const planTypeText = displayPlan.length > 3 ? 'هفتگی' : 'روزانه';
+    return (
+      <div className={`print-only w-full bg-white p-4 ${activePrintSource === 'plan' ? 'active-print' : ''}`}>
+        <PrintHeader title={`برنامه غذایی اختصاصی ${planTypeText}`} subtitle="نوش جان! سفره‌ای رنگین برای سلامتی شما" />
+        <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+           نام کاربر: {currentUser?.fullName || currentUser?.username} | تاریخ تهیه: {new Date().toLocaleDateString('fa-IR')}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th className="w-20">روز / نوبت</th>
+              <th className="w-40">نام غذا</th>
+              <th className="w-32">طبع و مصلح</th>
+              <th className="w-24">کالری و زمان</th>
+              <th>خلاصه توضیحات و مواد کلیدی</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayPlan.map((plan, idx) => {
+              const natureInfo = plan.dish.nature ? { type: plan.dish.nature, label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
+              const cal = plan.dish.calories || estimateCalories(plan.dish);
+              const time = plan.dish.cookTime || estimateCookTime(plan.dish);
+              return (
+                <tr key={idx}>
+                  <td className="font-black text-center">{plan.dayName}</td>
+                  <td className="font-black text-teal-700 text-lg">{plan.dish.name}</td>
+                  <td>
+                    <div className="font-bold">طبع: {natureInfo.label}</div>
+                    <div className="text-[9px] text-slate-500">مصلح: {plan.dish.mosleh || 'نیاز ندارد'}</div>
+                  </td>
+                  <td className="text-center">
+                    <div className="font-bold">{toPersianDigits(cal)} کالری</div>
+                    <div className="text-[9px] text-slate-500">{toPersianDigits(time)} دقیقه پخت</div>
+                  </td>
+                  <td className="text-justify text-[10px]">
+                    <p className="mb-1">{plan.dish.description}</p>
+                    <div className="font-bold text-slate-700">مواد اصلی: {plan.dish.ingredients?.slice(0, 5).map(i => i.item).join('، ')} ...</div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
+          <p className="text-[10px] font-black text-slate-500 leading-relaxed">
+            این برنامه غذایی {planTypeText} با توجه به محدودیت‌های اعمال شده و سلیقه‌های شخصی شما در اپلیکیشن نوش اپ تهیه شده است.
+            <br/>
+            <span className="text-slate-400 mt-2 block">www.nooshapp.ir | دستیار هوشمند آشپزی شما</span>
+          </p>
+        </div>
+      </div>
+    );
+  };
 
+  // --- قالب چاپ سبد خرید ---
+  const PrintShoppingTemplate = () => {
+    const activeItems = (currentUser?.customShoppingList || []).filter(i => !i.checked);
+    return (
+      <div className={`print-only w-full bg-white p-4 ${activePrintSource === 'shopping' ? 'active-print' : ''}`}>
+        <PrintHeader title="لیست خرید هوشمند" subtitle="ملزومات مورد نیاز برای آشپزخانه شما" />
+        <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+           نام کاربر: {currentUser?.fullName || currentUser?.username} | تعداد اقلام: {toPersianDigits(activeItems.length)} | تاریخ: {new Date().toLocaleDateString('fa-IR')}
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th className="w-12 text-center">ردیف</th>
+              <th>نام کالا / مواد اولیه</th>
+              <th className="w-32 text-center">مقدار</th>
+              <th className="w-32 text-center">واحد</th>
+              <th>مربوط به / یادداشت</th>
+            </tr>
+          </thead>
+          <tbody>
+            {activeItems.length > 0 ? activeItems.map((item, idx) => (
+              <tr key={idx}>
+                <td className="text-center font-bold">{toPersianDigits(idx + 1)}</td>
+                <td className="font-black text-slate-800 text-base">{item.name}</td>
+                <td className="text-center font-bold text-teal-700">{item.amount ? toPersianDigits(item.amount) : '---'}</td>
+                <td className="text-center font-bold text-slate-600">{item.unit || '---'}</td>
+                <td className="text-xs text-slate-400">{item.fromRecipe || 'افزودن دستی'}</td>
+              </tr>
+            )) : (
+              <tr><td colSpan={5} className="text-center p-10 font-bold text-slate-400 italic">لیست خرید شما خالی است.</td></tr>
+            )}
+          </tbody>
+        </table>
+        <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
+          <p className="text-[10px] font-black text-slate-500 leading-relaxed">
+             این لیست خرید با توجه به برنامه غذایی و نیازهای شخصی شما در اپلیکیشن نوش اپ تهیه شده است.
+            <br/>
+            <span className="text-slate-400 mt-2 block">www.nooshapp.ir | دستیار هوشمند آشپزی شما</span>
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans text-right dir-rtl relative">
+      
       <div className={`sticky top-0 z-40 shadow-2xl no-print bg-slate-950`}>
         <header className="h-[75px] flex items-center border-b border-white/5 px-4">
           <div className="container mx-auto flex justify-between items-center">
@@ -361,7 +420,7 @@ const App: React.FC = () => {
                        <h2 className="text-sm font-black text-slate-900">پیشنهادات منطبق با پروفایل شما</h2>
                     </div>
                     <div className="flex gap-2 no-print">
-                      <button onClick={handlePrint} className="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-teal-100 active:scale-95"><Printer size={12} /> چاپ برنامه</button>
+                      <button onClick={handlePrintPlan} className="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-teal-100 active:scale-95"><Printer size={12} /> چاپ برنامه</button>
                       <button onClick={handleClearPlan} className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-rose-100 active:scale-95"><Trash2 size={12} /> پاکسازی لیست</button>
                     </div>
                   </div>
@@ -386,11 +445,15 @@ const App: React.FC = () => {
            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-6 left-6 p-2 bg-gray-100 rounded-full text-gray-500 z-50 transition-colors hover:bg-gray-200 active:scale-90"><X size={20} /></button>
               <div className="flex-grow overflow-y-auto">
-                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
+                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} onPrintInternal={handlePrintShopping} />
               </div>
            </div>
         </div>
       )}
+
+      {/* بخش قالب‌های چاپ (در انتهای DOM برای عدم تداخل) */}
+      <PrintPlanTemplate />
+      <PrintShoppingTemplate />
     </div>
   );
 };
