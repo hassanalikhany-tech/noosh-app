@@ -1,5 +1,5 @@
 {
-  "name": "12252025noosh-app-v2.4",
+  "name": "noosh-app-v12",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,8 @@
     "react-dom": "^19.2.3",
     "lucide-react": "^0.561.0",
     "react": "^19.2.3",
-    "firebase": "^12.7.0"
+    "firebase": "^12.7.0",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

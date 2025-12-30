@@ -1,8 +1,7 @@
+
 import { Dish } from '../types';
 import { DEFAULT_DISHES } from '../data/recipes';
-import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
 import { 
-  doc, 
   collection, 
   getDocs,
   writeBatch
@@ -17,27 +16,44 @@ export const RecipeService = {
   initialize: async (): Promise<void> => {
     if (isInitialized) return;
     
-    // دستور صریح: پاکسازی کامل تمامی لایه‌ها
-    cachedDishes = [];
+    // بارگذاری داده‌های استاتیک (آش‌های جدید)
+    cachedDishes = [...DEFAULT_DISHES];
     
     try {
-      // پاکسازی اجباری کش مرورگر (IndexedDB) در هر بار اجرا برای اطمینان از صفر بودن
-      const dbInstance = await DB.init();
-      const transaction = dbInstance.transaction(['dishes'], 'readwrite');
-      transaction.objectStore('dishes').clear();
-      
-      console.log("Database Purged: Count is now 0");
+      // بررسی دیتابیس لوکال برای داده‌های ذخیره شده قبلی
+      const localDishes = await DB.getAll('dishes');
+      if (localDishes && localDishes.length > 0) {
+        const existingIds = new Set(cachedDishes.map(d => d.id));
+        localDishes.forEach(d => {
+          if (!existingIds.has(d.id)) {
+            cachedDishes.push(d);
+          }
+        });
+      }
+      console.log(`Database initialized with ${cachedDishes.length} dishes.`);
     } catch (error) {
-      console.error("Initialization Wipe Error:", error);
+      console.error("Initialization Error:", error);
     }
 
     isInitialized = true;
-    // مسدود کردن همگام‌سازی ابری برای جلوگیری از بازگشت ۳۲۶ غذا
   },
 
   syncFromCloud: async () => {
-    // غیرفعال شد: طبق دستور کاربر هیچ داده‌ای نباید از ابر دریافت شود
-    return;
+    try {
+      const snapshot = await getDocs(collection(db, "dishes"));
+      const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
+      if (cloudDishes.length > 0) {
+        const existingIds = new Set(cachedDishes.map(d => d.id));
+        cloudDishes.forEach(d => {
+          if (!existingIds.has(d.id)) {
+            cachedDishes.push(d);
+          }
+        });
+        window.dispatchEvent(new CustomEvent('recipes-updated'));
+      }
+    } catch (e) {
+      console.error("Cloud Sync Error:", e);
+    }
   },
 
   purgeCloudDatabase: async () => {
@@ -49,22 +65,24 @@ export const RecipeService = {
         batch.delete(doc.ref);
       });
       await batch.commit();
-      cachedDishes = [];
-      window.dispatchEvent(new CustomEvent('recipes-updated', { detail: [] }));
-      return { success: true, message: "دیتابیس ابری کاملاً پاکسازی شد." };
+      cachedDishes = [...DEFAULT_DISHES];
+      window.dispatchEvent(new CustomEvent('recipes-updated'));
+      return { success: true, message: "دیتابیس ابری پاکسازی و با داده‌های پیش‌فرض جایگزین شد." };
     } catch (e: any) {
       return { success: false, message: "خطا: " + e.message };
     }
   },
 
   getAllDishes: (): Dish[] => {
-    // همیشه آرایه خالی برمی‌گرداند تا تعداد ۰ بماند
     return cachedDishes;
   },
 
-  getLocalCount: () => 0,
+  getLocalCount: () => DEFAULT_DISHES.length,
   
-  getOfflineCacheCount: async () => 0,
+  getOfflineCacheCount: async () => {
+    const cached = await DB.getAll('dishes');
+    return cached.length;
+  },
 
   getRealCloudCount: async () => {
     try {
@@ -76,6 +94,7 @@ export const RecipeService = {
   },
 
   syncAllToFirebase: async (onProgress?: (p: number) => void) => {
-    return { success: true, count: 0, message: `دیتابیس در حالت پاکسازی کامل است.` };
+    // منطق آپلود به فایربیس در صورت نیاز ادمین
+    return { success: true, count: cachedDishes.length, message: `دیتابیس آماده همگام‌سازی است.` };
   }
 };

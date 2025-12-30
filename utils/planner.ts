@@ -1,6 +1,16 @@
+
 import { Dish, DayPlan, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
 import { UserService } from '../services/userService';
+
+const MEAT_KEYWORDS = [
+  'گوشت', 'مرغ', 'ماهی', 'میگو', 'اردک', 'غاز', 'بوقلمون', 'بلدرچین', 
+  'چرخ‌کرده', 'سینه', 'ران', 'فیله', 'جگر', 'دل', 'قلوه', 'سیرابی', 
+  'پاچه', 'زبان', 'گردن', 'ماهیچه', 'کالباس', 'سوسیس', 'ژامبون', 'بیکن',
+  'کباب', 'بره', 'گوساله', 'گاو', 'گوسفند', 'بال', 'مغز', 'همبرگر', 
+  'کله‌پاچه', 'کله پاچه', 'جغور', 'بغور', 'واویشکا', 'سوجوک', 'پپرونی',
+  'شنیسل', 'استیک', 'کوفته'
+];
 
 const shuffleArray = <T>(array: T[]): T[] => {
   const newArray = [...array];
@@ -11,48 +21,120 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return newArray;
 };
 
-export const generateDailyPlan = async (user: UserProfile, isQuickMode: boolean = false): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
-  const allDishes = RecipeService.getAllDishes();
-  const pool = allDishes.filter(d => !user.blacklistedDishIds?.includes(d.id));
-  const selected = shuffleArray(pool).slice(0, 3);
+const getProteinWeight = (dish: Dish): number => {
+  let score = 0;
+  if (dish.category === 'kabab') score += 50;
+  dish.ingredients.forEach(ing => {
+    if (MEAT_KEYWORDS.some(kw => ing.item.includes(kw))) {
+      score += 10;
+      if (['ماهیچه', 'گردن', 'راسته', 'فیله', 'سردست'].some(kw => ing.item.includes(kw))) {
+        score += 15;
+      }
+    }
+  });
+  return score;
+};
 
+const filterDishes = (user: UserProfile) => {
+  let pool = RecipeService.getAllDishes();
+
+  // ۱. حذف لیست سیاه شخصی و دسته‌بندی‌های ممنوعه
+  pool = pool.filter(d => !user.blacklistedDishIds?.includes(d.id));
+  if (user.excludedCategories && user.excludedCategories.length > 0) {
+    pool = pool.filter(d => !user.excludedCategories.includes(d.category));
+  }
+
+  // ۲. فیلتر مواد ممنوعه و حساسیت‌زا (بسیار مهم)
+  if (user.dislikedIngredients && user.dislikedIngredients.length > 0) {
+    pool = pool.filter(dish => {
+      const isForbiddenInName = user.dislikedIngredients.some(forbidden => dish.name.includes(forbidden));
+      const isForbiddenInIngredients = dish.ingredients.some(ing => 
+        user.dislikedIngredients.some(forbidden => ing.item.includes(forbidden))
+      );
+      return !isForbiddenInName && !isForbiddenInIngredients;
+    });
+  }
+
+  // ۳. فیلتر حالت رژیمی (کالری زیر ۵۰۰)
+  if (user.dietMode) {
+    pool = pool.filter(d => (d.calories || 400) < 500);
+  }
+
+  // ۴. فیلتر طبع دلخواه
+  if (user.preferredNatures && user.preferredNatures.length > 0) {
+    pool = pool.filter(d => user.preferredNatures.includes(d.nature || 'balanced'));
+  }
+
+  // ۵. فیلترهای سریع و محبوب
+  if (user.onlyFavoritesMode) {
+    pool = pool.filter(d => user.favoriteDishIds?.includes(d.id));
+  }
+  if (user.quickMealsMode) {
+    pool = pool.filter(d => (d.cookTime || 60) <= 45);
+  }
+
+  // ۶. منطق چالش‌های فعال
+  const activeChallengeId = user.activeChallengeId;
+  if (user.meatlessMode || activeChallengeId === 'vegan-week') {
+    pool = pool.filter(dish => {
+      const nameMatch = MEAT_KEYWORDS.some(kw => dish.name.includes(kw));
+      const ingredientMatch = dish.ingredients.some(ing => 
+        MEAT_KEYWORDS.some(kw => ing.item.includes(kw))
+      );
+      return !nameMatch && !ingredientMatch;
+    });
+  }
+
+  if (activeChallengeId === 'protein-power') {
+    pool = pool.filter(dish => {
+        return MEAT_KEYWORDS.some(kw => dish.name.includes(kw)) || 
+               dish.ingredients.some(ing => MEAT_KEYWORDS.some(kw => ing.item.includes(kw)));
+    });
+    pool.sort((a, b) => getProteinWeight(b) - getProteinWeight(a));
+  }
+
+  return pool;
+};
+
+export const generateDailyPlan = async (user: UserProfile): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
+  let pool = filterDishes(user);
+  const selectionPool = user.activeChallengeId === 'protein-power' ? pool.slice(0, 8) : pool;
+  const selected = shuffleArray(selectionPool).slice(0, 3);
   const plan: DayPlan[] = selected.map((dish, index) => ({
     dayName: index === 0 ? 'پیشنهاد اصلی' : `جایگزین ${index}`,
     dish: dish
   }));
-
-  const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: [] });
+  const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: plan });
   return { plan, updatedUser };
 };
 
-export const generateWeeklyPlan = async (user: UserProfile, isQuickMode: boolean = false): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
-  const allDishes = RecipeService.getAllDishes();
-  const basePool = allDishes.filter(d => !user.blacklistedDishIds?.includes(d.id));
-  
+export const generateWeeklyPlan = async (user: UserProfile): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
+  const basePool = filterDishes(user);
+  const isProteinChallenge = user.activeChallengeId === 'protein-power';
   const plan: DayPlan[] = [];
   const dayConfigs = [
-    { day: 'شنبه', cats: ['stew', 'khorak'] },
-    { day: 'یک‌شنبه', cats: ['polo'] },
-    { day: 'دوشنبه', cats: ['khorak', 'ash'] },
-    { day: 'سه‌شنبه', cats: ['stew', 'kabab'] },
-    { day: 'چهارشنبه', cats: ['international', 'polo'] },
-    { day: 'پنج‌شنبه', cats: ['fastfood', 'khorak'] },
+    { day: 'شنبه', cats: isProteinChallenge ? ['kabab', 'stew'] : ['stew', 'khorak'] },
+    { day: 'یک‌شنبه', cats: isProteinChallenge ? ['kabab', 'polo'] : ['polo'] },
+    { day: 'دوشنبه', cats: isProteinChallenge ? ['støw', 'international'] : ['khorak', 'ash'] },
+    { day: 'سه‌شنبه', cats: ['kabab', 'stew'] },
+    { day: 'چهارشنبه', cats: isProteinChallenge ? ['kabab', 'polo'] : ['international', 'polo'] },
+    { day: 'پنج‌شنبه', cats: isProteinChallenge ? ['kabab', 'stew'] : ['fastfood', 'khorak'] },
     { day: 'جمعه', cats: ['kabab', 'khorak'] }
   ];
-
   const usedIds = new Set<string>();
-
   for (const config of dayConfigs) {
     let pool = basePool.filter(d => config.cats.includes(d.category) && !usedIds.has(d.id));
+    if (isProteinChallenge) {
+        const kababs = pool.filter(d => d.category === 'kabab');
+        if (kababs.length > 0) pool = kababs;
+    }
     if (pool.length === 0) pool = basePool.filter(d => !usedIds.has(d.id));
-    
-    const selected = shuffleArray(pool)[0];
+    const selected = shuffleArray(pool.slice(0, 10))[0];
     if (selected) {
       plan.push({ dayName: config.day, dish: selected });
       usedIds.add(selected.id);
     }
   }
-
   const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: plan });
   return { plan, updatedUser };
 };

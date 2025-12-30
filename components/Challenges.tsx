@@ -19,7 +19,8 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
 
     if (user.activeChallengeId === id) {
       // Deactivate
-      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: undefined });
+      // Fix: Use null instead of undefined because Firestore updateDoc does not support undefined values
+      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: null });
       onUpdateUser(updatedUser);
       onNotify(
         'چالش غیرفعال شد',

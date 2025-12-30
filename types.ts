@@ -1,3 +1,4 @@
+
 export interface Ingredient {
   item: string;
   amount: number;
@@ -99,9 +100,11 @@ export interface UserProfile {
   isAdmin?: boolean;
   isApproved?: boolean; 
   dietMode?: boolean; 
-  activeChallengeId?: string; 
+  activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
   hasCompletedSetup?: boolean;
   onlyFavoritesMode?: boolean;
+  meatlessMode?: boolean;
+  quickMealsMode?: boolean;
   weeklyPlan?: DayPlan[]; 
 }

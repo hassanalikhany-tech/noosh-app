@@ -83,7 +83,7 @@ const DuplicateResolver: React.FC = () => {
     // رفرش لیست بعد از حذف
     loadFromSource();
     setSelectedIds(new Set());
-    alert(`${idsToHide.length} غذا از لیست پیشنهادات حذف شد. برای حذف از فایربیس، از دکمه پاکسازی ابر استفاده کنید.`);
+    alert(`${idsToHide.length} غذا از لیست پیشنهادات حذف شد.`);
   };
 
   const handleResetStorage = () => {
@@ -108,7 +108,6 @@ const DuplicateResolver: React.FC = () => {
              <FileCode size={24} />
              مدیریت تکراری‌ها و اصلاحات
            </h2>
-           <p className="text-indigo-100 text-[10px] mt-1 font-bold">غذاهای تکراری را انتخاب و حذف کنید تا لیست شما ۵۰۹ تایی شود.</p>
         </div>
         <button onClick={handleResetStorage} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black flex items-center gap-1 transition-all border border-white/10">
            <RotateCcw size={14} /> بازیابی همه حذفیات
@@ -125,7 +124,7 @@ const DuplicateResolver: React.FC = () => {
              {showAll ? 'نمایش همه' : 'فقط تکراری‌ها'}
            </button>
         </div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-xl border border-slate-100">Dishes in View: {allDishes.length}</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-xl border border-slate-100">تعداد غذاهای در حال نمایش: {allDishes.length}</div>
       </div>
 
       <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
@@ -161,7 +160,7 @@ const DuplicateResolver: React.FC = () => {
       {selectedIds.size > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-5 rounded-[2.5rem] shadow-2xl flex items-center gap-8 z-[100] border border-white/10 animate-enter">
            <div className="flex flex-col">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Selected Items</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">مواد انتخاب شده</span>
               <span className="text-lg font-black text-teal-400">{selectedIds.size} غذا برای حذف</span>
            </div>
            <div className="flex gap-2">
