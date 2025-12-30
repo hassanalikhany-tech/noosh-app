@@ -9,7 +9,6 @@ const DatabaseManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
 
   const loadStats = async () => {
@@ -26,26 +25,14 @@ const DatabaseManager: React.FC = () => {
   }, []);
 
   const handleExportCSV = () => {
-    const dishes = RecipeService.getAllDishes();
+    const dishes = RecipeService.getRawDishes(); // خروجی کامل حتی حذفیات
     if (dishes.length === 0) {
       alert("دیتابیس در حال حاضر خالی است.");
       return;
     }
     
     const headers = [
-      "ID", 
-      "Name", 
-      "Category", 
-      "Description", 
-      "Nature_Type", 
-      "Nature_Label", 
-      "Mosleh", 
-      "Calories", 
-      "CookTime", 
-      "Difficulty", 
-      "Nationality", 
-      "Ingredients_List", 
-      "Recipe_Steps"
+      "ID", "Name", "Category", "Description", "Nature_Type", "Nature_Label", "Mosleh", "Calories", "CookTime", "Difficulty", "Nationality", "Ingredients_List", "Recipe_Steps"
     ];
 
     const rows = dishes.map(d => {
@@ -90,7 +77,7 @@ const DatabaseManager: React.FC = () => {
   };
 
   const handlePurgeCloud = async () => {
-    if (!confirm("هشدار جدی: تمام اطلاعات موجود در فایربیس پاک خواهد شد. این کار برای جایگزینی با داده‌های جدید شماست. ادامه می‌دهید؟")) return;
+    if (!confirm("هشدار جدی: تمام اطلاعات موجود در فایربیس پاک خواهد شد. ادامه می‌دهید؟")) return;
     setIsPurging(true);
     const res = await RecipeService.purgeCloudDatabase();
     setMessage({ type: res.success ? 'warning' : 'error', text: res.message });
@@ -116,7 +103,7 @@ const DatabaseManager: React.FC = () => {
             <button onClick={handleExportCSV} className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95">
               <FileSpreadsheet size={20} /> استخراج فایل CSV فعلی
             </button>
-            <button onClick={handlePurgeCloud} disabled={isPurging || isSyncing} className="px-4 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs border border-rose-100 hover:bg-rose-100 transition-all">
+            <button onClick={handlePurgeCloud} disabled={isPurging} className="px-4 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs border border-rose-100 hover:bg-rose-100 transition-all">
               {isPurging ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />} پاکسازی کامل ابر (Firebase)
             </button>
             <button onClick={loadStats} className="p-4 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all">
@@ -128,17 +115,17 @@ const DatabaseManager: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 text-center relative overflow-hidden group">
             <div className="absolute -right-4 -top-4 text-slate-200/50 group-hover:scale-110 transition-transform"><Database size={100} /></div>
-            <span className="text-slate-400 font-black text-[10px] block mb-2 uppercase tracking-tighter">فایل‌های کد (محلی)</span>
+            <span className="text-slate-400 font-black text-[10px] block mb-2 uppercase tracking-tighter">کل فایل‌های کد</span>
             <span className="text-5xl font-black text-slate-800 relative z-10">{toPersian(stats.local)}</span>
           </div>
           <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 text-center relative overflow-hidden group">
             <div className="absolute -right-4 -top-4 text-amber-200/50 group-hover:scale-110 transition-transform"><Database size={100} /></div>
-            <span className="text-amber-500 font-black text-[10px] block mb-2 uppercase tracking-tighter">کش مرورگر ادمین</span>
+            <span className="text-amber-500 font-black text-[10px] block mb-2 uppercase tracking-tighter">ذخیره شده در کش</span>
             <span className="text-5xl font-black text-amber-700 relative z-10">{toPersian(stats.cache)}</span>
           </div>
           <div className="p-8 bg-indigo-50 rounded-[2rem] border border-indigo-100 text-center relative overflow-hidden group">
             <div className="absolute -right-4 -top-4 text-indigo-200/50 group-hover:scale-110 transition-transform"><Database size={100} /></div>
-            <span className="text-indigo-400 font-black text-[10px] block mb-2 uppercase tracking-tighter">کل دیتابیس آنلاین (Firebase)</span>
+            <span className="text-indigo-400 font-black text-[10px] block mb-2 uppercase tracking-tighter">دیتابیس آنلاین</span>
             <span className="text-5xl font-black text-indigo-700 relative z-10">{toPersian(stats.cloud)}</span>
           </div>
         </div>

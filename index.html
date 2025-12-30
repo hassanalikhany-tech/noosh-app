@@ -49,7 +49,6 @@
       .animate-enter { animation: enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
       @keyframes enter { to { opacity: 1; transform: translateY(0); } }
 
-      /* انیمیشن شناور لوگو - با بهبود راندمان */
       .animate-float {
         animation: float 4s ease-in-out infinite;
         will-change: transform;
@@ -60,12 +59,6 @@
         50% { transform: translateY(-15px); }
       }
 
-      /* انیمیشن درخشش */
-      @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-      
       .bg-noosh-pattern {
         background-image: url('https://i.ibb.co/gMDKtj4p/3.png');
         background-repeat: repeat;
@@ -79,27 +72,27 @@
       }
 
       @media print {
+        @page {
+          size: A4;
+          margin: 1cm;
+        }
         .no-print { display: none !important; }
-        body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+        .print-only { display: block !important; }
+        body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
         .bg-noosh-pattern { display: none; }
         main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
-        .grid { display: block !important; }
-        .animate-enter { animation: none !important; opacity: 1 !important; transform: none !important; }
-        .meal-card-print { 
-          break-inside: avoid; 
-          border: 1px solid #e2e8f0 !important; 
-          margin-bottom: 20px !important;
-          box-shadow: none !important;
-          border-radius: 15px !important;
-          page-break-inside: avoid;
-        }
-        .meal-card-print button { display: none !important; }
-        .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: right; line-height: 1.6; }
+        th { background-color: #f8fafc !important; font-weight: 900; color: #1e293b; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        
+        .print-brand { display: flex !important; align-items: center; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
       }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      .print-header { display: none; }
+      .print-only { display: none; }
     </style>
   <script type="importmap">
 {

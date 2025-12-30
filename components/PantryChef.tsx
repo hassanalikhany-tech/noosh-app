@@ -51,7 +51,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
     setIsSearching(true);
     
     // تحریک نمایش بنر اعتماد در App.tsx
-    window.dispatchEvent(new Event('trigger-trust-banner'));
+    window.dispatchEvent(new CustomEvent('trigger-trust-banner'));
     
     setTimeout(() => {
       let allDishes = RecipeService.getAllDishes();

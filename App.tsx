@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Printer, Lock, LayoutDashboard, Calendar, Leaf, Settings2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Utensils } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Printer, Lock, LayoutDashboard, Calendar, Leaf, Settings2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Utensils, Flame, Info } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
 import { DayPlan, UserProfile } from './types';
 import { UserService } from './services/userService';
@@ -15,6 +15,7 @@ import Challenges from './components/Challenges';
 import Login from './components/auth/Login';
 import Subscription from './components/auth/Subscription';
 import AdminDashboard from './components/admin/AdminDashboard';
+import { estimateCalories, estimateCookTime, getDishNature } from './utils/recipeHelpers';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -70,7 +71,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+  const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
   const handleGenerate = async () => {
     if (!currentUser) return;
@@ -139,8 +140,83 @@ const App: React.FC = () => {
     ? Array.from(new Set(currentUser.blacklistedDishIds.filter(id => typeof id === 'string' && id.trim() !== ''))).length 
     : 0;
 
+  // --- کامپوننت مخصوص چاپ ---
+  const PrintTemplate = () => (
+    <div className="print-only w-full bg-white p-4">
+      <div className="print-brand flex items-center justify-between mb-8 border-b-2 border-slate-900 pb-4">
+        <div className="flex items-center gap-4">
+          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain" />
+          <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black italic text-slate-900 uppercase">NOOSH</span>
+              <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Kitchen Assistant</span>
+          </div>
+        </div>
+        <div className="text-right">
+          <h1 className="text-xl font-black text-slate-800 mb-1">برنامه غذایی اختصاصی</h1>
+          <p className="text-sm font-bold text-teal-600 italic">نوش جان! سفره‌ای رنگین برای سلامتی شما</p>
+        </div>
+      </div>
+
+      <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
+         نام کاربر: {currentUser?.fullName || currentUser?.username} | تاریخ تهیه: {new Date().toLocaleDateString('fa-IR')}
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th className="w-20">روز / نوبت</th>
+            <th className="w-40">نام غذا</th>
+            <th className="w-32">طبع و مصلح</th>
+            <th className="w-24">کالری و زمان</th>
+            <th>خلاصه توضیحات و مواد کلیدی</th>
+          </tr>
+        </thead>
+        <tbody>
+          {displayPlan.map((plan, idx) => {
+            const natureInfo = plan.dish.nature ? { type: plan.dish.nature, label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
+            const cal = plan.dish.calories || estimateCalories(plan.dish);
+            const time = plan.dish.cookTime || estimateCookTime(plan.dish);
+            
+            return (
+              <tr key={idx}>
+                <td className="font-black text-center">{plan.dayName}</td>
+                <td className="font-black text-teal-700 text-lg">{plan.dish.name}</td>
+                <td>
+                  <div className="font-bold">طبع: {natureInfo.label}</div>
+                  <div className="text-[9px] text-slate-500">مصلح: {plan.dish.mosleh || 'نیاز ندارد'}</div>
+                </td>
+                <td className="text-center">
+                  <div className="font-bold">{toPersianDigits(cal)} کالری</div>
+                  <div className="text-[9px] text-slate-500">{toPersianDigits(time)} دقیقه پخت</div>
+                </td>
+                <td className="text-justify text-[10px]">
+                  <p className="mb-1">{plan.dish.description}</p>
+                  <div className="font-bold text-slate-700">مواد اصلی: {plan.dish.ingredients?.slice(0, 5).map(i => i.item).join('، ')} ...</div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
+        <p className="text-[10px] font-bold text-slate-400">
+          این برنامه با توجه به محدودیت‌ها و سلیقه شخصی شما در اپلیکیشن نوش تهیه شده است.
+          <br/>
+          www.nooshapp.ir | دستیار هوشمند آشپزی شما
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col font-sans text-right dir-rtl">
+      {/* رندر قالب چاپ */}
+      <PrintTemplate />
+
       <div className={`sticky top-0 z-40 shadow-2xl no-print bg-slate-950`}>
         <header className="h-[75px] flex items-center border-b border-white/5 px-4">
           <div className="container mx-auto flex justify-between items-center">
@@ -198,7 +274,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* بخش پیام‌های شناور */}
       {(viewMode === 'plan' || viewMode === 'pantry') && (showTrustBanner || activeChallenge) && (
         <div className="fixed top-40 left-4 right-4 z-[60] pointer-events-none flex flex-col gap-2 max-w-lg mx-auto no-print">
           {showTrustBanner && (
@@ -221,7 +296,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-grow container mx-auto px-4 pt-0 py-8 relative z-10 pb-24">
+      <main className="flex-grow container mx-auto px-4 pt-0 py-8 relative z-10 pb-24 no-print">
         {viewMode === 'plan' && (
           <div className="space-y-3 animate-enter">
             <div className="max-w-4xl mx-auto bg-white rounded-2xl p-2 px-4 shadow-sm border-2 border-teal-500/20 no-print flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
@@ -292,7 +367,7 @@ const App: React.FC = () => {
                   </div>
                   <div className={`grid grid-cols-1 ${isWeeklyView ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                     {displayPlan.map((plan, idx) => (
-                      <div key={`${plan.dish.id}-${idx}`} className="animate-enter meal-card-print" style={{ animationDelay: `${idx * 0.05}s` }}><MealCard plan={plan} user={currentUser} /></div>
+                      <div key={`${plan.dish.id}-${idx}`} className="animate-enter" style={{ animationDelay: `${idx * 0.05}s` }}><MealCard plan={plan} user={currentUser} /></div>
                     ))}
                   </div>
                 </div>

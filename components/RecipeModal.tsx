@@ -1,5 +1,5 @@
 
-import { X, ChefHat, Users, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Minus, Plus, Utensils, AlertCircle } from 'lucide-react';
+import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
@@ -18,8 +18,6 @@ const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', '�
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }) => {
   const [addedToCart, setAddedToCart] = useState(false);
-  // مقدار اولیه تعداد نفرات از پروفایل کاربر خوانده می‌شود
-  const [servingSize, setServingSize] = useState(user?.familySize || 4);
 
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
   const hasIngredients = dish.ingredients && dish.ingredients.length > 0;
@@ -29,14 +27,9 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
   const difficulty = dish.difficulty || getDifficulty(dish);
   const natureInfo = dish.nature ? { type: dish.nature, label: dish.natureLabel, mosleh: dish.mosleh } : getDishNature(dish);
 
-  // نسبت محاسبه: بر اساس پایه ۴ نفره که اکثر رسپی‌ها بر آن اساس هستند
-  const scaleRatio = servingSize / 4;
-
   useEffect(() => {
     if (isOpen) {
       setAddedToCart(false);
-      // هر بار که مدال باز می‌شود، تعداد نفرات را با آخرین مقدار پروفایل هماهنگ کن
-      setServingSize(user?.familySize || 4);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -44,13 +37,11 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, user?.familySize]);
+  }, [isOpen]);
 
   const toPersianDigits = (num: number | string) => {
     if (num === undefined || num === null) return '';
     if (typeof num === 'number' && num === 0) return '';
-    
-    // رند کردن برای نمایش تمیزتر (حداکثر ۱ رقم اعشار)
     const val = typeof num === 'number' ? Math.round(num * 10) / 10 : num;
     return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
@@ -63,8 +54,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
       .map(ing => ({
         id: Date.now() + Math.random().toString(),
         name: ing.item,
-        // مقدار را با ضریب نفرات انتخاب شده در همین لحظه به سبد خرید بفرست
-        amount: ing.amount > 0 ? ing.amount * scaleRatio : 0,
+        amount: ing.amount,
         unit: ing.unit,
         checked: false,
         fromRecipe: dish.name
@@ -94,38 +84,6 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-black border border-blue-100"><Activity size={16} /> {difficulty}</div>
           </div>
 
-          {/* نوار تنظیم نفرات اختصاصی این رسپی */}
-          <div className="mb-8 p-5 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-white/10 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-             <div className="flex items-center gap-4 relative z-10">
-                <div className="p-3 bg-teal-500 text-slate-950 rounded-2xl shadow-lg shadow-teal-500/20">
-                   <Users size={24} />
-                </div>
-                <div>
-                   <p className="text-xs font-black text-teal-400 mb-1">تعداد نفرات این دستور پخت:</p>
-                   <p className="text-[10px] text-slate-400 font-bold">تغییر این عدد، مقادیر مواد لازم زیر را بازحسابی می‌کند.</p>
-                </div>
-             </div>
-             <div className="flex items-center gap-5 bg-white/5 p-2 px-4 rounded-2xl border border-white/10 relative z-10">
-                <button 
-                  onClick={() => setServingSize(Math.max(1, servingSize - 1))}
-                  className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-rose-500 hover:text-white transition-all active:scale-90"
-                >
-                  <Minus size={20} />
-                </button>
-                <div className="flex flex-col items-center min-w-[40px]">
-                   <span className="text-2xl font-black text-white leading-none">{toPersianDigits(servingSize)}</span>
-                   <span className="text-[9px] font-black text-slate-500">نفر</span>
-                </div>
-                <button 
-                  onClick={() => setServingSize(Math.min(25, servingSize + 1))}
-                  className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-xl text-white hover:bg-teal-500 hover:text-slate-950 transition-all active:scale-90"
-                >
-                  <Plus size={20} />
-                </button>
-             </div>
-          </div>
-
           <div className={`p-5 rounded-2xl border mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-100' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
              <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-xl ${natureInfo.type === 'hot' ? 'bg-orange-500' : natureInfo.type === 'cold' ? 'bg-blue-500' : 'bg-emerald-500'} text-white shadow-lg`}>{natureInfo.type === 'hot' ? <Sun size={24} /> : natureInfo.type === 'cold' ? <Snowflake size={24} /> : <Scale size={24} />}</div>
@@ -140,7 +98,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
                 <div className="flex items-center justify-between mb-5">
                    <div className="flex items-center gap-2 text-teal-700 font-black text-xl">
                       <Utensils size={22} />
-                      <h3>مواد لازم</h3>
+                      <h3>مواد لازم (۴ نفره)</h3>
                    </div>
                    <span className="text-[10px] bg-teal-50 text-teal-700 px-3 py-1 rounded-full font-black">
                       {toPersianDigits(dish.ingredients.length)} قلم
@@ -151,8 +109,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
                     <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group hover:border-teal-200 transition-all">
                       <span className="font-bold text-slate-700 text-sm">{ing.item}</span>
                       <span className="font-black text-teal-600 text-xs bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-50">
-                        {/* محاسبه آنی مقدار بر اساس تعداد نفرات فعلی مدال */}
-                        {ing.amount > 0 ? `${toPersianDigits(ing.amount * scaleRatio)} ${ing.unit}` : ing.unit}
+                        {ing.amount > 0 ? `${toPersianDigits(ing.amount)} ${ing.unit}` : ing.unit}
                       </span>
                     </div>
                   ))}
@@ -164,7 +121,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
                     className={`w-full mt-6 py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 ${addedToCart ? 'bg-emerald-500 text-white' : 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-100'}`}
                   >
                     {addedToCart ? <Check size={20} /> : <PlusCircle size={20} />}
-                    {addedToCart ? 'به سبد خرید اضافه شد' : 'افزودن همه به سبد خرید'}
+                    {addedToCart ? 'به سبد خرید اضافه شد' : 'افزودن همه به سبد'}
                   </button>
                 )}
               </div>

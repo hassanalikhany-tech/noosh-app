@@ -43,11 +43,20 @@ const filterDishes = (user: UserProfile) => {
 
   // ۱. حذف لیست سیاه شخصی و دسته‌بندی‌های ممنوعه
   pool = pool.filter(d => !user.blacklistedDishIds?.includes(d.id));
+  
   if (user.excludedCategories && user.excludedCategories.length > 0) {
     pool = pool.filter(d => !user.excludedCategories.includes(d.category));
   }
 
-  // ۲. فیلتر مواد ممنوعه و حساسیت‌زا
+  // ۲. فیلتر ملل محدود شده
+  if (user.excludedNationalities && user.excludedNationalities.length > 0) {
+    pool = pool.filter(d => {
+      if (!d.nationality) return true;
+      return !user.excludedNationalities?.includes(d.nationality);
+    });
+  }
+
+  // ۳. فیلتر مواد ممنوعه و حساسیت‌زا
   if (user.dislikedIngredients && user.dislikedIngredients.length > 0) {
     pool = pool.filter(dish => {
       const isForbiddenInName = user.dislikedIngredients.some(forbidden => dish.name.includes(forbidden));
@@ -58,17 +67,17 @@ const filterDishes = (user: UserProfile) => {
     });
   }
 
-  // ۳. فیلتر حالت رژیمی
+  // ۴. فیلتر حالت رژیمی
   if (user.dietMode) {
     pool = pool.filter(d => (d.calories || 400) < 500);
   }
 
-  // ۴. فیلتر طبع دلخواه
+  // ۵. فیلتر طبع دلخواه
   if (user.preferredNatures && user.preferredNatures.length > 0) {
     pool = pool.filter(d => user.preferredNatures.includes(d.nature || 'balanced'));
   }
 
-  // ۵. فیلترهای محبوب
+  // ۶. فیلترهای محبوب
   if (user.onlyFavoritesMode) {
     pool = pool.filter(d => user.favoriteDishIds?.includes(d.id));
   }
@@ -76,7 +85,7 @@ const filterDishes = (user: UserProfile) => {
     pool = pool.filter(d => (d.cookTime || 60) <= 45);
   }
 
-  // ۶. چالش‌ها
+  // ۷. چالش‌ها
   const activeChallengeId = user.activeChallengeId;
   if (user.meatlessMode || activeChallengeId === 'vegan-week') {
     pool = pool.filter(dish => {

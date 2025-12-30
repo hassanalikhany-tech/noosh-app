@@ -23,7 +23,7 @@ import { UserProfile, ShoppingItem } from "../types";
 const ADMIN_EMAIL = 'YOUR_ACTUAL_EMAIL@GMAIL.COM'.toLowerCase();
 
 const notifyUpdate = () => {
-  window.dispatchEvent(new Event('user-data-updated'));
+  window.dispatchEvent(new CustomEvent('user-data-updated'));
 };
 
 const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string): UserProfile => {

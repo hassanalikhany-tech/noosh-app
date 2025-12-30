@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
+import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
 
 let cachedDishes: Dish[] = [];
 let isInitialized = false;
@@ -18,7 +19,6 @@ export const RecipeService = {
     if (isInitialized) return;
     cachedDishes = [...DEFAULT_DISHES];
     
-    // شناسایی ۳ مورد اول از هر ۸ دسته بندی (۸ * ۳ = ۲۴ غذا)
     const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
     categories.forEach(cat => {
       const firstThree = DEFAULT_DISHES
@@ -54,21 +54,32 @@ export const RecipeService = {
             cachedDishes.push(d);
           }
         });
-        window.dispatchEvent(new CustomEvent('recipes-updated'));
+        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { timestamp: Date.now() } }));
       }
     } catch (e) {
       console.error("Cloud Sync Error:", e);
     }
   },
 
+  // این متد لیست تمیز و فیلتر شده را با نام‌های اصلاح شده برمی‌گرداند
   getAllDishes: (): Dish[] => {
-    return cachedDishes;
+    const hiddenIds = getHiddenDishIds();
+    const renamedMap = getRenamedDishes();
+    
+    return cachedDishes
+      .filter(d => !hiddenIds.includes(d.id))
+      .map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
+  },
+
+  // این متد لیست کامل (خام) را با اعمال نام‌های اصلاح شده برای مدیریت برمی‌گرداند
+  getRawDishes: (): Dish[] => {
+    const renamedMap = getRenamedDishes();
+    return cachedDishes.map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
   },
 
   isDishAccessible: (dishId: string, user: UserProfile | null): boolean => {
     if (!user) return false;
     if (user.isAdmin || user.isApproved) return true;
-    // فقط ۲۴ غذای رایگان برای کاربران تایید نشده باز است
     return freeDishIds.has(dishId);
   },
 
@@ -89,7 +100,7 @@ export const RecipeService = {
       });
       await batch.commit();
       cachedDishes = [...DEFAULT_DISHES];
-      window.dispatchEvent(new CustomEvent('recipes-updated'));
+      window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { timestamp: Date.now() } }));
       return { success: true, message: "دیتابیس ابری پاکسازی شد." };
     } catch (e: any) {
       return { success: false, message: "خطا: " + e.message };

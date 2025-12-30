@@ -2,12 +2,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Dish } from '../../types';
 import { RecipeService } from '../../services/recipeService';
-import { hideDishIds, unhideAllDishes, renameDish } from '../../utils/dishStorage';
-import { Trash2, Search, Eye, Edit2, Download, FileCode, CheckCircle2, RotateCcw } from 'lucide-react';
-import { estimateCalories, estimateCookTime, getDifficulty, getDishNature } from '../../utils/recipeHelpers';
+import { hideDishIds, unhideAllDishes, renameDish, getHiddenDishIds } from '../../utils/dishStorage';
+import { Trash2, Search, Eye, Edit2, Download, FileCode, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
 import RecipeModal from '../RecipeModal';
 
-type AdminDish = Dish & { _internalId: string };
+type AdminDish = Dish & { _internalId: string, isHidden: boolean };
 
 interface DuplicateGroup {
   nameKey: string;
@@ -35,10 +34,12 @@ const DuplicateResolver: React.FC = () => {
   const [renamingDish, setRenamingDish] = useState<{ dish: AdminDish, newName: string } | null>(null);
 
   const loadFromSource = () => {
-    const dishes = RecipeService.getAllDishes();
+    const dishes = RecipeService.getRawDishes(); // استفاده از لیست خام
+    const hiddenIds = getHiddenDishIds();
     const safeDishes = dishes.map((d, idx) => ({
       ...d, 
-      _internalId: `admin-${d.id}-${idx}`
+      _internalId: `admin-${d.id}-${idx}`,
+      isHidden: hiddenIds.includes(d.id)
     }));
     setAllDishes(safeDishes);
   };
@@ -61,6 +62,7 @@ const DuplicateResolver: React.FC = () => {
     map.forEach((groupDishes, key) => {
       const isDuplicate = groupDishes.length > 1;
       const matchesSearch = searchTerm && (key.includes(normalizedSearch) || groupDishes[0].name.includes(searchTerm));
+      
       if (isDuplicate || showAll || matchesSearch) {
         resultGroups.push({ nameKey: key, originalName: groupDishes[0].name, dishes: groupDishes });
       }
@@ -80,14 +82,13 @@ const DuplicateResolver: React.FC = () => {
     
     hideDishIds(idsToHide);
     
-    // رفرش لیست بعد از حذف
     loadFromSource();
     setSelectedIds(new Set());
-    alert(`${idsToHide.length} غذا از لیست پیشنهادات حذف شد.`);
+    alert(`${idsToHide.length} غذا با موفقیت از "لیست پخت" و "جستجو" حذف شدند.`);
   };
 
   const handleResetStorage = () => {
-    if(confirm("آیا می‌خواهید تمام غذاهای حذف شده دوباره برگردند؟")) {
+    if(confirm("آیا می‌خواهید تمام غذاهای حذف شده دوباره به لیست‌های جستجو و پیشنهاد برگردند؟")) {
       unhideAllDishes();
       loadFromSource();
     }
@@ -106,8 +107,9 @@ const DuplicateResolver: React.FC = () => {
         <div>
            <h2 className="text-xl font-black flex items-center gap-2">
              <FileCode size={24} />
-             مدیریت تکراری‌ها و اصلاحات
+             مدیریت تکراری‌ها و اصلاحات دیتابیس
            </h2>
+           <p className="text-[10px] opacity-80 mt-1 font-bold">غذاهای حذف شده در اینجا با رنگ قرمز مشخص می‌شوند و در اپلیکیشن نمایش داده نمی‌شوند.</p>
         </div>
         <button onClick={handleResetStorage} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black flex items-center gap-1 transition-all border border-white/10">
            <RotateCcw size={14} /> بازیابی همه حذفیات
@@ -121,13 +123,12 @@ const DuplicateResolver: React.FC = () => {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
            </div>
            <button onClick={() => setShowAll(!showAll)} className={`px-4 py-2 rounded-xl text-xs font-black border transition-all ${showAll ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200'}`}>
-             {showAll ? 'نمایش همه' : 'فقط تکراری‌ها'}
+             {showAll ? 'نمایش همه غذاها' : 'نمایش فقط تکراری‌ها'}
            </button>
         </div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-4 py-2 rounded-xl border border-slate-100">تعداد غذاهای در حال نمایش: {allDishes.length}</div>
       </div>
 
-      <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto">
+      <div className="p-4 space-y-4 max-h-[600px] overflow-y-auto no-scrollbar">
         {groups.length === 0 ? (
            <div className="py-20 text-center text-slate-400 font-bold italic">موردی برای نمایش یافت نشد.</div>
         ) : groups.map(group => (
@@ -140,11 +141,12 @@ const DuplicateResolver: React.FC = () => {
             </div>
             <div className="divide-y divide-slate-50">
               {group.dishes.map(dish => (
-                <div key={dish._internalId} className={`flex items-center p-3 hover:bg-slate-50 transition-colors ${selectedIds.has(dish._internalId) ? 'bg-rose-50' : ''}`}>
+                <div key={dish._internalId} className={`flex items-center p-3 hover:bg-slate-50 transition-colors ${dish.isHidden ? 'bg-red-50' : selectedIds.has(dish._internalId) ? 'bg-rose-50' : ''}`}>
                    <input type="checkbox" checked={selectedIds.has(dish._internalId)} onChange={() => toggleSelection(dish._internalId)} className="w-5 h-5 ml-4 accent-rose-600 cursor-pointer" />
                    <div className="flex-grow">
                       <div className="font-black text-sm text-slate-800 flex items-center gap-2">
                          {dish.name}
+                         {dish.isHidden && <span className="px-2 py-0.5 bg-red-600 text-white text-[8px] rounded-full font-black">حذف شده از اپ</span>}
                          <button onClick={() => setRenamingDish({ dish, newName: dish.name })} className="text-blue-400 hover:text-blue-600 p-1"><Edit2 size={14}/></button>
                       </div>
                       <div className="text-[9px] font-bold text-slate-400 font-mono tracking-tighter">{dish.id} | {dish.category}</div>
@@ -160,12 +162,12 @@ const DuplicateResolver: React.FC = () => {
       {selectedIds.size > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-5 rounded-[2.5rem] shadow-2xl flex items-center gap-8 z-[100] border border-white/10 animate-enter">
            <div className="flex flex-col">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">مواد انتخاب شده</span>
-              <span className="text-lg font-black text-teal-400">{selectedIds.size} غذا برای حذف</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">تعداد انتخاب شده</span>
+              <span className="text-lg font-black text-teal-400">{selectedIds.size} مورد</span>
            </div>
            <div className="flex gap-2">
              <button onClick={() => setSelectedIds(new Set())} className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-black transition-all">لغو</button>
-             <button onClick={executeDelete} className="px-8 py-3 bg-rose-600 hover:bg-rose-700 rounded-2xl font-black text-xs flex items-center gap-2 shadow-lg shadow-rose-900/40 transition-all active:scale-95"><Trash2 size={16}/> حذف از لیست پخت</button>
+             <button onClick={executeDelete} className="px-8 py-3 bg-rose-600 hover:bg-rose-700 rounded-2xl font-black text-xs flex items-center gap-2 shadow-lg shadow-rose-900/40 transition-all active:scale-95"><Trash2 size={16}/> حذف نهایی از اپلیکیشن</button>
            </div>
         </div>
       )}

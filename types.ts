@@ -94,6 +94,7 @@ export interface UserProfile {
   favoriteDishIds: string[];
   dislikedIngredients: string[];
   excludedCategories: DishCategory[]; 
+  excludedNationalities?: string[];
   preferredNatures: NatureType[];
   history: string[];
   familySize: number;

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Info, Lock } from 'lucide-react';
+import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock } from 'lucide-react';
 import { DayPlan, UserProfile } from '../types';
 import RecipeModal from './RecipeModal';
 import DishVisual from './DishVisual';
@@ -16,7 +16,6 @@ interface MealCardProps {
 const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  const isApproved = user.isAdmin || user.isApproved;
   const isAccessible = RecipeService.isDishAccessible(plan.dish.id, user);
   const isLocked = !isAccessible;
 
@@ -120,11 +119,6 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
           )}
           <p className="text-slate-500 text-sm line-clamp-2 mb-4 flex-grow leading-relaxed font-bold">{plan.dish.description}</p>
           
-          <div className="mb-4 flex items-center gap-1.5 text-[9px] text-slate-400 font-bold bg-slate-50 p-2 rounded-lg border border-slate-100">
-             <Info size={12} className="text-teal-500" />
-             <span>پیش‌فرض رسپی‌ها برای سرو خانواده ۴ نفری است.</span>
-          </div>
-
           <button className={`w-full mt-auto flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 text-slate-700 group-hover:bg-teal-600 group-hover:text-white group-hover:shadow-lg'}`}>
              {isLocked ? <Lock size={16} /> : <Utensils size={18} />} <span>{isLocked ? 'غیرفعال (تایید نشده)' : 'مشاهده دستور'}</span> {!isLocked && <ChevronLeft size={16} />}
           </button>
