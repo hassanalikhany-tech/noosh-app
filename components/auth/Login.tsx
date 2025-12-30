@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckCircle2, RefreshCw } from 'lucide-react';
 import { UserService } from '../../services/userService';
@@ -65,10 +66,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
+        // نمایش مستقیم پیام خطای دریافتی از سرویس (شامل راهنمای دامنه)
         setError(result.message || 'خطا در ورود با گوگل');
         setIsGoogleLoading(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       setError('خطا در برقراری ارتباط با گوگل.');
       setIsGoogleLoading(false);
     }
@@ -130,7 +132,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
-      {/* پترن پس‌زمینه */}
       <div className="bg-noosh-pattern" style={{ opacity: 0.08 }}></div>
       
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
@@ -142,7 +143,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_8s_infinite] pointer-events-none"></div>
           
           <div className="relative z-10 text-center space-y-8">
-            <div className="animate-float inline-block">
+            <div className="animate-float">
                <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(45,212,191,0.5)]" />
             </div>
             <div>
@@ -159,7 +160,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-hidden">
           
           <div className="md:hidden flex flex-col items-center mb-6 gap-2 animate-enter flex-shrink-0">
-            <div className="animate-float">
+            <div className="animate-float h-24 flex items-center justify-center">
               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]" />
             </div>
             <div className="text-center">
@@ -172,7 +173,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
           <div className="mb-4 md:mb-8 text-center md:text-right flex-shrink-0">
             <div className="inline-flex md:flex items-center justify-center md:justify-start gap-2 text-teal-600">
-              <Sparkles size={18} />
+              <span className="animate-pulse"><Sparkles size={18} /></span>
               <span className="text-[11px] font-black uppercase tracking-widest">خوش آمدید | Welcome</span>
             </div>
           </div>

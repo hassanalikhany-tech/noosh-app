@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType } from '../types';
 import { UserService } from '../services/userService';
 import { LogOut, User, Users, Sun, Snowflake, Scale, Settings2, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, AlertTriangle, Plus, ShieldAlert } from 'lucide-react';
@@ -13,7 +13,13 @@ interface PreferencesProps {
 
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout }) => {
   const [ingInput, setIngInput] = useState('');
+  const [localFamilySize, setLocalFamilySize] = useState(user.familySize || 4);
   
+  // همگام‌سازی با تغییرات خارجی پروفایل
+  useEffect(() => {
+    setLocalFamilySize(user.familySize || 4);
+  }, [user.familySize]);
+
   const toggleCategory = async (cat: DishCategory) => {
     let newExcluded = [...user.excludedCategories];
     if (newExcluded.includes(cat)) {
@@ -66,10 +72,14 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     onUpdateUser(updatedUser);
   };
 
-  const changeFamilySize = async (newSize: number) => {
+  const changeFamilySize = (newSize: number) => {
     if (newSize < 1 || newSize > 20) return;
-    const updatedUser = await UserService.updatePreferences(user.username, { familySize: newSize });
-    onUpdateUser(updatedUser);
+    // تغییر آنی برای سرعت بالا
+    setLocalFamilySize(newSize);
+    // ذخیره در دیتابیس در پس‌زمینه
+    UserService.updatePreferences(user.username, { familySize: newSize }).then(updatedUser => {
+       onUpdateUser(updatedUser);
+    });
   };
 
   const favoritesList = useMemo(() => {
@@ -127,7 +137,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
         </div>
       </div>
 
-      {/* بخش مدیریت مواد ممنوعه و حساسیت‌زا */}
       <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100 relative overflow-hidden ring-1 ring-red-50">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-4 bg-red-600 text-white rounded-2xl shadow-lg shadow-red-200">
@@ -214,13 +223,14 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
             <h2 className="text-xl font-black text-slate-800">تعداد نفرات خانواده</h2>
           </div>
           <div className="flex items-center justify-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner">
-             <button onClick={() => changeFamilySize((user.familySize || 4) - 1)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl shadow-sm text-slate-400 border border-slate-200 text-2xl font-black hover:bg-slate-100">-</button>
+             <button onClick={() => changeFamilySize(localFamilySize - 1)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl shadow-sm text-slate-400 border border-slate-200 text-2xl font-black hover:bg-slate-100 active:scale-90 transition-transform">-</button>
              <div className="text-center w-24">
-                <span className="text-4xl font-black text-slate-800">{user.familySize || 4}</span>
+                <span className="text-4xl font-black text-slate-800">{localFamilySize}</span>
                 <span className="text-sm text-slate-400 block font-black">نفر</span>
              </div>
-             <button onClick={() => changeFamilySize((user.familySize || 4) + 1)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl shadow-sm text-slate-400 border border-slate-200 text-2xl font-black hover:bg-slate-100">+</button>
+             <button onClick={() => changeFamilySize(localFamilySize + 1)} className="w-12 h-12 flex items-center justify-center bg-white rounded-2xl shadow-sm text-slate-400 border border-slate-200 text-2xl font-black hover:bg-slate-100 active:scale-90 transition-transform">+</button>
           </div>
+          <p className="text-[9px] text-center text-slate-400 mt-4 font-bold">تمام مقادیر مواد اولیه در رسپی‌ها بر اساس این تعداد محاسبه خواهند شد.</p>
         </div>
 
         <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100">

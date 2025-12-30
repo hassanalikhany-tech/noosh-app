@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   ChefHat, 
@@ -32,7 +33,11 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     if (imageUrl) {
       setResolvedSrc(imageUrl);
     } else if (dishId) {
-      setResolvedSrc(`/images/dishes/${dishId}.png`);
+      // مسیر دقیق تصاویر در پوشه public/images/dishes
+      const path = `/images/dishes/${dishId}.png`;
+      setResolvedSrc(path);
+      // لاگ برای عیب‌یابی در کنسول (فقط در صورت نیاز پاک شود)
+      // console.log(`Loading image for ${dishId}: ${path}`);
     } else {
       setResolvedSrc(null);
     }
@@ -43,10 +48,16 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       setImageError(true);
       return;
     }
-    if (retryCount === 0) { setResolvedSrc(`/images/dishes/${dishId}.jpg`); setRetryCount(1); }
-    else if (retryCount === 1) { setResolvedSrc(`/images/dishes/${dishId}.jpeg`); setRetryCount(2); }
-    else if (retryCount === 2) { setResolvedSrc(`/images/dishes/${dishId}.webp`); setRetryCount(3); }
-    else { setImageError(true); }
+    // تلاش مجدد با فرمت‌های دیگر در صورت خطا
+    if (retryCount === 0) { 
+      setResolvedSrc(`/images/dishes/${dishId}.jpg`); 
+      setRetryCount(1); 
+    } else if (retryCount === 1) { 
+      setResolvedSrc(`/images/dishes/${dishId}.jpeg`); 
+      setRetryCount(2); 
+    } else { 
+      setImageError(true); 
+    }
   };
 
   const getVisualConfig = (cat: DishCategory) => {
@@ -70,9 +81,19 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     <div className={`relative overflow-hidden flex items-center justify-center ${config.bg} ${className}`}>
       <div className={`absolute inset-0 ${config.pattern} bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]`}></div>
       <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
+      
+      {/* آیکون پیش‌فرض تا زمان بارگذاری عکس */}
       <Icon size={iconSize} className={`text-white drop-shadow-lg relative z-10 transition-opacity duration-500 ${isLoaded ? 'opacity-0' : 'opacity-90'}`} strokeWidth={1.5} />
+      
       {resolvedSrc && !imageError && (
-        <img src={resolvedSrc} alt="Dish" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 z-20 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} onLoad={() => setIsLoaded(true)} onError={handleImageError} loading="lazy" />
+        <img 
+          src={resolvedSrc} 
+          alt="Dish" 
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 z-20 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
+          onLoad={() => setIsLoaded(true)} 
+          onError={handleImageError} 
+          loading="lazy" 
+        />
       )}
       <div className="absolute inset-0 bg-black/10 z-30 pointer-events-none"></div>
     </div>

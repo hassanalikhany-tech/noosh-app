@@ -48,15 +48,19 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     }
 
     const aggregated = new Map<string, { name: string, amount: number, unit: string }>();
+    const scaleRatio = (user.familySize || 4) / 4;
 
     weeklyPlan.forEach(plan => {
       plan.dish.ingredients.forEach(ing => {
         const key = `${ing.item.trim()}@@@${ing.unit.trim()}`;
         const current = aggregated.get(key);
+        // اعمال ضریب نفرات خانواده روی مقدار هر ماده
+        const scaledAmount = ing.amount > 0 ? ing.amount * scaleRatio : 0;
+        
         if (current) {
-          aggregated.set(key, { ...current, amount: current.amount + ing.amount });
+          aggregated.set(key, { ...current, amount: current.amount + scaledAmount });
         } else {
-          aggregated.set(key, { name: ing.item.trim(), amount: ing.amount, unit: ing.unit });
+          aggregated.set(key, { name: ing.item.trim(), amount: scaledAmount, unit: ing.unit });
         }
       });
     });
@@ -73,7 +77,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     });
 
     updateCustomItems([...customItems, ...newShoppingItems]);
-    alert('لیست خرید بر اساس برنامه هفتگی شما ساخته شد.');
+    alert('لیست خرید بر اساس برنامه هفتگی و تعداد نفرات خانواده شما ساخته شد.');
   };
 
   const handleDeleteItem = (id: string) => {
@@ -90,8 +94,10 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   };
 
   const toPersianDigits = (num: number | undefined) => {
-    if (!num) return '';
-    return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+    if (num === undefined || num === 0) return '';
+    // رند کردن اعداد اعشاری برای نمایش بهتر در لیست
+    const val = Math.round(num * 10) / 10;
+    return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
 
   const getRawListText = () => {

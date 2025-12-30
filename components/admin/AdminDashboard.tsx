@@ -52,7 +52,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
 
   const filteredUsers = users.filter(u => u.username.toLowerCase().includes(searchTerm.toLowerCase()) || u.fullName.includes(searchTerm));
 
-  // محاسبه آمار تثبیت شده (Master Safe Database)
   const ashCount = allDishes.filter(d => d.category === 'ash').length;
   const poloCount = allDishes.filter(d => d.category === 'polo').length;
   const khorakCount = allDishes.filter(d => d.category === 'khorak').length;
@@ -71,7 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
               <ShieldCheck size={28} />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight uppercase">پنل کنترل هوشمند نوش</h1>
+              <h1 className="text-xl font-black tracking-tight uppercase">پنل کنترل نوش</h1>
               <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">دسترسی مدیر سیستم</p>
             </div>
           </div>
@@ -96,7 +95,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         </div>
       </header>
 
-      {/* نوار وضعیت سلامت داده‌ها - Master Safe Database */}
       <div className="bg-teal-900 text-white py-3 border-b border-teal-800">
          <div className="container mx-auto px-6 flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">

@@ -1,5 +1,5 @@
 
-import { Dish } from '../types';
+import { Dish, UserProfile } from '../types';
 import { DEFAULT_DISHES } from '../data/recipes';
 import { 
   collection, 
@@ -11,16 +11,23 @@ import { DB } from '../utils/db';
 
 let cachedDishes: Dish[] = [];
 let isInitialized = false;
+const freeDishIds = new Set<string>();
 
 export const RecipeService = {
   initialize: async (): Promise<void> => {
     if (isInitialized) return;
-    
-    // بارگذاری داده‌های استاتیک (آش‌های جدید)
     cachedDishes = [...DEFAULT_DISHES];
     
+    // شناسایی ۳ مورد اول از هر ۸ دسته بندی (۸ * ۳ = ۲۴ غذا)
+    const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
+    categories.forEach(cat => {
+      const firstThree = DEFAULT_DISHES
+        .filter(d => d.category === cat)
+        .slice(0, 3);
+      firstThree.forEach(d => freeDishIds.add(d.id));
+    });
+
     try {
-      // بررسی دیتابیس لوکال برای داده‌های ذخیره شده قبلی
       const localDishes = await DB.getAll('dishes');
       if (localDishes && localDishes.length > 0) {
         const existingIds = new Set(cachedDishes.map(d => d.id));
@@ -30,11 +37,9 @@ export const RecipeService = {
           }
         });
       }
-      console.log(`Database initialized with ${cachedDishes.length} dishes.`);
     } catch (error) {
       console.error("Initialization Error:", error);
     }
-
     isInitialized = true;
   },
 
@@ -56,6 +61,24 @@ export const RecipeService = {
     }
   },
 
+  getAllDishes: (): Dish[] => {
+    return cachedDishes;
+  },
+
+  isDishAccessible: (dishId: string, user: UserProfile | null): boolean => {
+    if (!user) return false;
+    if (user.isAdmin || user.isApproved) return true;
+    // فقط ۲۴ غذای رایگان برای کاربران تایید نشده باز است
+    return freeDishIds.has(dishId);
+  },
+
+  getAccessibleDishes: (user: UserProfile | null): Dish[] => {
+    const all = RecipeService.getAllDishes();
+    if (!user) return [];
+    if (user.isAdmin || user.isApproved) return all;
+    return all.filter(d => freeDishIds.has(d.id));
+  },
+
   purgeCloudDatabase: async () => {
     if (!auth.currentUser) return { success: false, message: "دسترسی مدیریت ندارید." };
     try {
@@ -67,34 +90,21 @@ export const RecipeService = {
       await batch.commit();
       cachedDishes = [...DEFAULT_DISHES];
       window.dispatchEvent(new CustomEvent('recipes-updated'));
-      return { success: true, message: "دیتابیس ابری پاکسازی و با داده‌های پیش‌فرض جایگزین شد." };
+      return { success: true, message: "دیتابیس ابری پاکسازی شد." };
     } catch (e: any) {
       return { success: false, message: "خطا: " + e.message };
     }
   },
 
-  getAllDishes: (): Dish[] => {
-    return cachedDishes;
-  },
-
   getLocalCount: () => DEFAULT_DISHES.length,
-  
   getOfflineCacheCount: async () => {
     const cached = await DB.getAll('dishes');
     return cached.length;
   },
-
   getRealCloudCount: async () => {
     try {
       const snapshot = await getDocs(collection(db, "dishes"));
       return snapshot.size;
-    } catch (e) {
-      return 0;
-    }
-  },
-
-  syncAllToFirebase: async (onProgress?: (p: number) => void) => {
-    // منطق آپلود به فایربیس در صورت نیاز ادمین
-    return { success: true, count: cachedDishes.length, message: `دیتابیس آماده همگام‌سازی است.` };
+    } catch (e) { return 0; }
   }
 };

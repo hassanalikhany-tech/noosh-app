@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Printer, Lock, LayoutDashboard, Calendar, Leaf, Settings2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, PrinterCheck } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Printer, Lock, LayoutDashboard, Calendar, Leaf, Settings2, CheckCircle2, AlertCircle, ShieldCheck, Sparkles, Utensils } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
 import { DayPlan, UserProfile } from './types';
 import { UserService } from './services/userService';
@@ -73,7 +73,7 @@ const App: React.FC = () => {
   const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
   const handleGenerate = async () => {
-    if (!currentUser || (!currentUser.isApproved && !currentUser.isAdmin)) return;
+    if (!currentUser) return;
     setLoadingType('daily');
     triggerTrustBanner();
     const { plan, updatedUser } = await generateDailyPlan(currentUser);
@@ -84,7 +84,7 @@ const App: React.FC = () => {
   };
 
   const handleGenerateWeekly = async () => {
-    if (!currentUser || (!currentUser.isApproved && !currentUser.isAdmin)) return;
+    if (!currentUser) return;
     setLoadingType('weekly');
     triggerTrustBanner();
     const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
@@ -121,7 +121,6 @@ const App: React.FC = () => {
   if (isInitializing) return <div className="fixed inset-0 flex items-center justify-center bg-slate-950 z-[9999]"><RefreshCw className="animate-spin text-teal-400" size={64} /></div>;
   if (!currentUser) return <Login onLogin={setCurrentUser} />;
   
-  // منطق نمایش پنل مدیریت
   if (currentUser.isAdmin && isAdminMode) {
     return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
   }
@@ -131,6 +130,7 @@ const App: React.FC = () => {
   const isWeeklyView = displayPlan.length > 3;
   const isGenerating = !!loadingType;
   const activeChallenge = CHALLENGES.find(c => c.id === currentUser.activeChallengeId);
+  const isUnapproved = !currentUser.isAdmin && !currentUser.isApproved;
 
   const natureLabels: Record<string, string> = { hot: 'گرم', cold: 'سرد', balanced: 'معتدل' };
   const activeNaturesText = currentUser.preferredNatures?.map(n => natureLabels[n]).join(' و ') || '';
@@ -180,106 +180,106 @@ const App: React.FC = () => {
         </nav>
       </div>
 
-      <main className="flex-grow container mx-auto px-4 py-8 relative z-10 pb-24">
-        {/* هدر مخصوص چاپ */}
-        <div className="print-header">
-           <h1 className="text-3xl font-black">برنامه غذایی اختصاصی نوش‌اپ</h1>
-           <p className="text-sm font-bold">تنظیم شده برای: {currentUser.fullName || currentUser.username}</p>
+      {isUnapproved && (
+        <div className="bg-amber-600 text-white py-2 px-4 text-center text-[10px] font-black flex items-center justify-center gap-2 animate-pulse no-print">
+          <AlertCircle size={14} />
+          <span>حساب شما در انتظار تایید است. هم‌اکنون در «حالت پیش‌نمایش» هستید و فقط ۲۴ غذای منتخب در دسترس است.</span>
         </div>
+      )}
 
-        {(viewMode === 'plan' || viewMode === 'pantry') && (
-           <div className="max-w-5xl mx-auto space-y-4 mb-8 h-auto min-h-[60px] no-print">
-              {showTrustBanner && (
-                <div className="bg-white border-2 border-indigo-100 p-5 rounded-[2.5rem] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-enter">
-                  <div className="flex items-center gap-4 w-full">
-                      <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg flex-shrink-0"><ShieldCheck size={24} /></div>
-                      <div className="flex-grow">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-black text-slate-800">نوش‌اپ تمام شخصی‌سازی‌های شما را لحاظ کرده است:</h4>
-                          <button onClick={() => setShowTrustBanner(false)} className="text-slate-300 hover:text-slate-500"><X size={16}/></button>
-                        </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2">
-                            {currentUser.dislikedIngredients?.length > 0 && (
-                              <span className="text-[10px] font-bold bg-rose-50 text-rose-600 px-3 py-1 rounded-full border border-rose-100 flex items-center gap-1">
-                                <AlertCircle size={10}/> {toPersianDigits(currentUser.dislikedIngredients.length)} مورد ممنوعه
-                              </span>
-                            )}
-                            {currentUser.dietMode && (
-                              <span className="text-[10px] font-bold bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
-                                <Leaf size={10}/> غذاهای زیر ۵۰۰ کالری
-                              </span>
-                            )}
-                            {currentUser.preferredNatures?.length > 0 && (
-                              <span className="text-[10px] font-bold bg-amber-50 text-amber-600 px-3 py-1 rounded-full border border-amber-100 flex items-center gap-1">
-                                <Sparkles size={10}/> طبع {activeNaturesText}
-                              </span>
-                            )}
-                            {blacklistedCount > 0 && (
-                              <span className="text-[10px] font-bold bg-slate-50 text-slate-500 px-3 py-1 rounded-full border border-slate-100 flex items-center gap-1">
-                                <X size={10}/> {toPersianDigits(blacklistedCount)} غذا که دوست ندارید
-                              </span>
-                            )}
-                        </div>
-                      </div>
-                  </div>
+      {/* بخش پیام‌های شناور */}
+      {(viewMode === 'plan' || viewMode === 'pantry') && (showTrustBanner || activeChallenge) && (
+        <div className="fixed top-32 left-4 right-4 z-[60] pointer-events-none flex flex-col gap-2 max-w-lg mx-auto no-print">
+          {showTrustBanner && (
+            <div className="bg-white/95 backdrop-blur border-2 border-indigo-500 p-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-enter pointer-events-auto ring-4 ring-indigo-500/10">
+              <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-lg flex-shrink-0"><ShieldCheck size={18} /></div>
+              <div className="flex-grow overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black text-slate-800">شخصی‌سازی‌های فعال شما:</h4>
+                  <button onClick={() => setShowTrustBanner(false)} className="text-slate-300 hover:text-slate-500"><X size={12}/></button>
                 </div>
-              )}
-
-              {activeChallenge && (
-                <div className={`${activeChallenge.color} bg-opacity-10 border-2 ${activeChallenge.color.replace('bg-', 'border-')} border-dashed p-4 rounded-3xl flex items-center justify-between gap-4 animate-enter`}>
-                  <div className="flex items-center gap-4">
-                      <div className={`${activeChallenge.color} p-3 rounded-2xl text-white shadow-lg`}><activeChallenge.icon size={24} /></div>
-                      <div>
-                        <h4 className="font-black text-slate-800 text-sm">چالش فعال: {activeChallenge.title}</h4>
-                        <p className="text-[10px] font-bold text-slate-500">{activeChallenge.description}</p>
-                      </div>
-                  </div>
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {currentUser.dislikedIngredients?.length > 0 && <span className="text-[8px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-100">{toPersianDigits(currentUser.dislikedIngredients.length)} ممنوعه</span>}
+                  {currentUser.dietMode && <span className="text-[8px] font-bold bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full border border-emerald-100">رژیمی</span>}
+                  {currentUser.preferredNatures?.length > 0 && <span className="text-[8px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-100">طبع {activeNaturesText}</span>}
+                  {blacklistedCount > 0 && <span className="text-[8px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full border border-slate-200">{toPersianDigits(blacklistedCount)} حذفی</span>}
                 </div>
-              )}
-           </div>
-        )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
+      <main className="flex-grow container mx-auto px-4 pt-0 py-8 relative z-10 pb-24">
         {viewMode === 'plan' && (
-          <div className="space-y-12 animate-enter">
-            <div className="max-w-5xl mx-auto bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden no-print">
-               <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl"><Settings2 size={24} /></div>
-                  <h2 className="text-xl font-black text-slate-800">تنظیمات سریع برنامه</h2>
+          <div className="space-y-3 animate-enter">
+            <div className="max-w-4xl mx-auto bg-white rounded-2xl p-2 px-4 shadow-sm border-2 border-teal-500/20 no-print flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+               <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="p-1.5 bg-teal-600 text-white rounded-lg shadow-md shadow-teal-100"><Settings2 size={16} /></div>
+                  <h2 className="text-xs font-black text-slate-900 whitespace-nowrap">تنظیمات سریع برنامه</h2>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`p-4 rounded-3xl border-2 flex flex-col items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}><Heart size={24} /><span className="font-black text-sm">غذاهای محبوب</span></button>
-                  <button onClick={() => handleToggleFilter('quickMealsMode')} className={`p-4 rounded-3xl border-2 flex flex-col items-center gap-2 transition-all ${currentUser.quickMealsMode ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}><Clock size={24} /><span className="font-black text-sm">غذاهای سریع</span></button>
-                  <button disabled={currentUser.activeChallengeId === 'vegan-week'} onClick={() => handleToggleFilter('meatlessMode')} className={`p-4 rounded-3xl border-2 flex flex-col items-center gap-2 transition-all ${currentUser.meatlessMode || currentUser.activeChallengeId === 'vegan-week' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}><Leaf size={24} /><span className="font-black text-sm">بدون گوشت</span></button>
+               <div className="flex flex-wrap gap-1.5 justify-center sm:justify-end w-full">
+                  <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`px-3 py-1.5 rounded-xl border-2 flex items-center gap-1.5 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                    <Heart size={14} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
+                    <span className="font-black text-[9px]">غذاهای محبوب</span>
+                  </button>
+                  <button onClick={() => handleToggleFilter('quickMealsMode')} className={`px-3 py-1.5 rounded-xl border-2 flex items-center gap-1.5 transition-all ${currentUser.quickMealsMode ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                    <Clock size={14} />
+                    <span className="font-black text-[9px]">غذاهای سریع</span>
+                  </button>
+                  <button disabled={currentUser.activeChallengeId === 'vegan-week'} onClick={() => handleToggleFilter('meatlessMode')} className={`px-3 py-1.5 rounded-xl border-2 flex items-center gap-1.5 transition-all ${currentUser.meatlessMode || currentUser.activeChallengeId === 'vegan-week' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                    <Leaf size={14} />
+                    <span className="font-black text-[9px]">بدون گوشت</span>
+                  </button>
                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto no-print">
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col items-center text-center transition-all hover:shadow-xl group relative overflow-hidden">
-                <div className="w-16 h-16 bg-teal-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-teal-100 relative z-10"><Calendar size={32} /></div>
-                <h2 className="text-2xl font-black text-slate-800 mb-3 relative z-10">برنامه غذایی هفتگی</h2>
-                <button onClick={handleGenerateWeekly} disabled={isGenerating} className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">{loadingType === 'weekly' ? <RefreshCw size={24} className="animate-spin" /> : <span>ساخت برنامه ۷ روزه</span>}</button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-4xl mx-auto no-print">
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col items-center text-center transition-all hover:shadow-md group relative overflow-hidden">
+                <div className="w-8 h-8 bg-teal-600 text-white rounded-lg flex items-center justify-center mb-2 shadow-md shadow-teal-100 relative z-10"><Calendar size={18} /></div>
+                <h2 className="text-sm font-black text-slate-800 mb-2 relative z-10">برنامه غذایی هفتگی</h2>
+                <button onClick={handleGenerateWeekly} disabled={isGenerating} className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-black transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 text-[10px]">
+                  {loadingType === 'weekly' ? <RefreshCw size={14} className="animate-spin" /> : <span>ساخت برنامه ۷ روزه</span>}
+                </button>
               </div>
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col items-center text-center transition-all hover:shadow-xl group relative overflow-hidden">
-                <div className="w-16 h-16 bg-amber-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-100 relative z-10"><RefreshCw size={32} /></div>
-                <h2 className="text-2xl font-black text-slate-800 mb-3 relative z-10">برنامه غذایی روزانه</h2>
-                <button onClick={handleGenerate} disabled={isGenerating} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">{loadingType === 'daily' ? <RefreshCw size={24} className="animate-spin" /> : <span>پیشنهاد غذای امروز</span>}</button>
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col items-center text-center transition-all hover:shadow-md group relative overflow-hidden">
+                <div className="w-8 h-8 bg-amber-500 text-white rounded-lg flex items-center justify-center mb-2 shadow-md shadow-amber-100 relative z-10"><RefreshCw size={18} /></div>
+                <h2 className="text-sm font-black text-slate-800 mb-2 relative z-10">برنامه غذایی روزانه</h2>
+                <button onClick={handleGenerate} disabled={isGenerating} className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-black transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 text-[10px]">
+                  {loadingType === 'daily' ? <RefreshCw size={14} className="animate-spin" /> : <span>پیشنهاد غذای امروز</span>}
+                </button>
               </div>
             </div>
 
-            <div ref={planResultsRef} className="scroll-mt-32">
+            <div className="max-w-3xl mx-auto text-center px-4 no-print py-1">
+               <p className="text-[10px] font-bold text-slate-400 leading-relaxed">
+                 {isUnapproved ? 'در حالت پیش‌نمایش، فقط ۲۴ غذای منتخب برای شما نمایش داده می‌شود.' : 'برنامه غذایی مطابق با سلیقه شما در پروفایل و تنظیمات سریع تهیه می‌گردد.'}
+               </p>
+            </div>
+
+            {displayPlan.length === 0 && !isGenerating && (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-200 animate-pulse no-print">
+                 <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-4 border-4 border-dashed border-slate-100">
+                    <Utensils size={48} />
+                 </div>
+                 <p className="text-xs font-black text-slate-300">منتظر درخواست شما برای چیدن یک سفره رنگین هستیم...</p>
+              </div>
+            )}
+
+            <div ref={planResultsRef} className="scroll-mt-32 pt-2">
               {displayPlan.length > 0 && (
-                <div className="space-y-8 pb-12">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-6">
-                    <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg"><Calendar size={20} /></div>
-                       <h2 className="text-xl font-black text-slate-900">پیشنهادات منطبق با پروفایل شما</h2>
+                <div className="space-y-4 pb-12">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex items-center gap-2">
+                       <div className="w-7 h-7 bg-slate-900 text-white rounded-lg flex items-center justify-center shadow-lg"><Calendar size={14} /></div>
+                       <h2 className="text-sm font-black text-slate-900">پیشنهادات منطبق با پروفایل شما</h2>
                     </div>
-                    <div className="flex gap-3 no-print">
-                      <button onClick={handlePrint} className="px-4 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl flex items-center gap-2 text-xs font-black transition-all border border-teal-100 active:scale-95"><Printer size={16} /> چاپ برنامه</button>
-                      <button onClick={handleClearPlan} className="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl flex items-center gap-2 text-xs font-black transition-all border border-rose-100 active:scale-95"><Trash2 size={16} /> پاکسازی لیست</button>
+                    <div className="flex gap-2 no-print">
+                      <button onClick={handlePrint} className="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-teal-100 active:scale-95"><Printer size={12} /> چاپ برنامه</button>
+                      <button onClick={handleClearPlan} className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-rose-100 active:scale-95"><Trash2 size={12} /> پاکسازی لیست</button>
                     </div>
                   </div>
-                  <div className={`grid grid-cols-1 ${isWeeklyView ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-3'} gap-8`}>
+                  <div className={`grid grid-cols-1 ${isWeeklyView ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                     {displayPlan.map((plan, idx) => (
                       <div key={`${plan.dish.id}-${idx}`} className="animate-enter meal-card-print" style={{ animationDelay: `${idx * 0.05}s` }}><MealCard plan={plan} user={currentUser} /></div>
                     ))}

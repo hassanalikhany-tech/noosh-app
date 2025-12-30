@@ -36,7 +36,10 @@ const getProteinWeight = (dish: Dish): number => {
 };
 
 const filterDishes = (user: UserProfile) => {
-  let pool = RecipeService.getAllDishes();
+  // اگر کاربر تایید نشده باشد، فقط از غذاهای رایگان (۲۴ مورد) انتخاب کن
+  let pool = (user.isApproved || user.isAdmin) 
+    ? RecipeService.getAllDishes() 
+    : RecipeService.getAccessibleDishes(user);
 
   // ۱. حذف لیست سیاه شخصی و دسته‌بندی‌های ممنوعه
   pool = pool.filter(d => !user.blacklistedDishIds?.includes(d.id));
@@ -44,7 +47,7 @@ const filterDishes = (user: UserProfile) => {
     pool = pool.filter(d => !user.excludedCategories.includes(d.category));
   }
 
-  // ۲. فیلتر مواد ممنوعه و حساسیت‌زا (بسیار مهم)
+  // ۲. فیلتر مواد ممنوعه و حساسیت‌زا
   if (user.dislikedIngredients && user.dislikedIngredients.length > 0) {
     pool = pool.filter(dish => {
       const isForbiddenInName = user.dislikedIngredients.some(forbidden => dish.name.includes(forbidden));
@@ -55,7 +58,7 @@ const filterDishes = (user: UserProfile) => {
     });
   }
 
-  // ۳. فیلتر حالت رژیمی (کالری زیر ۵۰۰)
+  // ۳. فیلتر حالت رژیمی
   if (user.dietMode) {
     pool = pool.filter(d => (d.calories || 400) < 500);
   }
@@ -65,7 +68,7 @@ const filterDishes = (user: UserProfile) => {
     pool = pool.filter(d => user.preferredNatures.includes(d.nature || 'balanced'));
   }
 
-  // ۵. فیلترهای سریع و محبوب
+  // ۵. فیلترهای محبوب
   if (user.onlyFavoritesMode) {
     pool = pool.filter(d => user.favoriteDishIds?.includes(d.id));
   }
@@ -73,7 +76,7 @@ const filterDishes = (user: UserProfile) => {
     pool = pool.filter(d => (d.cookTime || 60) <= 45);
   }
 
-  // ۶. منطق چالش‌های فعال
+  // ۶. چالش‌ها
   const activeChallengeId = user.activeChallengeId;
   if (user.meatlessMode || activeChallengeId === 'vegan-week') {
     pool = pool.filter(dish => {
@@ -115,7 +118,7 @@ export const generateWeeklyPlan = async (user: UserProfile): Promise<{ plan: Day
   const dayConfigs = [
     { day: 'شنبه', cats: isProteinChallenge ? ['kabab', 'stew'] : ['stew', 'khorak'] },
     { day: 'یک‌شنبه', cats: isProteinChallenge ? ['kabab', 'polo'] : ['polo'] },
-    { day: 'دوشنبه', cats: isProteinChallenge ? ['støw', 'international'] : ['khorak', 'ash'] },
+    { day: 'دوشنبه', cats: isProteinChallenge ? ['stew', 'international'] : ['khorak', 'ash'] },
     { day: 'سه‌شنبه', cats: ['kabab', 'stew'] },
     { day: 'چهارشنبه', cats: isProteinChallenge ? ['kabab', 'polo'] : ['international', 'polo'] },
     { day: 'پنج‌شنبه', cats: isProteinChallenge ? ['kabab', 'stew'] : ['fastfood', 'khorak'] },
