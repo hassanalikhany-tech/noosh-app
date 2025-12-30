@@ -181,15 +181,26 @@ const App: React.FC = () => {
       </div>
 
       {isUnapproved && (
-        <div className="bg-amber-600 text-white py-2 px-4 text-center text-[10px] font-black flex items-center justify-center gap-2 animate-pulse no-print">
-          <AlertCircle size={14} />
-          <span>حساب شما در انتظار تایید است. هم‌اکنون در «حالت پیش‌نمایش» هستید و فقط ۲۴ غذای منتخب در دسترس است.</span>
+        <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white py-8 px-8 text-center shadow-2xl relative z-[55] no-print border-b-4 border-amber-900/40">
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-5">
+            <div className="bg-white/20 p-4 rounded-[2rem] animate-bounce flex-shrink-0 shadow-inner">
+              <AlertCircle size={40} className="text-white" />
+            </div>
+            <div className="text-right">
+              <span className="text-lg md:text-xl font-black leading-tight drop-shadow-md block mb-1">
+                حساب شما در انتظار تایید است.
+              </span>
+              <span className="text-sm md:text-base font-bold opacity-90 block">
+                هم‌اکنون در «حالت پیش‌نمایش» هستید و فقط ۲۴ غذای منتخب در دسترس است.
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
       {/* بخش پیام‌های شناور */}
       {(viewMode === 'plan' || viewMode === 'pantry') && (showTrustBanner || activeChallenge) && (
-        <div className="fixed top-32 left-4 right-4 z-[60] pointer-events-none flex flex-col gap-2 max-w-lg mx-auto no-print">
+        <div className="fixed top-40 left-4 right-4 z-[60] pointer-events-none flex flex-col gap-2 max-w-lg mx-auto no-print">
           {showTrustBanner && (
             <div className="bg-white/95 backdrop-blur border-2 border-indigo-500 p-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-enter pointer-events-auto ring-4 ring-indigo-500/10">
               <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-lg flex-shrink-0"><ShieldCheck size={18} /></div>
@@ -266,7 +277,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div ref={planResultsRef} className="scroll-mt-32 pt-2">
+            <div ref={planResultsRef} className="scroll-mt-48 pt-2">
               {displayPlan.length > 0 && (
                 <div className="space-y-4 pb-12">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-3">

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckCircle2 } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -22,11 +22,9 @@ const GoogleIcon = () => (
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [showResend, setShowResend] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -41,22 +39,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     if (error) setError('');
   };
 
-  const handleResendEmail = async () => {
-    if (!formData.email || !formData.password) {
-      setError("لطفاً ابتدا ایمیل و رمز عبور خود را وارد کنید.");
-      return;
-    }
-    setIsResending(true);
-    const result = await UserService.resendVerificationEmail(formData.email, formData.password);
-    if (result.success) {
-      setSuccessMessage(result.message);
-      setShowResend(false);
-    } else {
-      setError(result.message);
-    }
-    setIsResending(false);
-  };
-
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
     setError('');
@@ -66,7 +48,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
-        // نمایش مستقیم پیام خطای دریافتی از سرویس (شامل راهنمای دامنه)
         setError(result.message || 'خطا در ورود با گوگل');
         setIsGoogleLoading(false);
       }
@@ -85,7 +66,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setError('');
     setSuccessMessage('');
-    setShowResend(false);
 
     if (!email) {
       setError('لطفاً آدرس ایمیل خود را وارد کنید.');
@@ -110,14 +90,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           onLogin(result.user);
         } else {
           setError(result.message || 'ایمیل یا رمز عبور اشتباه است.');
-          if (result.needsVerification) setShowResend(true);
         }
       } else {
         const result = await UserService.register({ ...formData, email });
-        if (result.success) {
-          setSuccessMessage('حساب شما ساخته شد! اکنون می‌توانید وارد شوید.');
-          setMode('login');
-          setFormData(prev => ({ ...prev, password: '' }));
+        if (result.success && result.user) {
+          onLogin(result.user);
         } else {
           setError(result.message || 'خطا در ثبت‌نام');
         }
@@ -249,24 +226,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                    <AlertCircle size={14} className="flex-shrink-0" /> 
                    <span className="leading-relaxed">{error}</span>
                 </div>
-                {showResend && (
-                  <button 
-                    type="button" 
-                    onClick={handleResendEmail}
-                    disabled={isResending}
-                    className="flex items-center gap-1 text-teal-600 hover:underline mt-1 pr-1"
-                  >
-                    {isResending ? <Loader2 size={12} className="animate-spin"/> : <RefreshCw size={12}/>}
-                    ارسال مجدد لینک تایید به ایمیل
-                  </button>
-                )}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="p-3 bg-teal-50 text-teal-600 rounded-xl text-[10px] font-black flex items-start gap-2 border border-teal-100 animate-enter">
-                <CheckCircle2 size={18} className="flex-shrink-0 mt-0.5" /> 
-                <span className="leading-relaxed">{successMessage}</span>
               </div>
             )}
 
