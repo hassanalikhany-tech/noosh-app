@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -24,7 +24,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   
   const [formData, setFormData] = useState({
     email: '',
@@ -32,6 +31,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     fullName: '',
     phoneNumber: '',
   });
+
+  // اطمینان از خالی بودن فیلدها در هر بار نمایش کامپوننت
+  useEffect(() => {
+    setFormData({
+      email: '',
+      password: '',
+      fullName: '',
+      phoneNumber: '',
+    });
+  }, [mode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,7 +74,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const password = formData.password;
 
     setError('');
-    setSuccessMessage('');
 
     if (!email) {
       setError('لطفاً آدرس ایمیل خود را وارد کنید.');
@@ -117,7 +125,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="bg-noosh-pattern" style={{ opacity: 0.1 }}></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_8s_infinite] pointer-events-none"></div>
           
           <div className="relative z-10 text-center space-y-8">
             <div className="animate-float">
@@ -155,7 +162,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1 relative z-10">
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1 relative z-10">
+            {/* فیلد مخفی برای گول زدن اتوفیل مرورگر */}
+            <input type="text" style={{display:'none'}} />
+            <input type="password" style={{display:'none'}} />
+
             {mode === 'register' && (
               <>
                 <div className="space-y-1">
@@ -165,7 +176,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <input 
                     type="text" 
                     name="fullName" 
-                    autoComplete="name"
+                    autoComplete="off"
                     value={formData.fullName} 
                     onChange={handleInputChange} 
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-slate-800 placeholder:text-slate-400" 
@@ -180,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <input 
                     type="tel" 
                     name="phoneNumber" 
-                    autoComplete="tel"
+                    autoComplete="off"
                     value={formData.phoneNumber} 
                     onChange={handleInputChange} 
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
@@ -197,7 +208,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input 
                 type="email" 
                 name="email" 
-                autoComplete="email"
+                autoComplete="off"
                 value={formData.email} 
                 onChange={handleInputChange} 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
@@ -212,7 +223,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input 
                 type="password" 
                 name="password" 
-                autoComplete={mode === 'login' ? "current-password" : "new-password"}
+                autoComplete="new-password"
                 value={formData.password} 
                 onChange={handleInputChange} 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
