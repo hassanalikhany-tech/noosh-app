@@ -52,9 +52,8 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
 };
 
 export const UserService = {
-  login: async (email: string, password: string): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
+  login: async (email: string, password: string): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
     try {
-      // قبل از ورود، کش دیتابیس را پاک کن تا از تداخل جلوگیری شود
       await RecipeService.clearAllCache();
       
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -78,16 +77,17 @@ export const UserService = {
       }
       return { success: true, user: userData };
     } catch (error: any) {
-      return { success: false, message: "ایمیل یا رمز عبور اشتباه است." };
+      return { success: false, message: "ایمیل یا رمز عبور اشتباه است.", code: error.code };
     }
   },
 
-  loginWithGoogle: async () => {
+  loginWithGoogle: async (): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
     try {
       await RecipeService.clearAllCache();
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(provider); // Fix: remove auth from parameter to use global auth correctly
+      
+      const result = await signInWithPopup(auth, provider); 
       const user = result.user;
       const userEmail = (user.email || "").toLowerCase();
       
@@ -108,11 +108,16 @@ export const UserService = {
       }
       return { success: true, user: data };
     } catch (error: any) {
-      return { success: false, message: "خطا در ورود با گوگل." };
+      console.error("Google Login Error:", error);
+      return { 
+        success: false, 
+        message: "خطا در ورود با گوگل",
+        code: error.code 
+      };
     }
   },
 
-  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
+  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
     try {
       await RecipeService.clearAllCache();
       const { email, password, fullName, phoneNumber } = data;
@@ -121,7 +126,7 @@ export const UserService = {
       await setDoc(doc(db, "users", userCredential.user.uid), newUser);
       return { success: true, user: newUser };
     } catch (error: any) {
-      return { success: false, message: "خطا در ثبت‌نام: " + error.message };
+      return { success: false, message: "خطا در ثبت‌نام: " + error.message, code: error.code };
     }
   },
 
@@ -218,7 +223,6 @@ export const UserService = {
   },
 
   logout: async () => {
-    // قبل از خروج، کش را پاک کن
     await RecipeService.clearAllCache();
     await signOut(auth);
   },

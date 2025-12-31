@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -24,6 +24,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
+  const [detailedError, setDetailedError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -32,32 +34,52 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // اطمینان از خالی بودن فیلدها در هر بار نمایش کامپوننت
+  // بارگذاری اطلاعات ذخیره شده در هنگام شروع
   useEffect(() => {
-    setFormData({
-      email: '',
-      password: '',
-      fullName: '',
-      phoneNumber: '',
-    });
+    const savedEmail = localStorage.getItem('noosh_saved_email');
+    const savedPassword = localStorage.getItem('noosh_saved_password');
+    const savedRemember = localStorage.getItem('noosh_remember_me') === 'true';
+
+    if (savedRemember && savedEmail && savedPassword) {
+      setFormData(prev => ({ ...prev, email: savedEmail, password: savedPassword }));
+      setRememberMe(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    // فقط فیلدهای اضافی را پاک کن، ایمیل و پسورد اگر ذخیره شده باشند باقی بمانند
+    if (mode === 'register') {
+      setFormData(prev => ({ ...prev, fullName: '', phoneNumber: '' }));
+    }
+    setError('');
+    setDetailedError(null);
   }, [mode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
+    if (error) {
+      setError('');
+      setDetailedError(null);
+    }
   };
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
     setError('');
+    setDetailedError(null);
     setIsGoogleLoading(true);
     try {
       const result = await UserService.loginWithGoogle();
       if (result.success && result.user) {
         onLogin(result.user);
       } else {
-        setError(result.message || 'خطا در ورود با گوگل');
+        if (result.code === 'auth/unauthorized-domain') {
+          setError('خطای امنیتی دامنه فایربیس');
+          setDetailedError(`دامنه فعلی شما (${window.location.hostname}) در لیست دامنه‌های مجاز پروژه فایربیس نیست. لطفا این دامنه را در کنسول فایربیس اضافه کنید.`);
+        } else {
+          setError(result.message || 'خطا در ورود با گوگل');
+        }
         setIsGoogleLoading(false);
       }
     } catch (err: any) {
@@ -74,13 +96,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const password = formData.password;
 
     setError('');
+    setDetailedError(null);
 
-    if (!email) {
-      setError('لطفاً آدرس ایمیل خود را وارد کنید.');
-      return;
-    }
-    if (!password) {
-      setError('لطفاً رمز عبور خود را وارد کنید.');
+    if (!email || !password) {
+      setError('لطفاً ایمیل و رمز عبور را وارد کنید.');
       return;
     }
 
@@ -92,20 +111,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
+      let result;
       if (mode === 'login') {
-        const result = await UserService.login(email, password);
-        if (result.success && result.user) {
-          onLogin(result.user);
-        } else {
-          setError(result.message || 'ایمیل یا رمز عبور اشتباه است.');
-        }
+        result = await UserService.login(email, password);
       } else {
-        const result = await UserService.register({ ...formData, email });
-        if (result.success && result.user) {
-          onLogin(result.user);
+        result = await UserService.register({ ...formData, email });
+      }
+
+      if (result.success && result.user) {
+        // مدیریت قابلیت «مرا به خاطر بسپار»
+        if (rememberMe) {
+          localStorage.setItem('noosh_saved_email', email);
+          localStorage.setItem('noosh_saved_password', password);
+          localStorage.setItem('noosh_remember_me', 'true');
         } else {
-          setError(result.message || 'خطا در ثبت‌نام');
+          localStorage.removeItem('noosh_saved_email');
+          localStorage.removeItem('noosh_saved_password');
+          localStorage.setItem('noosh_remember_me', 'false');
         }
+        onLogin(result.user);
+      } else {
+        setError(result.message || 'خطایی رخ داده است.');
       }
     } catch (err: any) {
       console.error("Critical Auth Error:", err);
@@ -163,7 +189,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1 relative z-10">
-            {/* فیلد مخفی برای گول زدن اتوفیل مرورگر */}
             <input type="text" style={{display:'none'}} />
             <input type="password" style={{display:'none'}} />
 
@@ -231,12 +256,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
             </div>
 
+            {/* دکمه مرا به خاطر بسپار */}
+            <div className="flex items-center gap-2 px-2 py-1">
+              <button 
+                type="button" 
+                onClick={() => setRememberMe(!rememberMe)}
+                className="flex items-center gap-2 text-slate-500 hover:text-teal-600 transition-colors"
+              >
+                {rememberMe ? <CheckSquare size={18} className="text-teal-600" /> : <Square size={18} />}
+                <span className="text-[11px] font-black">مرا به خاطر بسپار</span>
+              </button>
+            </div>
+
             {error && (
               <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black space-y-2 border border-rose-100 animate-enter flex flex-col">
                 <div className="flex items-center gap-2">
                    <AlertCircle size={14} className="flex-shrink-0" /> 
                    <span className="leading-relaxed">{error}</span>
                 </div>
+                {detailedError && (
+                  <div className="mt-1 p-2 bg-white/50 rounded-lg text-rose-800 font-bold border border-rose-100 text-[9px] leading-relaxed">
+                    {detailedError}
+                  </div>
+                )}
               </div>
             )}
 
