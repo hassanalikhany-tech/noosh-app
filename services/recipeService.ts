@@ -18,7 +18,7 @@ export const RecipeService = {
   initialize: async (): Promise<void> => {
     if (isInitialized) return;
     
-    // همیشه با لیست پایه شروع کن و کش قدیمی را نادیده بگیر اگر باعث تکرار می‌شود
+    // همیشه با لیست خام استاتیک شروع کن (تضمین عدم تکرار در شروع)
     cachedDishes = [...DEFAULT_DISHES];
     
     const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
@@ -34,7 +34,7 @@ export const RecipeService = {
       if (localDishes && localDishes.length > 0) {
         const existingIds = new Set(cachedDishes.map(d => d.id));
         localDishes.forEach(d => {
-          // فقط اگر آی‌دی جدید بود اضافه کن (جلوگیری از دوبرابر شدن)
+          // فقط اگر آی‌دی در دیتابیس فعلی نبود اضافه کن
           if (!existingIds.has(d.id)) {
             cachedDishes.push(d);
           }
@@ -48,14 +48,15 @@ export const RecipeService = {
 
   clearAllCache: async () => {
     try {
-      // پاکسازی دیتابیس آفلاین
+      // پاکسازی کامل دیتابیس IndexedDB برای جلوگیری از جمع شدن اطلاعات کش قدیمی با دیتابیس جدید
       const dishes = await DB.getAll('dishes');
       for (const dish of dishes) {
         await DB.delete('dishes', dish.id);
       }
-      // بازنشانی متغیرهای محلی
+      // بازنشانی متغیر لوکال
       cachedDishes = [...DEFAULT_DISHES];
-      console.log("Cache cleared successfully");
+      isInitialized = false;
+      console.log("Database cache purged successfully to prevent duplication.");
     } catch (e) {
       console.error("Failed to clear cache", e);
     }

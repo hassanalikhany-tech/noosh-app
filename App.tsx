@@ -41,34 +41,36 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
-      // شبیه‌سازی پیشرفت بارگذاری برای تجربه کاربری بهتر
-      const progressTimer = setInterval(() => {
+      // ۱. اجبار به خروج و پاکسازی کش در هر بار بازگشت به اپلیکیشن
+      // این خط تضمین می‌کند کاربر همیشه پنل ورود را ببیند و دیتابیس دوبل نشود
+      await UserService.logout();
+      setInitProgress(20);
+
+      // ۲. شبیه‌سازی پیشرفت بارگذاری برای نمایش به کاربر
+      const progressInterval = setInterval(() => {
         setInitProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + 5;
+          if (prev >= 95) return prev;
+          return prev + 2;
         });
-      }, 100);
+      }, 150);
 
       await RecipeService.initialize();
       setInitProgress(60);
       
       await UserService.seedAdmin();
-      setInitProgress(80);
+      setInitProgress(85);
       
-      const user = await UserService.getCurrentUser();
+      // در این مرحله آگاهانه currentUser را ست نمی‌کنیم تا صفحه ورود نمایش داده شود
       setInitProgress(100);
       
-      clearInterval(progressTimer);
-
-      if (user) {
-        setCurrentUser(user);
-        if (user.weeklyPlan && user.weeklyPlan.length > 0) setDisplayPlan(user.weeklyPlan);
-        triggerTrustBanner();
-      }
+      clearInterval(progressInterval);
       
-      // یک تاخیر کوتاه برای نمایش ۱۰۰ درصد
-      setTimeout(() => setIsInitializing(false), 500);
+      // یک تاخیر کوتاه برای نمایش ۱۰۰ درصد و سپس حذف صفحه بارگذاری
+      setTimeout(() => {
+        setIsInitializing(false);
+      }, 800);
     };
+    
     initApp();
 
     const handleUserUpdate = async () => {
@@ -79,121 +81,115 @@ const App: React.FC = () => {
       }
     };
 
-    const handleExternalBannerTrigger = () => triggerTrustBanner();
-
     window.addEventListener('user-data-updated', handleUserUpdate);
-    window.addEventListener('trigger-trust-banner', handleExternalBannerTrigger);
+    // Fix: Listen to trigger-trust-banner event dispatched from other components
+    window.addEventListener('trigger-trust-banner', triggerTrustBanner);
     
     return () => {
       window.removeEventListener('user-data-updated', handleUserUpdate);
-      window.removeEventListener('trigger-trust-banner', handleExternalBannerTrigger);
-      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+      window.removeEventListener('trigger-trust-banner', triggerTrustBanner);
     };
   }, []);
 
   const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
-  const handleGenerate = async () => {
-    if (!currentUser) return;
-    setLoadingType('daily');
-    triggerTrustBanner();
-    const { plan, updatedUser } = await generateDailyPlan(currentUser);
-    setDisplayPlan(plan);
-    setCurrentUser(updatedUser);
-    setLoadingType(null);
-    setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-  };
-
-  const handleGenerateWeekly = async () => {
-    if (!currentUser) return;
-    setLoadingType('weekly');
-    triggerTrustBanner();
-    const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
-    setDisplayPlan(plan);
-    setCurrentUser(updatedUser);
-    setLoadingType(null);
-    setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-  };
-
-  const handleClearPlan = async () => {
-    if (!currentUser) return;
-    setDisplayPlan([]);
-    UserService.updateProfile(currentUser.username, { weeklyPlan: [] }).then(updatedUser => setCurrentUser(updatedUser));
-  };
-
-  const handlePrintPlan = () => {
-    setActivePrintSource('plan');
-    setTimeout(() => {
-      window.print();
-      setActivePrintSource(null);
-    }, 100);
-  };
-
-  const handlePrintShopping = () => {
-    setActivePrintSource('shopping');
-    setTimeout(() => {
-      window.print();
-      setActivePrintSource(null);
-    }, 100);
-  };
-
-  const handleToggleFilter = (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
-    if (!currentUser) return;
-    const newValue = !currentUser[filter];
-    setCurrentUser({ ...currentUser, [filter]: newValue });
-    UserService.updateProfile(currentUser.username, { [filter]: newValue });
-  };
-
-  const handleLogout = () => {
-    UserService.logout();
+  const handleLogout = async () => {
+    await UserService.logout();
     setCurrentUser(null);
     setIsAdminMode(false);
     setDisplayPlan([]);
   };
 
-  // المان بارگذاری ارتقایافته
+  // Fix: Added handleToggleFilter to toggle specific boolean settings in user profile
+  const handleToggleFilter = async (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
+    if (!currentUser) return;
+    const updates: Partial<UserProfile> = { [filter]: !currentUser[filter] };
+    const updated = await UserService.updateProfile(currentUser.username, updates);
+    setCurrentUser(updated);
+  };
+
+  // Fix: Added handleGenerate to generate a daily recommendation plan
+  const handleGenerate = async () => {
+    if (!currentUser) return;
+    setLoadingType('daily');
+    try {
+      const { plan, updatedUser } = await generateDailyPlan(currentUser);
+      setDisplayPlan(plan);
+      setCurrentUser(updatedUser);
+      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err) {
+      console.error("Daily plan generation failed:", err);
+    } finally {
+      setLoadingType(null);
+    }
+  };
+
+  // Fix: Added handleGenerateWeekly to generate a 7-day meal plan
+  const handleGenerateWeekly = async () => {
+    if (!currentUser) return;
+    setLoadingType('weekly');
+    try {
+      const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
+      setDisplayPlan(plan);
+      setCurrentUser(updatedUser);
+      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err) {
+      console.error("Weekly plan generation failed:", err);
+    } finally {
+      setLoadingType(null);
+    }
+  };
+
+  // صفحه بارگذاری اختصاصی با لوگو و نام دو رنگ
   if (isInitializing) return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] overflow-hidden">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0"></div>
       
-      <div className="relative z-10 flex flex-col items-center gap-8 animate-enter">
+      <div className="relative z-10 flex flex-col items-center gap-10 animate-enter">
+        {/* لوگوی اپلیکیشن با افکت درخشش */}
         <div className="animate-float">
           <img 
             src="https://i.ibb.co/gMDKtj4p/3.png" 
             alt="Noosh Logo" 
-            className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.4)]" 
+            className="w-36 h-36 object-contain drop-shadow-[0_0_30px_rgba(45,212,191,0.5)]" 
           />
         </div>
         
+        {/* نام دو رنگ انگلیسی اپلیکیشن */}
         <div className="text-center">
-          <div className="flex flex-row items-baseline justify-center gap-2 mb-2" style={{ direction: 'ltr' }}>
-            <span className="text-4xl font-black italic text-white uppercase tracking-tighter">NOOSH</span>
-            <span className="text-2xl font-black text-teal-500 italic uppercase">APP</span>
+          <div className="flex flex-row items-baseline justify-center gap-2 mb-4" style={{ direction: 'ltr' }}>
+            <span className="text-5xl font-black italic text-white uppercase tracking-tighter">NOOSH</span>
+            <span className="text-3xl font-black text-teal-500 italic uppercase">APP</span>
           </div>
-          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] opacity-60">Smart Kitchen Assistant</p>
+          <div className="h-1 w-20 bg-teal-500 mx-auto rounded-full mb-2 opacity-50"></div>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.4em] opacity-80">Smart Kitchen Assistant</p>
         </div>
 
-        <div className="w-64 space-y-3">
-          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+        {/* نوار پیشرفت و درصد */}
+        <div className="w-72 space-y-4">
+          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
             <div 
-              className="h-full bg-gradient-to-r from-teal-600 to-teal-400 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(45,212,191,0.5)]"
+              className="h-full bg-gradient-to-r from-teal-600 via-teal-400 to-teal-500 transition-all duration-500 ease-out rounded-full shadow-[0_0_15px_rgba(45,212,191,0.6)]"
               style={{ width: `${initProgress}%` }}
             ></div>
           </div>
-          <div className="flex justify-between items-center text-[10px] font-black">
-             <span className="text-teal-500 animate-pulse">در حال فراخوانی دیتابیس...</span>
-             <span className="text-white font-mono">{toPersianDigits(initProgress)}٪</span>
+          <div className="flex justify-between items-center px-1">
+             <div className="flex items-center gap-2">
+                <RefreshCw size={14} className="text-teal-500 animate-spin" />
+                <span className="text-teal-500 text-[11px] font-black">در حال آماده‌سازی...</span>
+             </div>
+             <span className="text-white font-mono text-sm font-black">{toPersianDigits(initProgress)}٪</span>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-10 flex items-center gap-2 text-slate-600 text-[9px] font-bold uppercase tracking-widest">
-        <RefreshCw size={12} className="animate-spin" />
-        <span>Secure Connection Established</span>
+      <div className="absolute bottom-12 text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em]">
+        Version 12.7.2 | Secure Environment
       </div>
     </div>
   );
 
+  // اگر کاربر لاگین نکرده باشد (که با توجه به منطق بالا همیشه در ابتدا نکرده است) صفحه ورود نشان داده می‌شود
   if (!currentUser) return <Login onLogin={setCurrentUser} />;
   
   if (currentUser.isAdmin && isAdminMode) {
@@ -204,139 +200,9 @@ const App: React.FC = () => {
 
   const isWeeklyView = displayPlan.length > 3;
   const isGenerating = !!loadingType;
-  const activeChallenge = CHALLENGES.find(c => c.id === currentUser.activeChallengeId);
-  const isUnapproved = !currentUser.isAdmin && !currentUser.isApproved;
-
-  const natureLabels: Record<string, string> = { hot: 'گرم', cold: 'سرد', balanced: 'معتدل' };
-  const activeNaturesText = currentUser.preferredNatures?.map(n => natureLabels[n]).join(' و ') || '';
-  
-  const blacklistedCount = currentUser.blacklistedDishIds 
-    ? Array.from(new Set(currentUser.blacklistedDishIds.filter(id => typeof id === 'string' && id.trim() !== ''))).length 
-    : 0;
-
-  // --- هدر مشترک چاپ ---
-  const PrintHeader = ({ title, subtitle }: { title: string, subtitle: string }) => (
-    <div className="print-brand flex items-center justify-between mb-8 border-b-2 border-slate-900 pb-4">
-      <div className="flex items-center gap-4">
-        <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain" />
-        <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black italic text-slate-900 uppercase">NOOSH</span>
-            <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
-          </div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Kitchen Assistant</span>
-        </div>
-      </div>
-      <div className="text-right">
-        <h1 className="text-xl font-black text-slate-800 mb-1">{title}</h1>
-        <p className="text-sm font-bold text-teal-600 italic">{subtitle}</p>
-      </div>
-    </div>
-  );
-
-  // --- قالب چاپ برنامه غذایی ---
-  const PrintPlanTemplate = () => {
-    const planTypeText = displayPlan.length > 3 ? 'هفتگی' : 'روزانه';
-    return (
-      <div className={`print-only w-full bg-white p-4 ${activePrintSource === 'plan' ? 'active-print' : ''}`}>
-        <PrintHeader title={`برنامه غذایی اختصاصی ${planTypeText}`} subtitle="نوش جان! سفره‌ای رنگین برای سلامتی شما" />
-        <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-           نام کاربر: {currentUser?.fullName || currentUser?.username} | تاریخ تهیه: {new Date().toLocaleDateString('fa-IR')}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th className="w-20">روز / نوبت</th>
-              <th className="w-40">نام غذا</th>
-              <th className="w-32">طبع و مصلح</th>
-              <th className="w-24">کالری و زمان</th>
-              <th>خلاصه توضیحات و مواد کلیدی</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayPlan.map((plan, idx) => {
-              const natureInfo = plan.dish.nature ? { type: plan.dish.nature, label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
-              const cal = plan.dish.calories || estimateCalories(plan.dish);
-              const time = plan.dish.cookTime || estimateCookTime(plan.dish);
-              return (
-                <tr key={idx}>
-                  <td className="font-black text-center">{plan.dayName}</td>
-                  <td className="font-black text-teal-700 text-lg">{plan.dish.name}</td>
-                  <td>
-                    <div className="font-bold">طبع: {natureInfo.label}</div>
-                    <div className="text-[9px] text-slate-500">مصلح: {plan.dish.mosleh || 'نیاز ندارد'}</div>
-                  </td>
-                  <td className="text-center">
-                    <div className="font-bold">{toPersianDigits(cal)} کالری</div>
-                    <div className="text-[9px] text-slate-500">{toPersianDigits(time)} دقیقه پخت</div>
-                  </td>
-                  <td className="text-justify text-[10px]">
-                    <p className="mb-1">{plan.dish.description}</p>
-                    <div className="font-bold text-slate-700">مواد اصلی: {plan.dish.ingredients?.slice(0, 5).map(i => i.item).join('، ')} ...</div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
-          <p className="text-[10px] font-black text-slate-500 leading-relaxed">
-            این برنامه غذایی {planTypeText} با توجه به محدودیت‌های اعمال شده و سلیقه‌های شخصی شما در اپلیکیشن نوش اپ تهیه شده است.
-            <br/>
-            <span className="text-slate-400 mt-2 block">www.nooshapp.ir | دستیار هوشمند آشپزی شما</span>
-          </p>
-        </div>
-      </div>
-    );
-  };
-
-  // --- قالب چاپ سبد خرید ---
-  const PrintShoppingTemplate = () => {
-    const activeItems = (currentUser?.customShoppingList || []).filter(i => !i.checked);
-    return (
-      <div className={`print-only w-full bg-white p-4 ${activePrintSource === 'shopping' ? 'active-print' : ''}`}>
-        <PrintHeader title="لیست خرید هوشمند" subtitle="ملزومات مورد نیاز برای آشپزخانه شما" />
-        <div className="mb-4 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">
-           نام کاربر: {currentUser?.fullName || currentUser?.username} | تعداد اقلام: {toPersianDigits(activeItems.length)} | تاریخ: {new Date().toLocaleDateString('fa-IR')}
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th className="w-12 text-center">ردیف</th>
-              <th>نام کالا / مواد اولیه</th>
-              <th className="w-32 text-center">مقدار</th>
-              <th className="w-32 text-center">واحد</th>
-              <th>مربوط به / یادداشت</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activeItems.length > 0 ? activeItems.map((item, idx) => (
-              <tr key={idx}>
-                <td className="text-center font-bold">{toPersianDigits(idx + 1)}</td>
-                <td className="font-black text-slate-800 text-base">{item.name}</td>
-                <td className="text-center font-bold text-teal-700">{item.amount ? toPersianDigits(item.amount) : '---'}</td>
-                <td className="text-center font-bold text-slate-600">{item.unit || '---'}</td>
-                <td className="text-xs text-slate-400">{item.fromRecipe || 'افزودن دستی'}</td>
-              </tr>
-            )) : (
-              <tr><td colSpan={5} className="text-center p-10 font-bold text-slate-400 italic">لیست خرید شما خالی است.</td></tr>
-            )}
-          </tbody>
-        </table>
-        <div className="mt-10 pt-4 border-t border-dashed border-slate-300 text-center">
-          <p className="text-[10px] font-black text-slate-500 leading-relaxed">
-             این لیست خرید با توجه به برنامه غذایی و نیازهای شخصی شما در اپلیکیشن نوش اپ تهیه شده است.
-            <br/>
-            <span className="text-slate-400 mt-2 block">www.nooshapp.ir | دستیار هوشمند آشپزی شما</span>
-          </p>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-right dir-rtl relative">
-      
       <div className={`sticky top-0 z-40 shadow-2xl no-print bg-slate-950`}>
         <header className="h-[75px] flex items-center border-b border-white/5 px-4">
           <div className="container mx-auto flex justify-between items-center">
@@ -375,46 +241,6 @@ const App: React.FC = () => {
           </div>
         </nav>
       </div>
-
-      {isUnapproved && (
-        <div className="bg-gradient-to-r from-amber-600 to-orange-700 text-white py-8 px-8 text-center shadow-2xl relative z-[55] no-print border-b-4 border-amber-900/40">
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-5">
-            <div className="bg-white/20 p-4 rounded-[2rem] animate-bounce flex-shrink-0 shadow-inner">
-              <AlertCircle size={40} className="text-white" />
-            </div>
-            <div className="text-right">
-              <span className="text-lg md:text-xl font-black leading-tight drop-shadow-md block mb-1">
-                حساب شما در انتظار تایید است.
-              </span>
-              <span className="text-sm md:text-base font-bold opacity-90 block">
-                هم‌اکنون در «حالت پیش‌نمایش» هستید و فقط ۲۴ غذای منتخب در دسترس است.
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(viewMode === 'plan' || viewMode === 'pantry') && (showTrustBanner || activeChallenge) && (
-        <div className="fixed top-40 left-4 right-4 z-[60] pointer-events-none flex flex-col gap-2 max-w-lg mx-auto no-print">
-          {showTrustBanner && (
-            <div className="bg-white/95 backdrop-blur border-2 border-indigo-500 p-2.5 rounded-2xl shadow-xl flex items-center gap-3 animate-enter pointer-events-auto ring-4 ring-indigo-500/10">
-              <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-lg flex-shrink-0"><ShieldCheck size={18} /></div>
-              <div className="flex-grow overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-black text-slate-800">شخصی‌سازی‌های فعال شما:</h4>
-                  <button onClick={() => setShowTrustBanner(false)} className="text-slate-300 hover:text-slate-500"><X size={12}/></button>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-0.5">
-                  {currentUser.dislikedIngredients?.length > 0 && <span className="text-[8px] font-bold bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full border border-rose-100">{toPersianDigits(currentUser.dislikedIngredients.length)} ممنوعه</span>}
-                  {currentUser.dietMode && <span className="text-[8px] font-bold bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full border border-emerald-100">رژیمی</span>}
-                  {currentUser.preferredNatures?.length > 0 && <span className="text-[8px] font-bold bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full border border-amber-100">طبع {activeNaturesText}</span>}
-                  {blacklistedCount > 0 && <span className="text-[8px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full border border-slate-200">{toPersianDigits(blacklistedCount)} حذفی</span>}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       <main className="flex-grow container mx-auto px-4 pt-0 py-8 relative z-10 pb-24 no-print">
         {viewMode === 'plan' && (
@@ -457,23 +283,8 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="max-w-3xl mx-auto text-center px-4 no-print py-1">
-               <p className="text-[10px] font-bold text-slate-400 leading-relaxed">
-                 {isUnapproved ? 'در حالت پیش‌نمایش، فقط ۲۴ غذای منتخب برای شما نمایش داده می‌شود.' : 'برنامه غذایی مطابق با سلیقه شما در پروفایل و تنظیمات سریع تهیه می‌گردد.'}
-               </p>
-            </div>
-
-            {displayPlan.length === 0 && !isGenerating && (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-200 animate-pulse no-print">
-                 <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-4 border-4 border-dashed border-slate-100">
-                    <Utensils size={48} />
-                 </div>
-                 <p className="text-xs font-black text-slate-300">منتظر درخواست شما برای چیدن یک سفره رنگین هستیم...</p>
-              </div>
-            )}
-
-            <div ref={planResultsRef} className="scroll-mt-48 pt-2">
-              {displayPlan.length > 0 && (
+            {displayPlan.length > 0 && (
+              <div ref={planResultsRef} className="scroll-mt-48 pt-2">
                 <div className="space-y-4 pb-12">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-3">
                     <div className="flex items-center gap-2">
@@ -481,8 +292,8 @@ const App: React.FC = () => {
                        <h2 className="text-sm font-black text-slate-900">پیشنهادات منطبق با پروفایل شما</h2>
                     </div>
                     <div className="flex gap-2 no-print">
-                      <button onClick={handlePrintPlan} className="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-teal-100 active:scale-95"><Printer size={12} /> چاپ برنامه</button>
-                      <button onClick={handleClearPlan} className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-rose-100 active:scale-95"><Trash2 size={12} /> پاکسازی لیست</button>
+                      <button onClick={() => window.print()} className="px-2.5 py-1 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-teal-100 active:scale-95"><Printer size={12} /> چاپ برنامه</button>
+                      <button onClick={async () => { setDisplayPlan([]); await UserService.updateProfile(currentUser.username, { weeklyPlan: [] }); }} className="px-2.5 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 text-[9px] font-black border border-rose-100 active:scale-95"><Trash2 size={12} /> پاکسازی لیست</button>
                     </div>
                   </div>
                   <div className={`grid grid-cols-1 ${isWeeklyView ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
@@ -491,8 +302,8 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
         {viewMode === 'pantry' && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
@@ -506,15 +317,11 @@ const App: React.FC = () => {
            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-[110] transition-colors hover:bg-gray-200 active:scale-90"><X size={20} /></button>
               <div className="flex-grow overflow-y-auto">
-                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} onPrintInternal={handlePrintShopping} />
+                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
               </div>
            </div>
         </div>
       )}
-
-      {/* بخش قالب‌های چاپ (در انتهای DOM برای عدم تداخل) */}
-      <PrintPlanTemplate />
-      <PrintShoppingTemplate />
     </div>
   );
 };
