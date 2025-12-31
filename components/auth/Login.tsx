@@ -34,7 +34,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // بارگذاری اطلاعات ذخیره شده در هنگام شروع
+  // بارگذاری اطلاعات ذخیره شده در هنگام شروع اپلیکیشن
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
     const savedPassword = localStorage.getItem('noosh_saved_password');
@@ -47,10 +47,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   }, []);
 
   useEffect(() => {
-    // فقط فیلدهای اضافی را پاک کن، ایمیل و پسورد اگر ذخیره شده باشند باقی بمانند
-    if (mode === 'register') {
-      setFormData(prev => ({ ...prev, fullName: '', phoneNumber: '' }));
-    }
+    // هنگام تغییر مد، فیلدها را پاکسازی کن
+    // برای امنیت، در حالت تغییر به ثبت نام، پسورد را پاک میکنیم
+    setFormData({
+      email: mode === 'login' ? (localStorage.getItem('noosh_saved_email') || '') : '',
+      password: mode === 'login' ? (localStorage.getItem('noosh_saved_password') || '') : '',
+      fullName: '',
+      phoneNumber: '',
+    });
     setError('');
     setDetailedError(null);
   }, [mode]);
@@ -76,7 +80,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       } else {
         if (result.code === 'auth/unauthorized-domain') {
           setError('خطای امنیتی دامنه فایربیس');
-          setDetailedError(`دامنه فعلی شما (${window.location.hostname}) در لیست دامنه‌های مجاز پروژه فایربیس نیست. لطفا این دامنه را در کنسول فایربیس اضافه کنید.`);
+          setDetailedError(`دامنه فعلی شما (${window.location.hostname}) در لیست دامنه‌های مجاز پروژه فایربیس نیست.`);
         } else {
           setError(result.message || 'خطا در ورود با گوگل');
         }
@@ -98,14 +102,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
     setDetailedError(null);
 
+    // اعتبارسنجی فیلدهای مشترک
     if (!email || !password) {
       setError('لطفاً ایمیل و رمز عبور را وارد کنید.');
       return;
     }
 
-    if (mode === 'register' && !formData.fullName.trim()) {
-      setError('نام و نام خانوادگی الزامی است.');
-      return;
+    // اعتبارسنجی سخت‌گیرانه برای ثبت‌نام (اجباری کردن تمام فیلدها)
+    if (mode === 'register') {
+      if (!formData.fullName.trim()) {
+        setError('وارد کردن نام و نام خانوادگی الزامی است.');
+        return;
+      }
+      if (!formData.phoneNumber.trim()) {
+        setError('وارد کردن شماره همراه الزامی است.');
+        return;
+      }
+      if (password.length < 6) {
+        setError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -119,15 +135,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        // مدیریت قابلیت «مرا به خاطر بسپار»
-        if (rememberMe) {
-          localStorage.setItem('noosh_saved_email', email);
-          localStorage.setItem('noosh_saved_password', password);
-          localStorage.setItem('noosh_remember_me', 'true');
-        } else {
-          localStorage.removeItem('noosh_saved_email');
-          localStorage.removeItem('noosh_saved_password');
-          localStorage.setItem('noosh_remember_me', 'false');
+        // مدیریت قابلیت «مرا به خاطر بسپار» - فقط در حالت ورود
+        if (mode === 'login') {
+          if (rememberMe) {
+            localStorage.setItem('noosh_saved_email', email);
+            localStorage.setItem('noosh_saved_password', password);
+            localStorage.setItem('noosh_remember_me', 'true');
+          } else {
+            localStorage.removeItem('noosh_saved_email');
+            localStorage.removeItem('noosh_saved_password');
+            localStorage.setItem('noosh_remember_me', 'false');
+          }
         }
         onLogin(result.user);
       } else {
@@ -147,7 +165,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
         
-        {/* بخش برندینگ */}
+        {/* بخش برندینگ (دسکتاپ) */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="bg-noosh-pattern" style={{ opacity: 0.1 }}></div>
@@ -196,7 +214,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                    <User size={12}/> نام و نام خانوادگی
+                    <User size={12}/> نام و نام خانوادگی <span className="text-rose-500">*</span>
                   </label>
                   <input 
                     type="text" 
@@ -211,7 +229,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                    <Phone size={12}/> شماره همراه
+                    <Phone size={12}/> شماره همراه <span className="text-rose-500">*</span>
                   </label>
                   <input 
                     type="tel" 
@@ -228,7 +246,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                <Mail size={12}/> آدرس ایمیل
+                <Mail size={12}/> آدرس ایمیل <span className="text-rose-500">*</span>
               </label>
               <input 
                 type="email" 
@@ -243,7 +261,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                <Lock size={12}/> رمز عبور
+                <Lock size={12}/> رمز عبور <span className="text-rose-500">*</span>
               </label>
               <input 
                 type="password" 
@@ -256,17 +274,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
             </div>
 
-            {/* دکمه مرا به خاطر بسپار */}
-            <div className="flex items-center gap-2 px-2 py-1">
-              <button 
-                type="button" 
-                onClick={() => setRememberMe(!rememberMe)}
-                className="flex items-center gap-2 text-slate-500 hover:text-teal-600 transition-colors"
-              >
-                {rememberMe ? <CheckSquare size={18} className="text-teal-600" /> : <Square size={18} />}
-                <span className="text-[11px] font-black">مرا به خاطر بسپار</span>
-              </button>
-            </div>
+            {/* دکمه مرا به خاطر بسپار - فقط در حالت ورود نمایش داده می‌شود */}
+            {mode === 'login' && (
+              <div className="flex items-center gap-2 px-2 py-1">
+                <button 
+                  type="button" 
+                  onClick={() => setRememberMe(!rememberMe)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-teal-600 transition-colors"
+                >
+                  {rememberMe ? <CheckSquare size={18} className="text-teal-600" /> : <Square size={18} />}
+                  <span className="text-[11px] font-black">مرا به خاطر بسپار</span>
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black space-y-2 border border-rose-100 animate-enter flex flex-col">
