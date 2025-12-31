@@ -18,8 +18,8 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { UserProfile, ShoppingItem } from "../types";
+import { RecipeService } from "./recipeService";
 
-// لطفاً ایمیل دقیق خود را که با آن وارد می‌شوید اینجا جایگزین کنید تا سیستم شما را به عنوان مدیر بشناسد
 const ADMIN_EMAIL = 'YOUR_ACTUAL_EMAIL@GMAIL.COM'.toLowerCase();
 
 const notifyUpdate = () => {
@@ -54,6 +54,9 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
 export const UserService = {
   login: async (email: string, password: string): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
+      // قبل از ورود، کش دیتابیس را پاک کن تا از تداخل جلوگیری شود
+      await RecipeService.clearAllCache();
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
       const userEmail = (firebaseUser.email || "").toLowerCase();
@@ -67,7 +70,6 @@ export const UserService = {
         await setDoc(userDocRef, userData);
       } else {
         userData = userDoc.data() as UserProfile;
-        // بازنشانی خودکار دسترسی ادمین اگر ایمیل مطابقت داشت
         if (userEmail === ADMIN_EMAIL && (!userData.isAdmin || !userData.isApproved)) {
           await updateDoc(userDocRef, { isAdmin: true, isApproved: true });
           userData.isAdmin = true;
@@ -82,9 +84,10 @@ export const UserService = {
 
   loginWithGoogle: async () => {
     try {
+      await RecipeService.clearAllCache();
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(provider); // Fix: remove auth from parameter to use global auth correctly
       const user = result.user;
       const userEmail = (user.email || "").toLowerCase();
       
@@ -111,6 +114,7 @@ export const UserService = {
 
   register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
+      await RecipeService.clearAllCache();
       const { email, password, fullName, phoneNumber } = data;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = createDefaultProfile(userCredential.user, fullName, phoneNumber);
@@ -214,6 +218,8 @@ export const UserService = {
   },
 
   logout: async () => {
+    // قبل از خروج، کش را پاک کن
+    await RecipeService.clearAllCache();
     await signOut(auth);
   },
 

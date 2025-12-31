@@ -17,6 +17,8 @@ const freeDishIds = new Set<string>();
 export const RecipeService = {
   initialize: async (): Promise<void> => {
     if (isInitialized) return;
+    
+    // همیشه با لیست پایه شروع کن و کش قدیمی را نادیده بگیر اگر باعث تکرار می‌شود
     cachedDishes = [...DEFAULT_DISHES];
     
     const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
@@ -32,6 +34,7 @@ export const RecipeService = {
       if (localDishes && localDishes.length > 0) {
         const existingIds = new Set(cachedDishes.map(d => d.id));
         localDishes.forEach(d => {
+          // فقط اگر آی‌دی جدید بود اضافه کن (جلوگیری از دوبرابر شدن)
           if (!existingIds.has(d.id)) {
             cachedDishes.push(d);
           }
@@ -41,6 +44,21 @@ export const RecipeService = {
       console.error("Initialization Error:", error);
     }
     isInitialized = true;
+  },
+
+  clearAllCache: async () => {
+    try {
+      // پاکسازی دیتابیس آفلاین
+      const dishes = await DB.getAll('dishes');
+      for (const dish of dishes) {
+        await DB.delete('dishes', dish.id);
+      }
+      // بازنشانی متغیرهای محلی
+      cachedDishes = [...DEFAULT_DISHES];
+      console.log("Cache cleared successfully");
+    } catch (e) {
+      console.error("Failed to clear cache", e);
+    }
   },
 
   syncFromCloud: async () => {
@@ -61,7 +79,6 @@ export const RecipeService = {
     }
   },
 
-  // این متد لیست تمیز و فیلتر شده را با نام‌های اصلاح شده برمی‌گرداند
   getAllDishes: (): Dish[] => {
     const hiddenIds = getHiddenDishIds();
     const renamedMap = getRenamedDishes();
@@ -71,7 +88,6 @@ export const RecipeService = {
       .map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
   },
 
-  // این متد لیست کامل (خام) را با اعمال نام‌های اصلاح شده برای مدیریت برمی‌گرداند
   getRawDishes: (): Dish[] => {
     const renamedMap = getRenamedDishes();
     return cachedDishes.map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);

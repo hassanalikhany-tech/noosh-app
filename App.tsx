@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [initProgress, setInitProgress] = useState(0);
   const [showTrustBanner, setShowTrustBanner] = useState(false);
   const [activePrintSource, setActivePrintSource] = useState<'plan' | 'shopping' | null>(null);
   const bannerTimerRef = useRef<any | null>(null);
@@ -40,15 +41,33 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
+      // شبیه‌سازی پیشرفت بارگذاری برای تجربه کاربری بهتر
+      const progressTimer = setInterval(() => {
+        setInitProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + 5;
+        });
+      }, 100);
+
       await RecipeService.initialize();
+      setInitProgress(60);
+      
       await UserService.seedAdmin();
+      setInitProgress(80);
+      
       const user = await UserService.getCurrentUser();
+      setInitProgress(100);
+      
+      clearInterval(progressTimer);
+
       if (user) {
         setCurrentUser(user);
         if (user.weeklyPlan && user.weeklyPlan.length > 0) setDisplayPlan(user.weeklyPlan);
         triggerTrustBanner();
       }
-      setIsInitializing(false);
+      
+      // یک تاخیر کوتاه برای نمایش ۱۰۰ درصد
+      setTimeout(() => setIsInitializing(false), 500);
     };
     initApp();
 
@@ -132,7 +151,49 @@ const App: React.FC = () => {
     setDisplayPlan([]);
   };
 
-  if (isInitializing) return <div className="fixed inset-0 flex items-center justify-center bg-slate-950 z-[9999]"><RefreshCw className="animate-spin text-teal-400" size={64} /></div>;
+  // المان بارگذاری ارتقایافته
+  if (isInitializing) return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] overflow-hidden">
+      <div className="bg-noosh-pattern opacity-10 absolute inset-0"></div>
+      
+      <div className="relative z-10 flex flex-col items-center gap-8 animate-enter">
+        <div className="animate-float">
+          <img 
+            src="https://i.ibb.co/gMDKtj4p/3.png" 
+            alt="Noosh Logo" 
+            className="w-32 h-32 object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.4)]" 
+          />
+        </div>
+        
+        <div className="text-center">
+          <div className="flex flex-row items-baseline justify-center gap-2 mb-2" style={{ direction: 'ltr' }}>
+            <span className="text-4xl font-black italic text-white uppercase tracking-tighter">NOOSH</span>
+            <span className="text-2xl font-black text-teal-500 italic uppercase">APP</span>
+          </div>
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] opacity-60">Smart Kitchen Assistant</p>
+        </div>
+
+        <div className="w-64 space-y-3">
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+            <div 
+              className="h-full bg-gradient-to-r from-teal-600 to-teal-400 transition-all duration-300 ease-out shadow-[0_0_10px_rgba(45,212,191,0.5)]"
+              style={{ width: `${initProgress}%` }}
+            ></div>
+          </div>
+          <div className="flex justify-between items-center text-[10px] font-black">
+             <span className="text-teal-500 animate-pulse">در حال فراخوانی دیتابیس...</span>
+             <span className="text-white font-mono">{toPersianDigits(initProgress)}٪</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-10 flex items-center gap-2 text-slate-600 text-[9px] font-bold uppercase tracking-widest">
+        <RefreshCw size={12} className="animate-spin" />
+        <span>Secure Connection Established</span>
+      </div>
+    </div>
+  );
+
   if (!currentUser) return <Login onLogin={setCurrentUser} />;
   
   if (currentUser.isAdmin && isAdminMode) {
