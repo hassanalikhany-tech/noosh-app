@@ -18,8 +18,6 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
     if (!selectedChallenge) return;
 
     if (user.activeChallengeId === id) {
-      // Deactivate
-      // Fix: Use null instead of undefined because Firestore updateDoc does not support undefined values
       const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: null });
       onUpdateUser(updatedUser);
       onNotify(
@@ -29,7 +27,6 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
         Trophy
       );
     } else {
-      // Activate
       const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: id });
       onUpdateUser(updatedUser);
       onNotify(
@@ -47,7 +44,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[2rem] p-8 text-white mb-8 shadow-2xl relative overflow-hidden">
+      <div className="metallic-navy rounded-[2rem] p-8 text-white mb-8 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/30 rounded-full translate-y-1/2 -translate-x-1/3 blur-2xl"></div>
         
@@ -55,8 +52,8 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
           <div className="inline-flex p-3 bg-white/20 backdrop-blur-md rounded-2xl mb-4 shadow-lg border border-white/10">
              <Trophy size={32} className="text-yellow-300 drop-shadow-sm" />
           </div>
-          <h2 className="text-3xl font-black mb-3 leading-tight">چالش‌های هفتگی</h2>
-          <p className="text-indigo-100 max-w-xl text-lg opacity-90 font-medium">
+          <h2 className="text-3xl font-black mb-3 leading-tight text-halo">چالش‌های هفتگی</h2>
+          <p className="text-indigo-100 max-w-xl text-lg opacity-90 font-medium text-halo">
             با شرکت در چالش‌ها، عادت‌های غذایی سالم‌تری بسازید و تنوع غذایی خود را بالا ببرید.
           </p>
         </div>

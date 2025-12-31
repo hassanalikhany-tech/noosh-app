@@ -1,10 +1,10 @@
 
 import React, { useMemo, useState } from 'react';
-import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType } from '../types';
+import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, Dish } from '../types';
 import { UserService } from '../services/userService';
-// Add AlertCircle to the imports from lucide-react
-import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle, Utensils } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
+import DishVisual from './DishVisual';
 
 interface PreferencesProps {
   user: UserProfile;
@@ -25,7 +25,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
   const [ingInput, setIngInput] = useState('');
   const [showNations, setShowNations] = useState(false);
 
-  // بهبود سرعت: تغییر آنی وضعیت در UI (Optimistic Update)
   const toggleCategory = (cat: DishCategory) => {
     let newExcluded = [...(user.excludedCategories || [])];
     const isCurrentlyExcluded = newExcluded.includes(cat);
@@ -36,11 +35,8 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
       newExcluded.push(cat);
     }
 
-    // آپدیت آنی
     const updatedUser = { ...user, excludedCategories: newExcluded };
     onUpdateUser(updatedUser);
-    
-    // ذخیره در دیتابیس در پس‌زمینه
     UserService.updatePreferences(user.username, { excludedCategories: newExcluded });
   };
 
@@ -101,9 +97,19 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
   }, [user.favoriteDishIds]);
 
   const blacklistedList = useMemo(() => {
-    const all = RecipeService.getAllDishes();
+    const all = RecipeService.getRawDishes();
     return all.filter(d => (user.blacklistedDishIds || []).includes(d.id));
   }, [user.blacklistedDishIds]);
+
+  const handleRemoveFavorite = async (dishId: string) => {
+    const updatedUser = await UserService.toggleFavorite(user.username, dishId);
+    onUpdateUser(updatedUser);
+  };
+
+  const handleRemoveBlacklist = async (dishId: string) => {
+    const updatedUser = await UserService.toggleBlacklist(user.username, dishId);
+    onUpdateUser(updatedUser);
+  };
 
   const daysLeft = Math.ceil((user.subscriptionExpiry - Date.now()) / (1000 * 60 * 60 * 24));
   const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
@@ -114,30 +120,38 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     <div className="max-w-4xl mx-auto space-y-6 pb-24 px-2 sm:px-0 text-right dir-rtl select-none">
       
       {/* هدر پروفایل */}
-      <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-teal-500 via-indigo-500 to-rose-400"></div>
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
-               <User size={28} />
+      <div className="relative group overflow-hidden metallic-navy rounded-[3rem] p-10 shadow-2xl border border-white/5">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
+        
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-teal-600 text-white rounded-[2rem] flex items-center justify-center shadow-2xl shadow-teal-500/30 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+               <User size={40} strokeWidth={1.5} />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800">{user.fullName || user.username}</h2>
-              <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Member ID: {user.username}</p>
+              <h2 className="text-2xl font-black text-white text-halo mb-1">{user.fullName || user.username}</h2>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse"></span>
+                <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Member ID: {user.username}</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-             <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-black border border-emerald-100">
+          <div className="flex items-center gap-4">
+             <div className="px-6 py-3 bg-emerald-500/20 text-emerald-400 rounded-2xl text-sm font-black border border-emerald-500/30 backdrop-blur-md text-halo shadow-lg">
                 {toPersianDigits(Math.max(0, daysLeft))} روز اعتبار
              </div>
-             <button onClick={onLogout} className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-colors border border-rose-100">
-               <LogOut size={20} />
+             <button 
+               onClick={onLogout} 
+               className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl hover:bg-rose-500/40 transition-all border border-rose-500/30 backdrop-blur-md active:scale-90 shadow-lg"
+               title="خروج از حساب"
+             >
+               <LogOut size={24} />
              </button>
           </div>
         </div>
       </div>
 
-      {/* بخش محدودیت‌های اصلی */}
+      {/* بخش محدودیت‌های دسته‌بندی */}
       <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shadow-sm"><FilterX size={24} /></div>
@@ -148,7 +162,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
         </div>
 
         <div className="space-y-6">
-          {/* دسته‌بندی‌های کلی */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => {
               const isExcluded = user.excludedCategories?.includes(cat);
@@ -170,7 +183,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
             })}
           </div>
 
-          {/* تفکیک ملل (مشابه صفحه جستجو) */}
           <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
             <button 
               onClick={() => !isIntlExcluded && setShowNations(!showNations)}
@@ -216,38 +228,91 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
                 </div>
               </div>
             )}
-
-            {isIntlExcluded && (
-              <div className="px-5 py-3 bg-slate-100 text-[10px] font-bold text-slate-500 flex items-center gap-2">
-                <AlertCircle size={14} />
-                <span>دسته «بین‌المللی» در بالا غیرفعال است؛ لذا تمام زیرمجموعه‌ها نیز غیرفعال شدند.</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* بقیه بخش‌ها (رژیمی، مواد ممنوعه و ...) */}
-      <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><Leaf size={24} /></div>
+      {/* بخش غذاهای مورد علاقه */}
+      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl"><Heart size={24} fill="currentColor" /></div>
           <div>
-            <h2 className="text-lg font-black text-slate-800">حالت رژیمی فعال</h2>
-            <p className="text-slate-400 text-[10px] font-bold">فقط غذاهای سبک و زیر ۵۰۰ کالری</p>
+            <h2 className="text-lg font-black text-slate-800">غذاهای مورد علاقه</h2>
+            <p className="text-slate-400 text-[10px] font-bold">لیست طعم‌هایی که همیشه دوست دارید.</p>
           </div>
         </div>
-        <button 
-          onClick={toggleDietMode} 
-          className={`w-full sm:w-40 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${
-            user.dietMode ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
-          }`}
-        >
-          {user.dietMode ? 'فعال است' : 'غیرفعال'}
-        </button>
+        
+        {favoritesList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {favoritesList.map(dish => (
+              <div key={dish.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 group animate-enter">
+                <div className="w-14 h-14 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
+                  <DishVisual category={dish.category} dishId={dish.id} imageUrl={dish.imageUrl} iconSize={20} className="w-full h-full" />
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h4 className="text-xs font-black text-slate-800 truncate">{dish.name}</h4>
+                  <p className="text-[9px] text-slate-400 font-bold">{CATEGORY_LABELS[dish.category]}</p>
+                </div>
+                <button 
+                  onClick={() => handleRemoveFavorite(dish.id)}
+                  className="p-2 text-rose-400 hover:bg-rose-50 rounded-xl transition-all"
+                  title="حذف از علاقه‌مندی"
+                >
+                  <Heart size={18} fill="currentColor" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-10 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+             <Heart size={32} className="mx-auto mb-2 text-slate-200" />
+             <p className="text-xs text-slate-400 font-bold">هنوز غذایی را به لیست علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
+          </div>
+        )}
       </div>
 
+      {/* بخش غذاهای لیست سیاه */}
+      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg"><ThumbsDown size={24} /></div>
+          <div>
+            <h2 className="text-lg font-black text-slate-800">غذاهایی که دوست ندارم</h2>
+            <p className="text-slate-400 text-[10px] font-bold">این غذاها دیگر در برنامه‌ریزی به شما پیشنهاد نمی‌شوند.</p>
+          </div>
+        </div>
+        
+        {blacklistedList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {blacklistedList.map(dish => (
+              <div key={dish.id} className="flex items-center gap-3 p-3 bg-slate-900 text-white rounded-2xl border border-white/5 group animate-enter">
+                <div className="w-14 h-14 rounded-xl overflow-hidden opacity-50 grayscale flex-shrink-0">
+                  <DishVisual category={dish.category} dishId={dish.id} imageUrl={dish.imageUrl} iconSize={20} className="w-full h-full" />
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h4 className="text-xs font-black truncate">{dish.name}</h4>
+                  <p className="text-[9px] text-slate-500 font-bold">{CATEGORY_LABELS[dish.category]}</p>
+                </div>
+                <button 
+                  onClick={() => handleRemoveBlacklist(dish.id)}
+                  className="p-2 text-teal-400 hover:bg-white/10 rounded-xl transition-all"
+                  title="بازگرداندن به لیست پخت"
+                >
+                  <RotateCcw size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-10 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+             <ThumbsDown size={32} className="mx-auto mb-2 text-slate-200" />
+             <p className="text-xs text-slate-400 font-bold">لیست سیاه شما خالی است.</p>
+          </div>
+        )}
+      </div>
+
+      {/* بخش مواد ممنوعه و حساسیت‌زا */}
       <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-slate-100 relative overflow-hidden ring-1 ring-red-50">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-3 mb-6">
           <div className="p-3 bg-rose-600 text-white rounded-2xl shadow-lg shadow-rose-100">
             <ShieldAlert size={24} />
           </div>
@@ -277,6 +342,25 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
             </div>
           ))}
         </div>
+      </div>
+
+      {/* حالت رژیمی */}
+      <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl"><Leaf size={24} /></div>
+          <div>
+            <h2 className="text-lg font-black text-slate-800">حالت رژیمی فعال</h2>
+            <p className="text-slate-400 text-[10px] font-bold">فقط غذاهای سبک و زیر ۵۰۰ کالری</p>
+          </div>
+        </div>
+        <button 
+          onClick={toggleDietMode} 
+          className={`w-full sm:w-40 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${
+            user.dietMode ? 'bg-emerald-600 text-white shadow-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200'
+          }`}
+        >
+          {user.dietMode ? 'فعال است' : 'غیرفعال'}
+        </button>
       </div>
     </div>
   );

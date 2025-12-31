@@ -118,9 +118,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     e.stopPropagation();
     if (!user) return;
     
-    // ۱. بازخورد فوری بصری
     setAddingToCartId(dishName);
-    
     const newItems: ShoppingItem[] = missingItems.map(item => ({
       id: `missing-${Date.now()}-${Math.random()}`,
       name: item.name,
@@ -128,11 +126,8 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
       fromRecipe: dishName
     }));
 
-    // ۲. بروزرسانی آنی State در کل اپلیکیشن (Optimistic Update)
     const updatedList = [...(user.customShoppingList || []), ...newItems];
     onUpdateUser({ ...user, customShoppingList: updatedList });
-    
-    // ۳. ارسال به سرور در پس‌زمینه بدون ایجاد وقفه در UI
     UserService.updateShoppingList(user.username, updatedList);
     
     setTimeout(() => setAddingToCartId(null), 1500);
@@ -158,7 +153,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
         </div>
       )}
 
-      <div className="relative group overflow-hidden bg-slate-950 rounded-[3rem] p-10 shadow-2xl border border-white/5">
+      <div className="relative group overflow-hidden metallic-navy rounded-[3rem] p-10 shadow-2xl border border-white/5">
         <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
         <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
           <div className="flex items-center gap-8 text-center lg:text-right flex-col lg:flex-row">
@@ -166,7 +161,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
               <ChefHat size={56} strokeWidth={1.5} />
             </div>
             <div className="max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-0">آشپز برتر بر اساس مواد موجود و فیلترهای شخصی شما پیشنهاد می‌دهد</h2>
+              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-0 text-halo">آشپز برتر بر اساس مواد موجود و فیلترهای شخصی شما پیشنهاد می‌دهد</h2>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">

@@ -34,6 +34,7 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     if (imageUrl && imageUrl.trim() !== "") {
       setResolvedSrc(imageUrl);
     } else if (dishId) {
+      // استفاده از مسیر نسبی برای سازگاری بیشتر با Netlify
       const path = `images/dishes/${dishId}.png`;
       setResolvedSrc(path);
     } else {
@@ -41,6 +42,7 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     }
   }, [imageUrl, dishId]);
 
+  // بررسی برای تصاویری که سریع لود می‌شوند یا در کش هستند
   useEffect(() => {
     if (imgRef.current && imgRef.current.complete) {
       setIsLoaded(true);
@@ -53,6 +55,7 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       return;
     }
 
+    // تلاش مجدد با فرمت‌های رایج دیگر
     if (retryCount === 0) { 
       setResolvedSrc(`images/dishes/${dishId}.jpg`); 
       setRetryCount(1); 
@@ -66,15 +69,15 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
 
   const getVisualConfig = (cat: DishCategory) => {
     switch (cat) {
-      case 'stew': return { bg: 'bg-emerald-100', text: 'text-emerald-600', icon: Leaf };
-      case 'polo': return { bg: 'bg-amber-100', text: 'text-amber-600', icon: Utensils };
-      case 'kabab': return { bg: 'bg-rose-100', text: 'text-rose-600', icon: Flame };
-      case 'ash': return { bg: 'bg-lime-100', text: 'text-lime-600', icon: Soup };
-      case 'soup': return { bg: 'bg-orange-100', text: 'text-orange-600', icon: Soup };
-      case 'khorak': return { bg: 'bg-yellow-100', text: 'text-yellow-600', icon: ChefHat };
-      case 'fastfood': return { bg: 'bg-pink-100', text: 'text-pink-600', icon: Pizza };
-      case 'international': return { bg: 'bg-indigo-100', text: 'text-indigo-600', icon: Globe2 };
-      default: return { bg: 'bg-gray-100', text: 'text-gray-600', icon: ChefHat };
+      case 'stew': return { bg: 'bg-gradient-to-br from-emerald-600 to-teal-800', icon: Leaf, pattern: 'opacity-20' };
+      case 'polo': return { bg: 'bg-gradient-to-br from-amber-400 to-orange-600', icon: Utensils, pattern: 'opacity-10' };
+      case 'kabab': return { bg: 'bg-gradient-to-br from-red-600 to-rose-900', icon: Flame, pattern: 'opacity-20' };
+      case 'ash': return { bg: 'bg-gradient-to-br from-lime-600 to-green-800', icon: Soup, pattern: 'opacity-20' };
+      case 'soup': return { bg: 'bg-gradient-to-br from-orange-400 to-red-600', icon: Soup, pattern: 'opacity-20' };
+      case 'khorak': return { bg: 'bg-gradient-to-br from-yellow-500 to-amber-700', icon: ChefHat, pattern: 'opacity-20' };
+      case 'fastfood': return { bg: 'bg-gradient-to-br from-pink-500 to-rose-700', icon: Pizza, pattern: 'opacity-20' };
+      case 'international': return { bg: 'bg-gradient-to-br from-indigo-500 to-violet-800', icon: Globe2, pattern: 'opacity-20' };
+      default: return { bg: 'bg-gradient-to-br from-gray-500 to-gray-700', icon: ChefHat, pattern: 'opacity-10' };
     }
   };
 
@@ -83,11 +86,13 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
 
   return (
     <div className={`relative overflow-hidden flex items-center justify-center ${config.bg} ${className}`}>
-      {/* حذف لایه‌های کدر کننده برای شفافیت حداکثری تصاویر */}
+      <div className={`absolute inset-0 ${config.pattern} bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]`}></div>
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
       
+      {/* آیکون جایگزین - فقط اگر عکسی لود نشده باشد یا خطا بدهد */}
       {(!resolvedSrc || imageError || !isLoaded) && (
         <div className="absolute inset-0 flex items-center justify-center z-10 transition-opacity duration-300">
-          <Icon size={iconSize} className={`${config.text} opacity-30`} strokeWidth={1.5} />
+          <Icon size={iconSize} className="text-white opacity-40 drop-shadow-lg" strokeWidth={1.5} />
         </div>
       )}
       
@@ -96,13 +101,13 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
           ref={imgRef}
           src={resolvedSrc} 
           alt="Dish" 
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 z-20 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 z-20 ${isLoaded ? 'opacity-100' : 'opacity-0'}`} 
           onLoad={() => setIsLoaded(true)} 
           onError={handleImageError} 
           loading="eager"
         />
       )}
-      {/* حذف لایه bg-black/10 که باعث تیره شدن عکس می‌شد */}
+      <div className="absolute inset-0 bg-black/10 z-30 pointer-events-none"></div>
     </div>
   );
 };

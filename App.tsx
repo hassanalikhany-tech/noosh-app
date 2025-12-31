@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
@@ -121,12 +122,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-right dir-rtl bg-slate-50">
-      <header className="sticky top-0 z-40 bg-slate-950 text-white shadow-xl no-print">
+      <header className="sticky top-0 z-40 metallic-navy text-white shadow-xl no-print">
         <div className="container mx-auto h-[70px] flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-10 h-10" />
             <div className="flex flex-row items-baseline gap-1.5" style={{ direction: 'ltr' }}>
-              <span className="text-2xl font-black italic uppercase">NOOSH</span>
+              <span className="text-2xl font-black italic uppercase text-halo">NOOSH</span>
               <span className="text-sm font-black text-teal-500 italic uppercase">APP</span>
             </div>
           </div>
@@ -197,14 +198,14 @@ const App: React.FC = () => {
               <button 
                 onClick={handleGenerateWeekly} 
                 disabled={!!loadingType}
-                className="group relative bg-slate-900 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-2xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-2xl transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 opacity-20"></div>
                 <div className="p-5 bg-white/10 text-teal-400 rounded-3xl group-hover:scale-110 transition-transform duration-500">
                   {loadingType === 'weekly' ? <RefreshCw size={40} className="animate-spin" /> : <Calendar size={40} />}
                 </div>
                 <div className="text-center">
-                  <span className="block font-black text-xl text-white">ساخت برنامه هفتگی</span>
+                  <span className="block font-black text-xl text-white text-halo">برنامه پیشنهادی هفتگی</span>
                   <span className="text-[10px] text-teal-500/60 font-bold uppercase tracking-wider">Weekly Meal Planner</span>
                 </div>
               </button>

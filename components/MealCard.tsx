@@ -56,17 +56,17 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${isBlacklisted ? 'opacity-75' : ''} ${isLocked ? 'grayscale-[0.8]' : ''}`}
+        className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${isBlacklisted ? 'opacity-75' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
         <div className="relative h-52 overflow-hidden">
           <DishVisual category={plan.dish.category} className={`w-full h-full transition-transform duration-700 ${isLocked ? '' : 'group-hover:scale-105'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
           
           {isLocked && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-               <div className="bg-white p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-1 scale-90">
-                  <Lock size={20} className="text-slate-900" />
-                  <span className="text-[8px] font-black text-slate-900">نیاز به تایید</span>
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-20">
+               <div className="bg-white/90 p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-1">
+                  <Lock size={24} className="text-slate-800" />
+                  <span className="text-[10px] font-black text-slate-800">نیاز به تایید مدیر</span>
                </div>
             </div>
           )}
