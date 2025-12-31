@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, LayoutDashboard } from 'lucide-react';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
@@ -111,7 +110,7 @@ const App: React.FC = () => {
         <div className="w-64 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
           <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${initProgress}%` }}></div>
         </div>
-        <p className="text-teal-500 text-xs font-black tracking-widest uppercase">در حال بارگذاری هوشمند...</p>
+        <p className="text-teal-500 text-xs font-black tracking-widest uppercase">در حال بارگذاری نوش اپ</p>
       </div>
     </div>
   );
@@ -220,7 +219,7 @@ const App: React.FC = () => {
                     </div>
                     <h2 className="text-2xl font-black text-slate-800">نتایج هوشمند هفته</h2>
                   </div>
-                  <button onClick={async () => { setDisplayPlan([]); await UserService.updateProfile(currentUser.username, { weeklyPlan: [] }); }} className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all font-black text-xs">
+                  <button onClick={async () => { setDisplayPlan([]); if (currentUser) await UserService.updateProfile(currentUser.username, { weeklyPlan: [] }); }} className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all font-black text-xs">
                     <Trash2 size={16} />
                     <span>پاکسازی لیست</span>
                   </button>
@@ -228,7 +227,7 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                   {displayPlan.map((plan, idx) => (
                     <div key={`${plan.dish.id}-${idx}`} className="animate-enter" style={{ animationDelay: `${idx * 0.05}s` }}>
-                      <MealCard plan={plan} user={currentUser} onUpdateUser={setCurrentUser} />
+                      <MealCard plan={plan} user={currentUser!} onUpdateUser={setCurrentUser} />
                     </div>
                   ))}
                 </div>
@@ -236,13 +235,13 @@ const App: React.FC = () => {
             )}
           </div>
         )}
-        {viewMode === 'pantry' && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
-        {viewMode === 'search' && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} />}
-        {viewMode === 'challenges' && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={() => {}} />}
-        {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
+        {viewMode === 'pantry' && currentUser && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
+        {viewMode === 'search' && currentUser && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} />}
+        {viewMode === 'challenges' && currentUser && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={() => {}} />}
+        {viewMode === 'settings' && currentUser && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {isShoppingListOpen && (
+      {isShoppingListOpen && currentUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-[110] hover:bg-gray-200 transition-all"><X size={20} /></button>

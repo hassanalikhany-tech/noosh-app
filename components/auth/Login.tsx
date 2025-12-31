@@ -48,7 +48,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   useEffect(() => {
     // هنگام تغییر مد، فیلدها را پاکسازی کن
-    // برای امنیت، در حالت تغییر به ثبت نام، پسورد را پاک میکنیم
     setFormData({
       email: mode === 'login' ? (localStorage.getItem('noosh_saved_email') || '') : '',
       password: mode === 'login' ? (localStorage.getItem('noosh_saved_password') || '') : '',
@@ -108,7 +107,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // اعتبارسنجی سخت‌گیرانه برای ثبت‌نام (اجباری کردن تمام فیلدها)
     if (mode === 'register') {
       if (!formData.fullName.trim()) {
         setError('وارد کردن نام و نام خانوادگی الزامی است.');
@@ -135,7 +133,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        // مدیریت قابلیت «مرا به خاطر بسپار» - فقط در حالت ورود
         if (mode === 'login') {
           if (rememberMe) {
             localStorage.setItem('noosh_saved_email', email);
@@ -207,9 +204,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3 md:space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1 relative z-10">
-            <input type="text" style={{display:'none'}} />
-            <input type="password" style={{display:'none'}} />
-
             {mode === 'register' && (
               <>
                 <div className="space-y-1">
@@ -235,9 +229,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     type="tel" 
                     name="phoneNumber" 
                     autoComplete="off"
+                    dir="ltr"
                     value={formData.phoneNumber} 
                     onChange={handleInputChange} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left text-slate-800 placeholder:text-slate-400" 
                     placeholder="0912xxxxxxx" 
                   />
                 </div>
@@ -252,9 +247,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="email" 
                 name="email" 
                 autoComplete="off"
+                dir="ltr"
                 value={formData.email} 
                 onChange={handleInputChange} 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left text-slate-800 placeholder:text-slate-400" 
                 placeholder="name@gmail.com" 
               />
             </div>
@@ -267,14 +263,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="password" 
                 name="password" 
                 autoComplete="new-password"
+                dir="ltr"
                 value={formData.password} 
                 onChange={handleInputChange} 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left dir-ltr text-slate-800 placeholder:text-slate-400" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left text-slate-800 placeholder:text-slate-400" 
                 placeholder="••••••••" 
               />
             </div>
 
-            {/* دکمه مرا به خاطر بسپار - فقط در حالت ورود نمایش داده می‌شود */}
             {mode === 'login' && (
               <div className="flex items-center gap-2 px-2 py-1">
                 <button 
