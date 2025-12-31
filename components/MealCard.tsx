@@ -11,9 +11,10 @@ import { RecipeService } from '../services/recipeService';
 interface MealCardProps {
   plan: DayPlan;
   user: UserProfile;
+  onUpdateUser?: (user: UserProfile) => void;
 }
 
-const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
+const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const isAccessible = RecipeService.isDishAccessible(plan.dish.id, user);
@@ -124,7 +125,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user }) => {
           </button>
         </div>
       </div>
-      <RecipeModal dish={plan.dish} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={user} />
+      <RecipeModal dish={plan.dish} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={user} onUpdateUser={onUpdateUser} />
     </>
   );
 };

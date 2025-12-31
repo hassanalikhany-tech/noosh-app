@@ -277,7 +277,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
           </>
         )}
       </div>
-      {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} />}
+      {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} onUpdateUser={onUpdateUser} />}
     </div>
   );
 };

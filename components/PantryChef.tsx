@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Layers, Trophy, Weight, ShieldCheck, Heart, Leaf } from 'lucide-react';
 import { PANTRY_ITEMS, SPICES_AND_ADDITIVES } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
@@ -10,12 +10,13 @@ import DishVisual from './DishVisual';
 
 interface PantryChefProps {
   user: UserProfile;
+  onUpdateUser: (user: UserProfile) => void;
 }
 
 const PROTEIN_ITEMS = PANTRY_ITEMS.find(c => c.id === 'proteins')?.items || [];
 const MEAT_KEYWORDS = ['گوشت', 'مرغ', 'ماهی', 'میگو', 'فیله', 'ماهیچه', 'گردن', 'سردست', 'راسته', 'کباب', 'بوقلمون', 'بلدرچین'];
 
-const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
+const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [pantrySearchTerm, setPantrySearchTerm] = useState('');
   const [results, setResults] = useState<{ dish: Dish, available: string[], missing: { name: string, isAdditive: boolean }[], matchCount: number, isProteinBoost?: boolean, proteinDensity?: number }[] | null>(null);
@@ -50,7 +51,6 @@ const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
     if (selectedItems.length === 0) return;
     setIsSearching(true);
     
-    // تحریک نمایش بنر اعتماد در App.tsx
     window.dispatchEvent(new CustomEvent('trigger-trust-banner'));
     
     setTimeout(() => {
@@ -117,15 +117,25 @@ const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
   const handleAddMissingToCart = (e: React.MouseEvent, missingItems: { name: string }[], dishName: string) => {
     e.stopPropagation();
     if (!user) return;
+    
+    // ۱. بازخورد فوری بصری
     setAddingToCartId(dishName);
+    
     const newItems: ShoppingItem[] = missingItems.map(item => ({
       id: `missing-${Date.now()}-${Math.random()}`,
       name: item.name,
       checked: false,
       fromRecipe: dishName
     }));
-    UserService.updateShoppingList(user.username, [...(user.customShoppingList || []), ...newItems]);
-    setTimeout(() => setAddingToCartId(null), 2000);
+
+    // ۲. بروزرسانی آنی State در کل اپلیکیشن (Optimistic Update)
+    const updatedList = [...(user.customShoppingList || []), ...newItems];
+    onUpdateUser({ ...user, customShoppingList: updatedList });
+    
+    // ۳. ارسال به سرور در پس‌زمینه بدون ایجاد وقفه در UI
+    UserService.updateShoppingList(user.username, updatedList);
+    
+    setTimeout(() => setAddingToCartId(null), 1500);
   };
 
   const filteredCategories = useMemo(() => {
@@ -242,7 +252,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
                     )}
                   </div>
                   <div className="mt-auto flex flex-col gap-4">
-                    {missing.length > 0 && <button onClick={(e) => handleAddMissingToCart(e, missing, dish.name)} className={`w-full py-5 rounded-[2rem] text-sm font-black flex items-center justify-center gap-3 transition-all ${addingToCartId === dish.name ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{addingToCartId === dish.name ? <CheckCircle2 size={20} /> : <ShoppingCart size={20}/>} خرید مواد کسری</button>}
+                    {missing.length > 0 && <button onClick={(e) => handleAddMissingToCart(e, missing, dish.name)} className={`w-full py-5 rounded-[2rem] text-sm font-black flex items-center justify-center gap-3 transition-all ${addingToCartId === dish.name ? 'bg-emerald-500 text-white shadow-lg scale-[0.98]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{addingToCartId === dish.name ? <CheckCircle2 size={20} /> : <ShoppingCart size={20}/>} خرید مواد کسری</button>}
                     <button onClick={() => setSelectedDish(dish)} className="w-full py-5 bg-slate-950 text-white rounded-[2rem] font-black text-sm transition-all hover:bg-teal-500 shadow-xl group"><span className="flex items-center justify-center gap-2">مشاهده دستور پخت <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /></span></button>
                   </div>
                 </div>
@@ -251,7 +261,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user }) => {
           </div>
         </div>
       )}
-      {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} />}
+      {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} onUpdateUser={onUpdateUser} />}
     </div>
   );
 };

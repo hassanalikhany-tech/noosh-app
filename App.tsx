@@ -426,7 +426,7 @@ const App: React.FC = () => {
                   </div>
                   <div className={`grid grid-cols-1 ${isWeeklyView ? 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'md:grid-cols-3'} gap-4`}>
                     {displayPlan.map((plan, idx) => (
-                      <div key={`${plan.dish.id}-${idx}`} className="animate-enter" style={{ animationDelay: `${idx * 0.05}s` }}><MealCard plan={plan} user={currentUser} /></div>
+                      <div key={`${plan.dish.id}-${idx}`} className="animate-enter" style={{ animationDelay: `${idx * 0.05}s` }}><MealCard plan={plan} user={currentUser} onUpdateUser={setCurrentUser} /></div>
                     ))}
                   </div>
                 </div>
@@ -434,7 +434,7 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
-        {viewMode === 'pantry' && <PantryChef user={currentUser} />}
+        {viewMode === 'pantry' && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
         {viewMode === 'search' && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} />}
         {viewMode === 'challenges' && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={()=>{}} />}
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
@@ -443,7 +443,7 @@ const App: React.FC = () => {
       {isShoppingListOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-6 left-6 p-2 bg-gray-100 rounded-full text-gray-500 z-50 transition-colors hover:bg-gray-200 active:scale-90"><X size={20} /></button>
+              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-[110] transition-colors hover:bg-gray-200 active:scale-90"><X size={20} /></button>
               <div className="flex-grow overflow-y-auto">
                 <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} onPrintInternal={handlePrintShopping} />
               </div>

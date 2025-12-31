@@ -12,11 +12,12 @@ interface RecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserProfile | null;
+  onUpdateUser?: (user: UserProfile) => void;
 }
 
 const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن'];
 
-const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }) => {
+const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, onUpdateUser }) => {
   const [addedToCart, setAddedToCart] = useState(false);
 
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
@@ -46,21 +47,35 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
     return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
 
-  const handleAddAllToCart = async () => {
+  const handleAddAllToCart = () => {
     if (!user || !dish.ingredients) return;
+    
+    // ۱. بازخورد فوری بصری
+    setAddedToCart(true);
+    
+    // ۲. آماده‌سازی لیست جدید
     const currentList = user.customShoppingList || [];
     const newItems: ShoppingItem[] = dish.ingredients
       .filter(ing => !EXCLUDED_SHOPPING_ITEMS.includes(ing.item))
       .map(ing => ({
-        id: Date.now() + Math.random().toString(),
+        id: `ing-${Date.now()}-${Math.random()}`,
         name: ing.item,
         amount: ing.amount,
         unit: ing.unit,
         checked: false,
         fromRecipe: dish.name
       }));
-    await UserService.updateShoppingList(user.username, [...currentList, ...newItems]);
-    setAddedToCart(true);
+    
+    const updatedFullList = [...currentList, ...newItems];
+
+    // ۳. بروزرسانی آنی در کل اپلیکیشن (Optimistic)
+    if (onUpdateUser) {
+      onUpdateUser({ ...user, customShoppingList: updatedFullList });
+    }
+
+    // ۴. ارسال به دیتابیس در پس‌زمینه
+    UserService.updateShoppingList(user.username, updatedFullList);
+    
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
@@ -118,7 +133,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user }
                 {user && (
                   <button 
                     onClick={handleAddAllToCart}
-                    className={`w-full mt-6 py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 ${addedToCart ? 'bg-emerald-500 text-white' : 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-100'}`}
+                    className={`w-full mt-6 py-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 ${addedToCart ? 'bg-emerald-500 text-white scale-[0.98]' : 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-100'}`}
                   >
                     {addedToCart ? <Check size={20} /> : <PlusCircle size={20} />}
                     {addedToCart ? 'به سبد خرید اضافه شد' : 'افزودن همه به سبد'}
