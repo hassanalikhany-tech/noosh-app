@@ -77,7 +77,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     if (activeItems.length === 0) return 'سبد خرید شما خالی است.';
 
     let text = `⚪️ NOOSH 🟢 APP\n`;
-    text += `برکت به سفره‌ات باشه مهربان، ممنون که برای آرامش و سلامتی خانه خرید می‌کنی. ❤️\n`;
+    text += `همراه سلامتی و آسایش شما\n`;
     text += `📅 تاریخ: ${persianDate}\n`;
     text += `------------------------------------------\n\n`;
     text += `🛒 *لیست مواد مورد نیاز:*\n\n`;
@@ -90,17 +90,17 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
     text += `\n------------------------------------------\n`;
     text += `🌐 www.nooshapp.ir\n`;
-    text += `‏‏​​​https://i.ibb.co/gMDKtj4p/3.png`; 
     
     return text;
   };
 
   const handlePrint = () => {
     setIsPrinting(true);
+    // تأخیر کوچک برای اعمال استایل‌های پرینت در DOM
     setTimeout(() => {
       window.print();
       setIsPrinting(false);
-    }, 100);
+    }, 250);
   };
 
   const handleSMS = () => {
@@ -115,15 +115,15 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col">
-      {/* نسخه مخصوص چاپ - مخفی در حالت عادی */}
-      <div className={`print-only ${isPrinting ? 'active-print' : ''} p-8 dir-rtl text-right`}>
+      {/* نسخه مخصوص چاپ */}
+      <div className={`print-only ${isPrinting ? 'active-print' : ''} dir-rtl text-right`}>
         <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
            <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
                 <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Smart Meal Planner</span>
+              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">همراه سلامتی و آسایش شما</span>
            </div>
            <div className="text-left font-black text-slate-800">
               <div className="text-xs opacity-50 mb-1">تاریخ تهیه لیست</div>
@@ -133,7 +133,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
         <div className="mb-8 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
            <p className="text-sm font-black text-slate-700 leading-relaxed">
-             برکت به سفره‌ات باشه مهربان؛ ممنون که برای آرامش و سلامتی خانه خرید می‌کنی. ❤️
+             همراه سلامتی و آسایش شما
            </p>
         </div>
 

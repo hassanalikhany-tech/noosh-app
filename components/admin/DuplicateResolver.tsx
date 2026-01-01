@@ -34,7 +34,8 @@ const DuplicateResolver: React.FC = () => {
   const [renamingDish, setRenamingDish] = useState<{ dish: AdminDish, newName: string } | null>(null);
 
   const loadFromSource = () => {
-    const dishes = RecipeService.getRawDishes(); // استفاده از لیست خام
+    // گرفتن لیست خام مستقیم از سرویس بدون کش لایه کامپوننت
+    const dishes = RecipeService.getRawDishes(); 
     const hiddenIds = getHiddenDishIds();
     const safeDishes = dishes.map((d, idx) => ({
       ...d, 
@@ -46,6 +47,11 @@ const DuplicateResolver: React.FC = () => {
 
   useEffect(() => {
     loadFromSource();
+    
+    // گوش دادن به تغییرات احتمالی از بخش‌های دیگر
+    const handleRefresh = () => loadFromSource();
+    window.addEventListener('recipes-updated', handleRefresh);
+    return () => window.removeEventListener('recipes-updated', handleRefresh);
   }, []);
 
   const groups = useMemo(() => {
@@ -82,23 +88,39 @@ const DuplicateResolver: React.FC = () => {
     
     hideDishIds(idsToHide);
     
-    loadFromSource();
-    setSelectedIds(new Set());
-    alert(`${idsToHide.length} غذا با موفقیت از "لیست پخت" و "جستجو" حذف شدند.`);
+    // اجبار به بازخوانی کل دیتابیس برای اعمال فیلترهای جدید
+    RecipeService.initialize().then(() => {
+        loadFromSource();
+        setSelectedIds(new Set());
+        // اطلاع رسانی به کل اپلیکیشن برای بروزرسانی لیست‌ها
+        window.dispatchEvent(new CustomEvent('recipes-updated'));
+        alert(`${idsToHide.length} غذا با موفقیت از سیستم حذف شدند.`);
+    });
   };
 
   const handleResetStorage = () => {
     if(confirm("آیا می‌خواهید تمام غذاهای حذف شده دوباره به لیست‌های جستجو و پیشنهاد برگردند؟")) {
       unhideAllDishes();
-      loadFromSource();
+      RecipeService.initialize().then(() => {
+          loadFromSource();
+          window.dispatchEvent(new CustomEvent('recipes-updated'));
+      });
     }
   };
 
   const handleRenameSave = () => {
     if (!renamingDish) return;
-    renameDish(renamingDish.dish.id, renamingDish.newName.trim());
-    setAllDishes(prev => prev.map(d => d.id === renamingDish.dish.id ? { ...d, name: renamingDish.newName.trim() } : d));
-    setRenamingDish(null);
+    const newName = renamingDish.newName.trim();
+    
+    renameDish(renamingDish.dish.id, newName);
+    
+    // اعمال تغییر در سرویس اصلی
+    RecipeService.initialize().then(() => {
+        loadFromSource();
+        setRenamingDish(null);
+        // اطلاع رسانی سراسری برای تغییر نام
+        window.dispatchEvent(new CustomEvent('recipes-updated'));
+    });
   };
 
   return (
@@ -109,7 +131,7 @@ const DuplicateResolver: React.FC = () => {
              <FileCode size={24} />
              مدیریت تکراری‌ها و اصلاحات دیتابیس
            </h2>
-           <p className="text-[10px] opacity-80 mt-1 font-bold">غذاهای حذف شده در اینجا با رنگ قرمز مشخص می‌شوند و در اپلیکیشن نمایش داده نمی‌شوند.</p>
+           <p className="text-[10px] opacity-80 mt-1 font-bold">تغییرات شما در لحظه در دیتابیس اصلی ثبت و در کل اپلیکیشن اعمال می‌شود.</p>
         </div>
         <button onClick={handleResetStorage} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-black flex items-center gap-1 transition-all border border-white/10">
            <RotateCcw size={14} /> بازیابی همه حذفیات
