@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone } from 'lucide-react';
+import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, X } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
 
@@ -21,6 +21,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   
   useEffect(() => {
     setCustomItems(user.customShoppingList || []);
@@ -29,6 +30,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const uniqueItems = useMemo(() => {
     return [...customItems].sort((a, b) => a.name.localeCompare(b.name, 'fa'));
   }, [customItems]);
+
+  const activeItems = useMemo(() => uniqueItems.filter(i => !i.checked), [uniqueItems]);
 
   const updateCustomItems = async (newItems: ShoppingItem[]) => {
     setCustomItems(newItems);
@@ -66,18 +69,18 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
 
+  const persianDate = useMemo(() => {
+    return new Intl.DateTimeFormat('fa-IR').format(new Date());
+  }, []);
+
   const getFormattedListText = () => {
-    const activeItems = uniqueItems.filter(i => !i.checked);
     if (activeItems.length === 0) return 'سبد خرید شما خالی است.';
 
-    const dateStr = new Date().toLocaleDateString('fa-IR');
-    
     let text = `⚪️ NOOSH 🟢 APP\n`;
-    text += `✨ برنامه غذایی هوشمند شما\n`;
+    text += `برکت به سفره‌ات باشه مهربان، ممنون که برای آرامش و سلامتی خانه خرید می‌کنی. ❤️\n`;
+    text += `📅 تاریخ: ${persianDate}\n`;
     text += `------------------------------------------\n\n`;
-    text += `🛒 *لیست خرید*\n`;
-    text += `👤 کاربر: ${user.fullName || user.username}\n`;
-    text += `📅 تاریخ: ${dateStr}\n\n`;
+    text += `🛒 *لیست مواد مورد نیاز:*\n\n`;
 
     activeItems.forEach((item, index) => {
        const qty = item.amount ? ` (${toPersianDigits(item.amount)} ${item.unit || ''})` : '';
@@ -87,16 +90,17 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
     text += `\n------------------------------------------\n`;
     text += `🌐 www.nooshapp.ir\n`;
-    // ترفند: قرار دادن لینک عکس در انتهای پیام برای فعال شدن پیش‌نمایش لوگو در تلگرام/واتس‌اپ
-    // بدون اینکه در بدنه اصلی متن به چشم بیاید
     text += `‏‏​​​https://i.ibb.co/gMDKtj4p/3.png`; 
     
     return text;
   };
 
   const handlePrint = () => {
-    if (onPrintInternal) onPrintInternal();
-    else window.print();
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 100);
   };
 
   const handleSMS = () => {
@@ -110,35 +114,83 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const encodedText = encodeURIComponent(getFormattedListText());
 
   return (
-    <div id="shopping-list-content" className="bg-white rounded-2xl p-6 min-h-full flex flex-col">
-      <div className="screen-only">
-        {/* pl-28 برای ایجاد فضای کاملا آزاد جهت دکمه ضربدر X که در گوشه بالا سمت چپ قرار دارد */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-28 md:pl-0 pt-2">
+    <div className="bg-white rounded-2xl min-h-full flex flex-col">
+      {/* نسخه مخصوص چاپ - مخفی در حالت عادی */}
+      <div className={`print-only ${isPrinting ? 'active-print' : ''} p-8 dir-rtl text-right`}>
+        <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
+           <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
+                <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Smart Meal Planner</span>
+           </div>
+           <div className="text-left font-black text-slate-800">
+              <div className="text-xs opacity-50 mb-1">تاریخ تهیه لیست</div>
+              <div className="text-lg">{toPersianDigits(persianDate)}</div>
+           </div>
+        </div>
+
+        <div className="mb-8 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
+           <p className="text-sm font-black text-slate-700 leading-relaxed">
+             برکت به سفره‌ات باشه مهربان؛ ممنون که برای آرامش و سلامتی خانه خرید می‌کنی. ❤️
+           </p>
+        </div>
+
+        <table className="w-full border-collapse mb-8">
+           <thead>
+              <tr className="bg-slate-100">
+                <th className="border p-3 text-right font-black text-sm">ردیف</th>
+                <th className="border p-3 text-right font-black text-sm">شرح کالا</th>
+                <th className="border p-3 text-right font-black text-sm">مقدار/واحد</th>
+                <th className="border p-3 text-right font-black text-sm">بابت غذای</th>
+              </tr>
+           </thead>
+           <tbody>
+              {activeItems.map((item, idx) => (
+                <tr key={item.id}>
+                  <td className="border p-3 text-center text-sm">{toPersianDigits(idx + 1)}</td>
+                  <td className="border p-3 text-sm font-bold">{item.name}</td>
+                  <td className="border p-3 text-sm">{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
+                  <td className="border p-3 text-xs text-slate-500">{item.fromRecipe || '-'}</td>
+                </tr>
+              ))}
+           </tbody>
+        </table>
+
+        <div className="text-center border-t pt-6">
+           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Generated by</div>
+           <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
+        </div>
+      </div>
+
+      {/* نسخه نمایش در اپلیکیشن */}
+      <div className="no-print p-6 flex flex-col flex-grow">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-0 pt-2">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl">
               <ShoppingCart size={28} />
             </div>
             <div>
               <h2 className="text-2xl font-black text-slate-800 leading-none">سبد خرید</h2>
-              <p className="text-[10px] text-slate-400 font-bold mt-1">({toPersianDigits(uniqueItems.filter(i => !i.checked).length)} قلم کالا)</p>
+              <p className="text-[10px] text-slate-400 font-bold mt-1">({toPersianDigits(activeItems.length)} قلم کالا)</p>
             </div>
           </div>
           
           <div className="flex gap-2 flex-wrap">
-            <button onClick={handlePrint} className="p-3 text-slate-600 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200 active:scale-90 shadow-sm" title="چاپ">
+            <button onClick={handlePrint} className="p-3 text-slate-600 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200 active:scale-90 shadow-sm" title="چاپ فاکتور خرید">
               <Printer size={22} />
             </button>
             
-            <button onClick={handleSMS} className="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-blue-100 active:scale-90 shadow-sm" title="پیامک">
+            <button onClick={handleSMS} className="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-blue-100 active:scale-90 shadow-sm" title="ارسال پیامک">
               <Smartphone size={22} />
             </button>
 
-            <a href={`https://wa.me/?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-green-600 hover:bg-green-50 rounded-2xl transition-all border border-green-100 active:scale-90 shadow-sm" title="واتس‌اپ">
+            <a href={`https://wa.me/?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-green-600 hover:bg-green-50 rounded-2xl transition-all border border-green-100 active:scale-90 shadow-sm" title="ارسال به واتس‌اپ">
               <MessageCircle size={22} />
             </a>
 
-            {/* حذف پارامتر url برای جلوگیری از نمایش تکراری آدرس وب‌سایت در بالای پیام تلگرام */}
-            <a href={`https://t.me/share/url?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-sky-500 hover:bg-sky-100 rounded-2xl transition-all border border-sky-100 active:scale-90 shadow-sm" title="تلگرام">
+            <a href={`https://t.me/share/url?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-sky-500 hover:bg-sky-100 rounded-2xl transition-all border border-sky-100 active:scale-90 shadow-sm" title="ارسال به تلگرام">
               <TelegramIcon />
             </a>
             

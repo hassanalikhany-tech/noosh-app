@@ -179,11 +179,11 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <button 
                 onClick={handleGenerateDaily} 
                 disabled={!!loadingType}
-                className="group relative bg-white border-2 border-slate-100 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-teal-200 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                className="group relative bg-white border-2 border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-[0_20px_50px_rgba(15,23,42,0.15)] hover:shadow-[0_30px_60px_rgba(15,23,42,0.25)] hover:border-teal-400 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="p-5 bg-teal-50 text-teal-600 rounded-3xl group-hover:scale-110 transition-transform duration-500">
@@ -198,7 +198,7 @@ const App: React.FC = () => {
               <button 
                 onClick={handleGenerateWeekly} 
                 disabled={!!loadingType}
-                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-2xl transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-[0_20px_50px_rgba(2,6,23,0.4)] transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 opacity-20"></div>
                 <div className="p-5 bg-white/10 text-teal-400 rounded-3xl group-hover:scale-110 transition-transform duration-500">
