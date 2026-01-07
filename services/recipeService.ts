@@ -4,7 +4,9 @@ import { DEFAULT_DISHES } from '../data/recipes';
 import { 
   collection, 
   getDocs,
-  writeBatch
+  writeBatch,
+  doc,
+  setDoc
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
@@ -59,6 +61,23 @@ export const RecipeService = {
       console.log("Database cache purged successfully to prevent duplication.");
     } catch (e) {
       console.error("Failed to clear cache", e);
+    }
+  },
+
+  seedCloudDatabase: async () => {
+    if (!auth.currentUser) return { success: false, message: "دسترسی مدیریت ندارید." };
+    try {
+      const batch = writeBatch(db);
+      // انتقال تمام ۴۸۱ غذا از کدهای استاتیک به فایربیس
+      DEFAULT_DISHES.forEach((dish) => {
+        const docRef = doc(db, "dishes", dish.id);
+        batch.set(docRef, dish);
+      });
+      await batch.commit();
+      return { success: true, message: `تعداد ${DEFAULT_DISHES.length} غذا با موفقیت و بدون تغییر به فایربیس منتقل شدند.` };
+    } catch (e: any) {
+      console.error("Seeding Error:", e);
+      return { success: false, message: "خطا در انتقال داده‌ها: " + e.message };
     }
   },
 

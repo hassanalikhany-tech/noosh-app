@@ -1,5 +1,5 @@
 
-import { CloudLightning, Loader2, Database, RefreshCw, Trash2, Download, ShieldAlert, FileSpreadsheet } from 'lucide-react';
+import { CloudLightning, Loader2, Database, RefreshCw, Trash2, Download, ShieldAlert, FileSpreadsheet, UploadCloud } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { RecipeService } from '../../services/recipeService';
 import { estimateCalories, estimateCookTime, getDifficulty, getDishNature } from '../../utils/recipeHelpers';
@@ -9,6 +9,7 @@ const DatabaseManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info' | 'warning'; text: string } | null>(null);
 
   const loadStats = async () => {
@@ -76,6 +77,17 @@ const DatabaseManager: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleSeedDatabase = async () => {
+    const count = RecipeService.getLocalCount();
+    if (!confirm(`آیا مطمئن هستید که می‌خواهید تمام ${count} غذای موجود در فایل‌های کد را به فایربیس منتقل کنید؟`)) return;
+    
+    setIsSeeding(true);
+    const res = await RecipeService.seedCloudDatabase();
+    setMessage({ type: res.success ? 'success' : 'error', text: res.message });
+    await loadStats();
+    setIsSeeding(false);
+  };
+
   const handlePurgeCloud = async () => {
     if (!confirm("هشدار جدی: تمام اطلاعات موجود در فایربیس پاک خواهد شد. ادامه می‌دهید؟")) return;
     setIsPurging(true);
@@ -89,6 +101,17 @@ const DatabaseManager: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-enter">
+      {message && (
+        <div className={`p-4 rounded-2xl text-sm font-black flex items-center gap-3 animate-bounce ${
+          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
+          message.type === 'warning' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+        }`}>
+          <ShieldAlert size={20} />
+          {message.text}
+          <button onClick={() => setMessage(null)} className="mr-auto opacity-50 hover:opacity-100">×</button>
+        </div>
+      )}
+
       <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
         <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8 border-b border-slate-50 pb-8">
           <div className="flex items-center gap-4">
@@ -100,12 +123,23 @@ const DatabaseManager: React.FC = () => {
           </div>
           
           <div className="flex gap-2 flex-wrap justify-center">
+            <button 
+              onClick={handleSeedDatabase} 
+              disabled={isSeeding} 
+              className="px-6 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+            >
+              {isSeeding ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />} 
+              انتقال {toPersian(RecipeService.getLocalCount())} غذا به فایربیس
+            </button>
+
             <button onClick={handleExportCSV} className="px-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 active:scale-95">
-              <FileSpreadsheet size={20} /> استخراج فایل CSV فعلی
+              <FileSpreadsheet size={20} /> استخراج فایل CSV
             </button>
+            
             <button onClick={handlePurgeCloud} disabled={isPurging} className="px-4 py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs border border-rose-100 hover:bg-rose-100 transition-all">
-              {isPurging ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />} پاکسازی کامل ابر (Firebase)
+              {isPurging ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />} پاکسازی کامل ابر
             </button>
+            
             <button onClick={loadStats} className="p-4 bg-slate-100 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all">
                <RefreshCw size={24} className={isLoading ? "animate-spin" : ""} />
             </button>
