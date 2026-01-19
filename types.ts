@@ -1,11 +1,13 @@
 
+
 export interface Ingredient {
   item: string;
   amount: number;
   unit: string;
 }
 
-export type DishCategory = 
+// Fix: Corrected DishCategory syntax from type Name { ... } to type Name = ...
+export type DishCategory =
   | 'ash' 
   | 'polo' 
   | 'khorak' 
@@ -100,6 +102,7 @@ export interface UserProfile {
   familySize: number;
   isAdmin?: boolean;
   isApproved?: boolean; 
+  isDeleted?: boolean; // فیلد جدید برای حذف نرم
   dietMode?: boolean; 
   activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
@@ -109,5 +112,5 @@ export interface UserProfile {
   quickMealsMode?: boolean;
   weeklyPlan?: DayPlan[]; 
   currentSessionId?: string;
-  registeredDevices?: string[]; // لیست شناسه‌های دستگاه‌های مجاز (حداکثر ۲ مورد)
+  registeredDevices?: string[]; 
 }

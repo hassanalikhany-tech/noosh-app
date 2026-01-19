@@ -28,7 +28,6 @@ const notifyUpdate = () => {
   window.dispatchEvent(new CustomEvent('user-data-updated'));
 };
 
-// تابع تولید یا بازیابی شناسه اثرانگشت دستگاه
 const getDeviceFingerprint = () => {
   let deviceId = localStorage.getItem('noosh_device_fingerprint');
   if (!deviceId) {
@@ -61,6 +60,7 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
     customShoppingList: [],
     isAdmin: isOwner,
     isApproved: isOwner,
+    isDeleted: false,
     registeredDevices: [deviceId] 
   };
 };
@@ -84,10 +84,15 @@ export const UserService = {
       }
 
       let userData = userDoc.data() as UserProfile;
+
+      if (userData.isDeleted) {
+        await signOut(auth);
+        return { success: false, message: "این حساب کاربری غیرفعال یا حذف شده است." };
+      }
+
       const userEmail = (firebaseUser.email || "").toLowerCase();
       const isOwner = userEmail === ADMIN_EMAIL || userData.isAdmin;
 
-      // محدودیت دستگاه فقط برای کاربران عادی
       if (!isOwner) {
         const registeredDevices = userData.registeredDevices || [];
         const isDeviceKnown = registeredDevices.includes(deviceId);
@@ -109,15 +114,12 @@ export const UserService = {
         }
       }
 
-      // تولید نشست جدید
       const newSessionId = crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       
-      // فقط نشست کاربر عادی را در دیتابیس آپدیت می‌کنیم تا باعث اخراج بقیه نشود
       if (!isOwner) {
         await updateDoc(userDocRef, { currentSessionId: newSessionId });
       } else {
-        // برای ادمین، کدی ثابت یا تهی می‌گذاریم تا چک نشست در App.tsx همیشه پاس شود
         await updateDoc(userDocRef, { currentSessionId: 'ADMIN_SESSION' });
         localStorage.setItem('noosh_active_session', 'ADMIN_SESSION');
       }
@@ -164,10 +166,15 @@ export const UserService = {
       }
 
       let data = userDoc.data() as UserProfile;
+
+      if (data.isDeleted) {
+        await signOut(auth);
+        return { success: false, message: "این حساب کاربری حذف شده است." };
+      }
+
       const userEmail = (user.email || "").toLowerCase();
       const isOwner = userEmail === ADMIN_EMAIL || data.isAdmin;
 
-      // بررسی محدودیت دستگاه برای کاربران عادی در گوگل لاگین
       if (!isOwner) {
         const registeredDevices = data.registeredDevices || [];
         if (!registeredDevices.includes(deviceId)) {
@@ -194,7 +201,6 @@ export const UserService = {
     const user = auth.currentUser;
     if (!user) return true;
     
-    // اگر کاربر ادمین است، هرگز نشست او نامعتبر نشود
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
     if (userDoc.exists() && userDoc.data().isAdmin) return true;
@@ -224,6 +230,9 @@ export const UserService = {
       await setDoc(doc(db, "users", userCredential.user.uid), newUser);
       return { success: true, user: newUser };
     } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        return { success: false, message: "این ایمیل قبلاً ثبت شده است. اگر اکانت حذف شده، باید توسط مدیریت از پنل فایربیس نیز پاک شود.", code: error.code };
+      }
       return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
     }
   },
@@ -237,7 +246,9 @@ export const UserService = {
             const userDocRef = doc(db, "users", user.uid);
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
-              resolve(userDoc.data() as UserProfile);
+              const data = userDoc.data() as UserProfile;
+              if (data.isDeleted) resolve(null);
+              else resolve(data);
             } else { resolve(null); }
           } catch { resolve(null); }
         } else { resolve(null); }
@@ -296,16 +307,24 @@ export const UserService = {
   getAllUsers: async (): Promise<{ success: boolean; data: any[]; error?: string }> => {
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
-      return { success: true, data: querySnapshot.docs.map(d => ({ ...d.data(), uid: d.id })) };
+      const allUsers = querySnapshot.docs.map(d => ({ ...d.data(), uid: d.id })) as any[];
+      return { success: true, data: allUsers.filter(u => !u.isDeleted) };
     } catch (e: any) { return { success: false, data: [], error: e.code }; }
   },
 
   deleteUser: async (uid: string): Promise<void> => {
     try {
-      await deleteDoc(doc(db, "users", uid));
+      // تغییر اطلاعات برای آزادسازی ایمیل و یوزرنیم
+      // این کار باعث می‌شود اگر ادمین اکانت را از Auth پاک کرد، ثبت‌نام جدید بدون تداخل با رکوردهای قدیمی انجام شود.
+      await updateDoc(doc(db, "users", uid), { 
+        isDeleted: true,
+        email: `deleted_${uid}@noosh.old`,
+        username: `deleted_${uid}`,
+        registeredDevices: [] // پاکسازی دستگاه‌ها
+      });
       notifyUpdate();
     } catch (e) {
-      console.error("Firebase delete error:", e);
+      console.error("Soft delete error:", e);
       throw e;
     }
   },

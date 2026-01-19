@@ -63,22 +63,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
   };
 
   const handleDelete = async (uid: string, fullName: string) => {
-    // جلوگیری از حذف اکانت خود ادمین
     const currentAuthUser = auth.currentUser;
     if (currentAuthUser && currentAuthUser.uid === uid) {
       alert('شما نمی‌توانید اکانت فعلی خود را حذف کنید!');
       return;
     }
 
-    if (confirm(`آیا از حذف کامل کاربر «${fullName}» اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+    if (confirm(`آیا از حذف کاربر «${fullName}» از اپلیکیشن مطمئن هستید؟\n\nنکته: برای اینکه این فرد بتواند مجدداً ثبت‌نام کند، باید اکانت او را از کنسول فایربیس (بخش Authentication) نیز حذف کنید.`)) {
       try {
         await UserService.deleteUser(uid);
         await loadInitialData();
-        alert('کاربر با موفقیت حذف شد.');
+        alert('کاربر با موفقیت از لیست اپلیکیشن حذف شد.');
       } catch (err: any) {
-        console.error("Delete user failed:", err);
-        // نمایش خطای دقیق به جای پیام عمومی
-        alert(`خطا در حذف کاربر: ${err.message || 'خطای ناشناخته در فایربیس'}`);
+        alert(`خطا در عملیات: ${err.message}`);
       }
     }
   };
@@ -101,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight uppercase">پنل مدیریت نوش</h1>
-              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Version 15.1 | Multi-Device Guard</p>
+              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Version 15.2 | Cloud Safe Delete</p>
             </div>
           </div>
           <div className="flex gap-2">
