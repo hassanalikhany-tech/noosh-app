@@ -110,25 +110,37 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
-      {/* بخش مخصوص چاپ - در حالت عادی مخفی است */}
+      {/* بخش مخصوص چاپ - لوگو در مرکز هدر */}
       <div className="print-only dir-rtl text-right active-print-container">
         <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
-           <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+           {/* سمت چپ هدر (انگلیسی) */}
+           <div className="flex-1 flex flex-col items-start" style={{ direction: 'ltr' }}>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
                 <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">همراه سلامتی و آسایش شما</span>
+              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Premium Kitchen Assistant</span>
            </div>
-           <div className="text-left font-black text-slate-800">
-              <div className="text-xs opacity-50 mb-1">تاریخ تهیه لیست</div>
+
+           {/* لوگوی مرکزی */}
+           <div className="flex-1 flex justify-center">
+              <img 
+                src="https://i.ibb.co/gMDKtj4p/3.png" 
+                alt="Noosh Logo" 
+                className="w-16 h-16 object-contain"
+              />
+           </div>
+           
+           {/* سمت راست هدر (فارسی) */}
+           <div className="flex-1 text-left font-black text-slate-800">
+              <div className="text-[10px] opacity-50 mb-1">تاریخ تهیه لیست</div>
               <div className="text-lg">{toPersianDigits(persianDate)}</div>
            </div>
         </div>
 
         <div className="mb-6 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
            <p className="text-sm font-black text-slate-700 leading-relaxed">
-             لیست مواد اولیه مورد نیاز جهت خرید
+             لیست مواد اولیه مورد نیاز جهت خرید - همراه سلامتی و آسایش شما
            </p>
         </div>
 
@@ -154,7 +166,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         </table>
 
         <div className="text-center border-t pt-6">
-           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن نوش</div>
+           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن هوشمند آشپزی نوش</div>
            <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
         </div>
       </div>
