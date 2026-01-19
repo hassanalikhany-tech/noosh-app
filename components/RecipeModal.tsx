@@ -1,5 +1,5 @@
 
-import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle } from 'lucide-react';
+import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
@@ -19,6 +19,7 @@ const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', '�
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, onUpdateUser }) => {
   const [addedToCart, setAddedToCart] = useState(false);
+  const [servings, setServings] = useState(user?.familySize || 4);
 
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
   const hasIngredients = dish.ingredients && dish.ingredients.length > 0;
@@ -31,6 +32,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
   useEffect(() => {
     if (isOpen) {
       setAddedToCart(false);
+      setServings(user?.familySize || 4);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -38,7 +40,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, user?.familySize]);
 
   const toPersianDigits = (num: number | string) => {
     if (num === undefined || num === null) return '';
@@ -47,33 +49,36 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
 
+  // محاسبه مقدار scaled شده برای هر آیتم
+  const getScaledAmount = (baseAmount: number) => {
+    if (!baseAmount) return 0;
+    const scaled = (baseAmount / 4) * servings;
+    return Math.round(scaled * 10) / 10; // تا یک رقم اعشار
+  };
+
   const handleAddAllToCart = () => {
     if (!user || !dish.ingredients) return;
     
-    // ۱. بازخورد فوری بصری
     setAddedToCart(true);
     
-    // ۲. آماده‌سازی لیست جدید
     const currentList = user.customShoppingList || [];
     const newItems: ShoppingItem[] = dish.ingredients
       .filter(ing => !EXCLUDED_SHOPPING_ITEMS.includes(ing.item))
       .map(ing => ({
         id: `ing-${Date.now()}-${Math.random()}`,
         name: ing.item,
-        amount: ing.amount,
+        amount: getScaledAmount(ing.amount),
         unit: ing.unit,
         checked: false,
-        fromRecipe: dish.name
+        fromRecipe: `${dish.name} (${toPersianDigits(servings)} نفر)`
       }));
     
     const updatedFullList = [...currentList, ...newItems];
 
-    // ۳. بروزرسانی آنی در کل اپلیکیشن (Optimistic)
     if (onUpdateUser) {
       onUpdateUser({ ...user, customShoppingList: updatedFullList });
     }
 
-    // ۴. ارسال به دیتابیس در پس‌زمینه
     UserService.updateShoppingList(user.username, updatedFullList);
     
     setTimeout(() => setAddedToCart(false), 2000);
@@ -99,12 +104,26 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-black border border-blue-100"><Activity size={16} /> {difficulty}</div>
           </div>
 
-          <div className={`p-5 rounded-2xl border mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-100' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
-             <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-xl ${natureInfo.type === 'hot' ? 'bg-orange-500' : natureInfo.type === 'cold' ? 'bg-blue-500' : 'bg-emerald-500'} text-white shadow-lg`}>{natureInfo.type === 'hot' ? <Sun size={24} /> : natureInfo.type === 'cold' ? <Snowflake size={24} /> : <Scale size={24} />}</div>
-                <div><h4 className="font-black text-slate-800 text-sm">طبع این غذا: {natureInfo.label}</h4></div>
-             </div>
-             <div className="sm:mr-auto flex items-center gap-2 bg-white/80 px-4 py-2 rounded-xl border shadow-sm"><ShieldCheck size={18} className="text-teal-600" /><span className="text-xs text-slate-700 font-bold">مصلح: <span className="text-teal-700 font-black">{natureInfo.mosleh}</span></span></div>
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className={`flex-1 p-5 rounded-2xl border flex flex-col items-center justify-center gap-3 ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-100' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                <div className="flex items-center gap-3">
+                   <div className={`p-2 rounded-xl ${natureInfo.type === 'hot' ? 'bg-orange-500' : natureInfo.type === 'cold' ? 'bg-blue-500' : 'bg-emerald-500'} text-white`}>{natureInfo.type === 'hot' ? <Sun size={20} /> : natureInfo.type === 'cold' ? <Snowflake size={20} /> : <Scale size={20} />}</div>
+                   <h4 className="font-black text-slate-800 text-sm">طبع: {natureInfo.label}</h4>
+                </div>
+                <div className="bg-white/80 px-3 py-1 rounded-lg border text-[10px] font-bold text-slate-700">مصلح: {natureInfo.mosleh}</div>
+            </div>
+
+            <div className="flex-1 p-5 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-3">
+                <div className="flex items-center gap-2 text-slate-500">
+                    <Users size={18} />
+                    <span className="text-xs font-black">تنظیم تعداد نفرات</span>
+                </div>
+                <div className="flex items-center gap-4 bg-white px-2 py-1 rounded-xl shadow-sm border border-slate-100">
+                    <button onClick={() => setServings(Math.max(1, servings - 1))} className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-all active:scale-90"><Minus size={20} /></button>
+                    <span className="text-xl font-black text-slate-800 min-w-[20px] text-center">{toPersianDigits(servings)}</span>
+                    <button onClick={() => setServings(Math.min(20, servings + 1))} className="p-1.5 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-all active:scale-90"><Plus size={20} /></button>
+                </div>
+            </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-10">
@@ -113,21 +132,21 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                 <div className="flex items-center justify-between mb-5">
                    <div className="flex items-center gap-2 text-teal-700 font-black text-xl">
                       <Utensils size={22} />
-                      <h3>مواد لازم (۴ نفره)</h3>
+                      <h3>مواد لازم برای {toPersianDigits(servings)} نفر</h3>
                    </div>
-                   <span className="text-[10px] bg-teal-50 text-teal-700 px-3 py-1 rounded-full font-black">
-                      {toPersianDigits(dish.ingredients.length)} قلم
-                   </span>
                 </div>
                 <div className="space-y-3">
-                  {dish.ingredients.map((ing, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group hover:border-teal-200 transition-all">
-                      <span className="font-bold text-slate-700 text-sm">{ing.item}</span>
-                      <span className="font-black text-teal-600 text-xs bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-50">
-                        {ing.amount > 0 ? `${toPersianDigits(ing.amount)} ${ing.unit}` : ing.unit}
-                      </span>
-                    </div>
-                  ))}
+                  {dish.ingredients.map((ing, idx) => {
+                    const scaled = getScaledAmount(ing.amount);
+                    return (
+                      <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 group hover:border-teal-200 transition-all">
+                        <span className="font-bold text-slate-700 text-sm">{ing.item}</span>
+                        <span className="font-black text-teal-600 text-xs bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-50">
+                          {scaled > 0 ? `${toPersianDigits(scaled)} ${ing.unit}` : ing.unit}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
                 
                 {user && (

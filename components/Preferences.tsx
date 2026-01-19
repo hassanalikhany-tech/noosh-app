@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, Dish } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle, Utensils } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle, Utensils, Users, Minus } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import DishVisual from './DishVisual';
 
@@ -37,8 +37,14 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
 
     const updatedUser = { ...user, excludedCategories: newExcluded };
     onUpdateUser(updatedUser);
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { excludedCategories: newExcluded });
+  };
+
+  const updateFamilySize = (size: number) => {
+    if (size < 1 || size > 20) return;
+    const updatedUser = { ...user, familySize: size };
+    onUpdateUser(updatedUser);
+    UserService.updateProfile(user.username, { familySize: size });
   };
 
   const toggleNationalityGroup = (countries: string[]) => {
@@ -56,7 +62,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
 
     const updatedUser = { ...user, excludedNationalities: newExNats };
     onUpdateUser(updatedUser);
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { excludedNationalities: newExNats });
   };
 
@@ -68,14 +73,12 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     }
     const updatedUser = { ...user, excludedNationalities: newExNats };
     onUpdateUser(updatedUser);
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { excludedNationalities: newExNats });
   };
 
   const toggleDietMode = () => {
     const newVal = !user.dietMode;
     onUpdateUser({ ...user, dietMode: newVal });
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { dietMode: newVal });
   };
 
@@ -86,14 +89,12 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     const newList = [...current, ingInput.trim()];
     onUpdateUser({ ...user, dislikedIngredients: newList });
     setIngInput('');
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { dislikedIngredients: newList });
   };
 
   const removeDislikedIng = (ing: string) => {
     const newList = (user.dislikedIngredients || []).filter(i => i !== ing);
     onUpdateUser({ ...user, dislikedIngredients: newList });
-    // Fix: Using updateProfile instead of non-existent updatePreferences
     UserService.updateProfile(user.username, { dislikedIngredients: newList });
   };
 
@@ -154,6 +155,39 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
                <LogOut size={24} />
              </button>
           </div>
+        </div>
+      </div>
+
+      {/* بخش تعداد نفرات خانواده */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-32 h-32 bg-teal-50 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-40"></div>
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl shadow-inner">
+            <Users size={32} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-800">تعداد نفرات خانواده</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Recipe Scaling Basis</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-6 bg-slate-50 p-3 rounded-3xl border border-slate-100 relative z-10">
+          <button 
+            onClick={() => updateFamilySize((user.familySize || 4) - 1)}
+            className="w-12 h-12 bg-white text-slate-600 rounded-2xl flex items-center justify-center shadow-sm hover:bg-rose-50 hover:text-rose-600 transition-all active:scale-90"
+          >
+            <Minus size={24} />
+          </button>
+          <div className="flex flex-col items-center min-w-[60px]">
+            <span className="text-3xl font-black text-slate-800">{toPersianDigits(user.familySize || 4)}</span>
+            <span className="text-[10px] font-black text-slate-400">نفر</span>
+          </div>
+          <button 
+            onClick={() => updateFamilySize((user.familySize || 4) + 1)}
+            className="w-12 h-12 bg-white text-slate-600 rounded-2xl flex items-center justify-center shadow-sm hover:bg-emerald-50 hover:text-emerald-600 transition-all active:scale-90"
+          >
+            <Plus size={24} />
+          </button>
         </div>
       </div>
 

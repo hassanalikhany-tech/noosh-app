@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [displayPlan, setDisplayPlan] = useState<DayPlan[]>([]);
   const [loadingType, setLoadingType] = useState<'daily' | 'weekly' | null>(null);
+  const [lastPlanType, setLastPlanType] = useState<'daily' | 'weekly' | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -54,6 +55,7 @@ const App: React.FC = () => {
     try {
       const { plan, updatedUser } = await generateDailyPlan(currentUser);
       setDisplayPlan(plan);
+      setLastPlanType('daily');
       setCurrentUser(updatedUser);
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
@@ -69,6 +71,7 @@ const App: React.FC = () => {
     try {
       const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
       setDisplayPlan(plan);
+      setLastPlanType('weekly');
       setCurrentUser(updatedUser);
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
@@ -119,7 +122,10 @@ const App: React.FC = () => {
         setSyncStatus('done');
       }
 
-      if (user && user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
+      if (user && user.weeklyPlan && user.weeklyPlan.length > 0) {
+        setDisplayPlan(user.weeklyPlan);
+        setLastPlanType(user.weeklyPlan.length <= 3 ? 'daily' : 'weekly');
+      }
       
       setInitProgress(100);
       clearTimeout(skipTimer);
@@ -150,7 +156,10 @@ const App: React.FC = () => {
       const updated = await UserService.getCurrentUser();
       if (updated) {
         setCurrentUser({ ...updated });
-        if (updated.weeklyPlan) setDisplayPlan(updated.weeklyPlan);
+        if (updated.weeklyPlan) {
+          setDisplayPlan(updated.weeklyPlan);
+          setLastPlanType(updated.weeklyPlan.length <= 3 ? 'daily' : 'weekly');
+        }
       }
     };
 
@@ -242,7 +251,7 @@ const App: React.FC = () => {
               <span className="text-sm font-black text-teal-500 italic uppercase">APP</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <button onClick={() => setIsShoppingListOpen(true)} className="relative p-2.5 bg-white/5 rounded-2xl text-teal-400 border border-white/10">
               <ShoppingCart size={22} />
               {currentUser.customShoppingList?.filter(i => !i.checked).length ? (
@@ -348,7 +357,9 @@ const App: React.FC = () => {
                     <div className="p-2 bg-teal-600 text-white rounded-xl shadow-lg shadow-teal-200">
                       <Sparkles size={20} />
                     </div>
-                    <h2 className="text-2xl font-black text-slate-800">نتایج هوشمند هفته</h2>
+                    <h2 className="text-2xl font-black text-slate-800">
+                      {lastPlanType === 'daily' ? 'برنامه غذایی پیشنهادی برای امروز' : 'برنامه غذایی پیشنهادی برای هفته پیش رو'}
+                    </h2>
                   </div>
                   <button onClick={async () => { setDisplayPlan([]); if (currentUser) await UserService.updateProfile(currentUser.username, { weeklyPlan: [] }); }} className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all font-black text-xs">
                     <Trash2 size={16} />
