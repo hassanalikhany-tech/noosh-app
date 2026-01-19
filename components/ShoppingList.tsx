@@ -105,8 +105,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     window.location.href = `sms:${separator}body=${encodeURIComponent(text)}`;
   };
 
-  const encodedText = encodeURIComponent(getFormattedListText());
-  const telegramShareLink = `https://t.me/share/url?url=&text=${encodedText}`;
+  const shareText = getFormattedListText();
+  const encodedText = encodeURIComponent(shareText);
+  const appUrl = encodeURIComponent('https://nooshapp.ir');
+  
+  // لینک استاندارد تلگرام که باعث باز شدن اپلیکیشن و انتخاب مخاطب می‌شود
+  const telegramShareLink = `https://t.me/share/url?url=${appUrl}&text=${encodedText}`;
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
