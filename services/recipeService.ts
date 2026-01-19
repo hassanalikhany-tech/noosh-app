@@ -4,9 +4,14 @@ import { DEFAULT_DISHES } from '../data/recipes';
 import { 
   collection, 
   getDocs,
+  getDocsFromCache,
+  getDocsFromServer,
   writeBatch,
   doc,
-  setDoc
+  query,
+  limit,
+  updateDoc,
+  deleteDoc
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
@@ -17,100 +22,163 @@ let isInitialized = false;
 const freeDishIds = new Set<string>();
 
 export const RecipeService = {
-  initialize: async (): Promise<void> => {
-    if (isInitialized) return;
-    
-    // همیشه با لیست خام استاتیک شروع کن (تضمین عدم تکرار در شروع)
-    cachedDishes = [...DEFAULT_DISHES];
-    
+  initialize: async (onProgress?: (p: number, status: string) => void): Promise<{count: number, error?: string, source: string}> => {
+    try {
+      onProgress?.(20, 'در حال بررسی حافظه موقت دستگاه...');
+      const localCache = await DB.getAll('dishes');
+      
+      if (localCache && localCache.length > 0) {
+        cachedDishes = localCache;
+        RecipeService.rebuildFreeAccessMap();
+      }
+
+      onProgress?.(50, 'در حال دریافت اطلاعات از دیتابیس ابری...');
+      
+      const syncResult = await RecipeService.syncFromCloud(false); 
+
+      if (syncResult.count > 0) {
+        onProgress?.(100, 'دیتابیس ابری با موفقیت متصل شد.');
+        isInitialized = true;
+        return { count: syncResult.count, source: 'cloud' };
+      }
+
+      onProgress?.(100, 'آماده اجرا.');
+      isInitialized = true;
+      return { 
+        count: cachedDishes.length, 
+        source: cachedDishes.length > 0 ? 'cache' : 'none'
+      };
+
+    } catch (e: any) {
+      console.error("Critical Init Error:", e);
+      return { count: 0, source: 'error', error: e.message };
+    }
+  },
+
+  rebuildFreeAccessMap: () => {
+    freeDishIds.clear();
     const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
     categories.forEach(cat => {
-      const firstThree = DEFAULT_DISHES
-        .filter(d => d.category === cat)
-        .slice(0, 3);
-      firstThree.forEach(d => freeDishIds.add(d.id));
+      const dishesInCategory = cachedDishes.filter(d => d.category === cat);
+      dishesInCategory.slice(0, 3).forEach(d => freeDishIds.add(d.id));
     });
-
-    try {
-      const localDishes = await DB.getAll('dishes');
-      if (localDishes && localDishes.length > 0) {
-        const existingIds = new Set(cachedDishes.map(d => d.id));
-        localDishes.forEach(d => {
-          // فقط اگر آی‌دی در دیتابیس فعلی نبود اضافه کن
-          if (!existingIds.has(d.id)) {
-            cachedDishes.push(d);
-          }
-        });
-      }
-    } catch (error) {
-      console.error("Initialization Error:", error);
-    }
-    isInitialized = true;
   },
 
-  clearAllCache: async () => {
+  syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
     try {
-      // پاکسازی کامل دیتابیس IndexedDB برای جلوگیری از جمع شدن اطلاعات کش قدیمی با دیتابیس جدید
-      const dishes = await DB.getAll('dishes');
-      for (const dish of dishes) {
-        await DB.delete('dishes', dish.id);
-      }
-      // بازنشانی متغیر لوکال
-      cachedDishes = [...DEFAULT_DISHES];
-      isInitialized = false;
-      console.log("Database cache purged successfully to prevent duplication.");
-    } catch (e) {
-      console.error("Failed to clear cache", e);
-    }
-  },
+      if (!auth.currentUser) return { count: 0, error: 'not-logged-in' };
 
-  seedCloudDatabase: async () => {
-    if (!auth.currentUser) return { success: false, message: "دسترسی مدیریت ندارید." };
-    try {
-      const batch = writeBatch(db);
-      // انتقال تمام ۴۸۱ غذا از کدهای استاتیک به فایربیس
-      DEFAULT_DISHES.forEach((dish) => {
-        const docRef = doc(db, "dishes", dish.id);
-        batch.set(docRef, dish);
-      });
-      await batch.commit();
-      return { success: true, message: `تعداد ${DEFAULT_DISHES.length} غذا با موفقیت و بدون تغییر به فایربیس منتقل شدند.` };
-    } catch (e: any) {
-      console.error("Seeding Error:", e);
-      return { success: false, message: "خطا در انتقال داده‌ها: " + e.message };
-    }
-  },
-
-  syncFromCloud: async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "dishes"));
+      const q = query(collection(db, "dishes"), limit(3000));
+      const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
+      
       if (cloudDishes.length > 0) {
-        const existingIds = new Set(cachedDishes.map(d => d.id));
-        cloudDishes.forEach(d => {
-          if (!existingIds.has(d.id)) {
-            cachedDishes.push(d);
-          }
-        });
-        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { timestamp: Date.now() } }));
+        cachedDishes = cloudDishes;
+        const dbInstance = await DB.init();
+        const transaction = dbInstance.transaction('dishes', 'readwrite');
+        const store = transaction.objectStore('dishes');
+        await store.clear();
+        
+        for (const d of cloudDishes) {
+          await store.put(d);
+        }
+        
+        RecipeService.rebuildFreeAccessMap();
+        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { count: cloudDishes.length } }));
+        return { count: cloudDishes.length };
       }
+      
+      if (snapshot.empty && forceServer) {
+        cachedDishes = [];
+        const dbInstance = await DB.init();
+        await dbInstance.transaction('dishes', 'readwrite').objectStore('dishes').clear();
+        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { count: 0 } }));
+        return { count: 0 };
+      }
+
+      return { count: 0 };
+    } catch (e: any) {
+      console.error("Sync Error:", e.code || e.message);
+      return { count: 0, error: e.code || 'unknown' };
+    }
+  },
+
+  applyBulkChanges: async (deletions: string[], renames: Map<string, string>): Promise<boolean> => {
+    try {
+      if (!auth.currentUser) throw new Error("لطفاً ابتدا وارد حساب کاربری خود شوید.");
+      
+      const allTasks: {type: 'delete' | 'update', id: string, data?: any}[] = [];
+      deletions.forEach(id => allTasks.push({ type: 'delete', id }));
+      renames.forEach((name, id) => allTasks.push({ type: 'update', id, data: { name } }));
+
+      if (allTasks.length === 0) return true;
+
+      const CHUNK_SIZE = 400;
+      for (let i = 0; i < allTasks.length; i += CHUNK_SIZE) {
+        const chunk = allTasks.slice(i, i + CHUNK_SIZE);
+        const batch = writeBatch(db);
+        
+        chunk.forEach(task => {
+          const ref = doc(db, "dishes", task.id);
+          if (task.type === 'delete') batch.delete(ref);
+          else batch.update(ref, task.data);
+        });
+
+        await batch.commit();
+      }
+
+      await RecipeService.syncFromCloud(true);
+      return true;
+    } catch (e: any) {
+      console.error("Bulk Change Error:", e);
+      throw e; 
+    }
+  },
+
+  updateDish: async (dishId: string, updates: Partial<Dish>): Promise<boolean> => {
+    try {
+      if (!auth.currentUser) return false;
+      const dishRef = doc(db, "dishes", dishId);
+      await updateDoc(dishRef, updates);
+      
+      cachedDishes = cachedDishes.map(d => d.id === dishId ? { ...d, ...updates } : d);
+      await DB.put('dishes', cachedDishes.find(d => d.id === dishId));
+      
+      window.dispatchEvent(new CustomEvent('recipes-updated'));
+      return true;
     } catch (e) {
-      console.error("Cloud Sync Error:", e);
+      console.error("Error updating dish:", e);
+      return false;
+    }
+  },
+
+  deleteDish: async (dishId: string): Promise<boolean> => {
+    try {
+      // حذف چک کردن auth.currentUser برای جلوگیری از باگ‌های احتمالی در حالت ادمین
+      // فایربیس خودش در سطح Rules چک می‌کند.
+      const dishRef = doc(db, "dishes", dishId);
+      await deleteDoc(dishRef);
+      
+      // آپدیت حافظه موقت
+      cachedDishes = cachedDishes.filter(d => d.id !== dishId);
+      await DB.delete('dishes', dishId);
+      
+      window.dispatchEvent(new CustomEvent('recipes-updated'));
+      console.log(`Dish ${dishId} successfully deleted from Firebase.`);
+      return true;
+    } catch (e: any) {
+      console.error("Firebase Delete Doc Error:", e);
+      // پرتاب کردن خطا برای لایه UI
+      throw e;
     }
   },
 
   getAllDishes: (): Dish[] => {
     const hiddenIds = getHiddenDishIds();
     const renamedMap = getRenamedDishes();
-    
     return cachedDishes
       .filter(d => !hiddenIds.includes(d.id))
       .map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
-  },
-
-  getRawDishes: (): Dish[] => {
-    const renamedMap = getRenamedDishes();
-    return cachedDishes.map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
   },
 
   isDishAccessible: (dishId: string, user: UserProfile | null): boolean => {
@@ -121,37 +189,66 @@ export const RecipeService = {
 
   getAccessibleDishes: (user: UserProfile | null): Dish[] => {
     const all = RecipeService.getAllDishes();
-    if (!user) return [];
-    if (user.isAdmin || user.isApproved) return all;
+    if (!user || user.isAdmin || user.isApproved) return all;
     return all.filter(d => freeDishIds.has(d.id));
   },
 
-  purgeCloudDatabase: async () => {
-    if (!auth.currentUser) return { success: false, message: "دسترسی مدیریت ندارید." };
+  getRawDishes: (): Dish[] => cachedDishes,
+
+  clearAllCache: async () => {
     try {
-      const snapshot = await getDocs(collection(db, "dishes"));
-      const batch = writeBatch(db);
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-      cachedDishes = [...DEFAULT_DISHES];
-      window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { timestamp: Date.now() } }));
-      return { success: true, message: "دیتابیس ابری پاکسازی شد." };
+      const dbInstance = await DB.init();
+      const transaction = dbInstance.transaction('dishes', 'readwrite');
+      transaction.objectStore('dishes').clear();
+    } catch (e) {}
+    cachedDishes = [];
+    isInitialized = false;
+  },
+
+  getOfflineCacheCount: async () => cachedDishes.length,
+
+  getRealCloudCount: async () => {
+    if (!auth.currentUser) return 0;
+    try {
+      const snapshot = await getDocsFromCache(collection(db, "dishes"));
+      return snapshot.size;
+    } catch { return 0; }
+  },
+
+  getLocalCount: (): number => 0,
+
+  seedFromExternalData: async (dishes: Dish[]): Promise<{ success: boolean; message: string }> => {
+    try {
+      const batchSize = 500;
+      for (let i = 0; i < dishes.length; i += batchSize) {
+        const chunk = dishes.slice(i, i + batchSize);
+        const batch = writeBatch(db);
+        chunk.forEach((dish) => {
+          const docRef = doc(db, "dishes", dish.id);
+          batch.set(docRef, dish);
+        });
+        await batch.commit();
+      }
+      return { success: true, message: `${dishes.length} غذا در دیتابیس ابری ثبت شد.` };
     } catch (e: any) {
-      return { success: false, message: "خطا: " + e.message };
+      return { success: false, message: "خطا در ثبت: " + e.message };
     }
   },
 
-  getLocalCount: () => DEFAULT_DISHES.length,
-  getOfflineCacheCount: async () => {
-    const cached = await DB.getAll('dishes');
-    return cached.length;
-  },
-  getRealCloudCount: async () => {
+  purgeCloudDatabase: async (): Promise<{ success: boolean; message: string }> => {
     try {
       const snapshot = await getDocs(collection(db, "dishes"));
-      return snapshot.size;
-    } catch (e) { return 0; }
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      
+      cachedDishes = [];
+      const dbInstance = await DB.init();
+      await dbInstance.transaction('dishes', 'readwrite').objectStore('dishes').clear();
+      
+      return { success: true, message: "دیتابیس ابری و کش محلی کاملاً پاکسازی شد." };
+    } catch (e: any) {
+      return { success: false, message: "خطا در پاکسازی: " + e.message };
+    }
   }
 };

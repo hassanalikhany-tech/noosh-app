@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock } from 'lucide-react';
 import { DayPlan, UserProfile } from '../types';
 import RecipeModal from './RecipeModal';
@@ -17,11 +17,18 @@ interface MealCardProps {
 const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // استفاده از وضعیت محلی برای پاسخگویی آنی (Optimistic UI)
+  const [localFavorite, setLocalFavorite] = useState(user?.favoriteDishIds?.includes(plan.dish.id));
+  const [localBlacklisted, setLocalBlacklisted] = useState(user?.blacklistedDishIds?.includes(plan.dish.id));
+  
+  // همگام‌سازی وضعیت محلی در صورت تغییر پروفایل کاربر از بیرون
+  useEffect(() => {
+    setLocalFavorite(user?.favoriteDishIds?.includes(plan.dish.id));
+    setLocalBlacklisted(user?.blacklistedDishIds?.includes(plan.dish.id));
+  }, [user?.favoriteDishIds, user?.blacklistedDishIds, plan.dish.id]);
+
   const isAccessible = RecipeService.isDishAccessible(plan.dish.id, user);
   const isLocked = !isAccessible;
-
-  const isFavorite = user?.favoriteDishIds?.includes(plan.dish.id);
-  const isBlacklisted = user?.blacklistedDishIds?.includes(plan.dish.id);
 
   const calories = plan.dish.calories || estimateCalories(plan.dish);
   const time = plan.dish.cookTime || estimateCookTime(plan.dish);
@@ -32,16 +39,40 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLocked) return;
-    if (user) {
-        await UserService.toggleFavorite(user.username, plan.dish.id);
+    
+    const nextFavorite = !localFavorite;
+    
+    // ۱. به‌روزرسانی آنی در ظاهر
+    setLocalFavorite(nextFavorite);
+    if (nextFavorite) setLocalBlacklisted(false); // انحصار متقابل
+    
+    // ۲. ارسال به سرور و اطلاع‌رسانی به والد
+    try {
+      const updatedUser = await UserService.toggleFavorite(user.username, plan.dish.id);
+      if (onUpdateUser) onUpdateUser(updatedUser);
+    } catch (err) {
+      // بازگشت به حالت قبل در صورت خطا
+      setLocalFavorite(!nextFavorite);
     }
   };
 
   const handleToggleBlacklist = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLocked) return;
-    if (user) {
-        await UserService.toggleBlacklist(user.username, plan.dish.id);
+    
+    const nextBlacklisted = !localBlacklisted;
+
+    // ۱. به‌روزرسانی آنی در ظاهر
+    setLocalBlacklisted(nextBlacklisted);
+    if (nextBlacklisted) setLocalFavorite(false); // انحصار متقابل
+    
+    // ۲. ارسال به سرور و اطلاع‌رسانی به والد
+    try {
+      const updatedUser = await UserService.toggleBlacklist(user.username, plan.dish.id);
+      if (onUpdateUser) onUpdateUser(updatedUser);
+    } catch (err) {
+      // بازگشت به حالت قبل در صورت خطا
+      setLocalBlacklisted(!nextBlacklisted);
     }
   };
 
@@ -56,7 +87,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${isBlacklisted ? 'opacity-75' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
+        className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
         <div className="relative h-52 overflow-hidden">
@@ -78,21 +109,21 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
                <div className="flex gap-2">
                   <button 
                     onClick={handleToggleFavorite} 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 ${
-                      isFavorite ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-rose-500'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 active:scale-90 ${
+                      localFavorite ? 'bg-rose-500 text-white shadow-rose-200 scale-110' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-rose-500'
                     }`}
                     title="علاقه‌مندی"
                   >
-                    <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
+                    <Heart size={20} fill={localFavorite ? "currentColor" : "none"} className={localFavorite ? "animate-pulse" : ""} />
                   </button>
                   <button 
                     onClick={handleToggleBlacklist} 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 ${
-                      isBlacklisted ? 'bg-black text-white' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-black'
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 active:scale-90 ${
+                      localBlacklisted ? 'bg-slate-900 text-white scale-110' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-black'
                     }`}
                     title="دیگر پیشنهاد نده"
                   >
-                    <ThumbsDown size={20} fill={isBlacklisted ? "currentColor" : "none"} />
+                    <ThumbsDown size={20} fill={localBlacklisted ? "currentColor" : "none"} className={localBlacklisted ? "animate-pulse" : ""} />
                   </button>
                </div>
                {user?.dietMode && calories < 500 && (
@@ -115,8 +146,8 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
              <span className="flex items-center gap-1 bg-rose-50 text-rose-600 px-2 py-1 rounded-md"><Flame size={12} /> {toPersianDigits(calories)} کالری</span>
              <span className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-md"><Clock size={12} /> {toPersianDigits(time)} دقیقه</span>
           </div>
-          {isBlacklisted && (
-            <div className="mb-2 bg-black/5 text-black text-[10px] font-black py-1 px-2 rounded-lg inline-block w-fit">در لیست سیاه شماست</div>
+          {localBlacklisted && (
+            <div className="mb-2 bg-slate-900 text-white text-[10px] font-black py-1 px-2 rounded-lg inline-block w-fit">در لیست سیاه شماست</div>
           )}
           <p className="text-slate-500 text-sm line-clamp-2 mb-4 flex-grow leading-relaxed font-bold">{plan.dish.description}</p>
           

@@ -1,5 +1,5 @@
 
-import { Search, Heart, ThumbsDown, Database, RefreshCw, Globe, ChevronRight, ChevronLeft, MapPin, LayoutList, Lock } from 'lucide-react';
+import { Search, Heart, ThumbsDown, Database, RefreshCw, Globe, ChevronRight, ChevronLeft, MapPin, LayoutList, Lock, CloudDownload, AlertCircle } from 'lucide-react';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dish, DishCategory, CATEGORY_LABELS, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
@@ -28,39 +28,45 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
   const [selectedRegion, setSelectedRegion] = useState<string | 'all'>('all');
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [allDishes, setAllDishes] = useState<Dish[]>(RecipeService.getAllDishes());
+  const [allDishes, setAllDishes] = useState<Dish[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const refreshList = () => {
+    const dishes = RecipeService.getAllDishes();
+    setAllDishes(dishes);
+  };
+
   useEffect(() => {
-    const handleSync = () => {
-      setAllDishes(RecipeService.getAllDishes());
-    };
-    window.addEventListener('recipes-updated' as any, handleSync);
-    return () => window.removeEventListener('recipes-updated' as any, handleSync);
+    refreshList();
+    const handleSync = () => refreshList();
+    window.addEventListener('recipes-updated', handleSync);
+    return () => window.removeEventListener('recipes-updated', handleSync);
   }, []);
+
+  const handleSyncDb = async () => {
+    setIsSyncing(true);
+    await RecipeService.syncFromCloud();
+    setIsSyncing(false);
+    refreshList();
+  };
 
   const filteredDishes = useMemo(() => {
     return allDishes.filter(dish => {
       const name = dish.name || "";
       const desc = dish.description || "";
       const nationality = dish.nationality || "";
-      
       const matchesSearch = name.includes(searchTerm) || desc.includes(searchTerm);
       if (!matchesSearch) return false;
-      
       if (selectedCategory !== 'all' && dish.category !== selectedCategory) return false;
-      
       if (selectedCategory === 'international' && selectedRegion !== 'all') {
         const region = REGIONS.find(r => r.id === selectedRegion);
         if (region && !region.countries.includes(nationality)) return false;
       }
-      
       return true;
     });
   }, [searchTerm, selectedCategory, selectedRegion, allDishes]);
 
   const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
-
   const paginatedDishes = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredDishes.slice(start, start + ITEMS_PER_PAGE);
@@ -77,40 +83,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
     setCurrentPage(1);
   };
 
-  const handleToggleFavorite = (e: React.MouseEvent, dishId: string) => {
-    e.stopPropagation();
-    if (!RecipeService.isDishAccessible(dishId, user)) return;
-    let newFavorites = [...(user.favoriteDishIds || [])];
-    let newBlacklist = [...(user.blacklistedDishIds || [])];
-    const isFavorite = newFavorites.includes(dishId);
-
-    if (isFavorite) {
-      newFavorites = newFavorites.filter(id => id !== dishId);
-    } else {
-      newFavorites.push(dishId);
-      newBlacklist = newBlacklist.filter(id => id !== dishId);
-    }
-    onUpdateUser({ ...user, favoriteDishIds: newFavorites, blacklistedDishIds: newBlacklist });
-    UserService.updateProfile(user.username, { favoriteDishIds: newFavorites, blacklistedDishIds: newBlacklist }).catch(console.error);
-  };
-
-  const handleToggleBlacklist = (e: React.MouseEvent, dishId: string) => {
-    e.stopPropagation();
-    if (!RecipeService.isDishAccessible(dishId, user)) return;
-    let newBlacklist = [...(user.blacklistedDishIds || [])];
-    let newFavorites = [...(user.favoriteDishIds || [])];
-    const isBlacklisted = newBlacklist.includes(dishId);
-
-    if (isBlacklisted) {
-      newBlacklist = newBlacklist.filter(id => id !== dishId);
-    } else {
-      newBlacklist.push(dishId);
-      newFavorites = newFavorites.filter(id => id !== dishId);
-    }
-    onUpdateUser({ ...user, blacklistedDishIds: newBlacklist, favoriteDishIds: newFavorites });
-    UserService.updateProfile(user.username, { blacklistedDishIds: newBlacklist, favoriteDishIds: newFavorites }).catch(console.error);
-  };
-
   const handleDishClick = (dish: Dish) => {
     if (!RecipeService.isDishAccessible(dish.id, user)) {
       alert("حساب شما در انتظار تایید مدیر است. برای مشاهده جزئیات تمامی دستور پخت‌ها، لطفاً منتظر تایید نهایی بمانید.");
@@ -120,12 +92,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
   };
 
   const toPersian = (num: number) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-
-  const handleSyncDb = async () => {
-    setIsSyncing(true);
-    await RecipeService.syncFromCloud();
-    setIsSyncing(false);
-  };
 
   return (
     <div className="pb-40 relative min-h-[70vh]">
@@ -145,8 +111,8 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
             </div>
             <button 
               onClick={handleSyncDb}
-              title="بروزرسانی دیتابیس"
-              className={`p-5 bg-white rounded-[2rem] text-teal-600 shadow-xl border border-slate-50 transition-all hover:bg-teal-50 active:scale-90 ${isSyncing ? 'animate-spin' : ''}`}
+              disabled={isSyncing}
+              className={`p-5 bg-white rounded-[2rem] text-teal-600 shadow-xl border border-slate-50 transition-all hover:bg-teal-50 active:scale-90 ${isSyncing ? 'animate-spin opacity-50' : ''}`}
             >
               <RefreshCw size={24} />
             </button>
@@ -155,59 +121,53 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
 
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6 animate-enter" style={{ animationDelay: '0.1s' }}>
           <div className="flex flex-wrap gap-2 items-center justify-start overflow-x-auto no-scrollbar pb-2 flex-grow max-w-full lg:max-w-4xl">
-             <button 
-              onClick={() => handleCategoryChange('all')} 
-              className={`px-6 py-3 rounded-2xl text-sm font-black transition-all border shadow-md whitespace-nowrap flex items-center gap-2 ${selectedCategory === 'all' ? 'bg-teal-600 text-white border-teal-600 ring-4 ring-teal-100' : 'bg-white text-slate-500 border-slate-100 hover:border-teal-200'}`}
-             >
-               <LayoutList size={18} />
-               همه دسته‌ها
+             <button onClick={() => handleCategoryChange('all')} className={`px-6 py-3 rounded-2xl text-sm font-black transition-all border shadow-md whitespace-nowrap flex items-center gap-2 ${selectedCategory === 'all' ? 'bg-teal-600 text-white border-teal-600 ring-4 ring-teal-100' : 'bg-white text-slate-500 border-slate-100 hover:border-teal-200'}`}>
+               <LayoutList size={18} /> همه دسته‌ها
              </button>
             {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map((cat) => (
-              <button 
-                key={cat} 
-                onClick={() => handleCategoryChange(cat)} 
-                className={`px-6 py-3 rounded-2xl text-sm font-black transition-all border shadow-md whitespace-nowrap flex items-center gap-2 ${selectedCategory === cat ? 'bg-teal-600 text-white border-teal-600 ring-4 ring-teal-100' : 'bg-white text-slate-500 border-slate-100 hover:border-teal-200'}`}
-              >
-                {cat === 'international' && <Globe size={18} />}
-                {CATEGORY_LABELS[cat]}
+              <button key={cat} onClick={() => handleCategoryChange(cat)} className={`px-6 py-3 rounded-2xl text-sm font-black transition-all border shadow-md whitespace-nowrap flex items-center gap-2 ${selectedCategory === cat ? 'bg-teal-600 text-white border-teal-600 ring-4 ring-teal-100' : 'bg-white text-slate-500 border-slate-100 hover:border-teal-200'}`}>
+                {cat === 'international' && <Globe size={18} />} {CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>
 
-          <div className="flex-shrink-0 flex items-center gap-4 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 group overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <Database size={20} className="text-teal-400 relative z-10" />
-            <div className="flex flex-col relative z-10">
-               <span className="text-[9px] text-slate-400 font-black uppercase tracking-tighter leading-none mb-1">نتایج یافت شده</span>
+          <div className="flex-shrink-0 flex items-center gap-4 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10">
+            <Database size={20} className="text-teal-400" />
+            <div className="flex flex-col">
+               <span className="text-[9px] text-slate-400 font-black uppercase mb-1">نتایج یافت شده</span>
                <div className="flex items-baseline gap-1">
-                 <span className="text-lg font-black text-teal-400 leading-none">{toPersian(filteredDishes.length)}</span>
+                 <span className="text-lg font-black text-teal-400">{toPersian(filteredDishes.length)}</span>
                  <span className="text-[10px] text-slate-500 font-bold">مورد</span>
                </div>
             </div>
           </div>
         </div>
-
-        {selectedCategory === 'international' && (
-          <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm animate-enter">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><MapPin size={18} /></div>
-              <span className="text-xs font-black text-slate-600 uppercase tracking-tighter">تفکیک ملل</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => { setSelectedRegion('all'); setCurrentPage(1); }} className={`px-5 py-2 rounded-xl text-xs font-black transition-all border ${selectedRegion === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-white'}`}>همه ملل</button>
-              {REGIONS.map(reg => (
-                <button key={reg.id} onClick={() => { setSelectedRegion(reg.id); setCurrentPage(1); }} className={`px-5 py-2 rounded-xl text-xs font-black transition-all border ${selectedRegion === reg.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-slate-50 text-slate-500 border-slate-100 hover:bg-white'}`}>{reg.label}</button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="max-w-7xl mx-auto px-4">
-        {filteredDishes.length === 0 ? (
-          <div className="py-32 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-50 shadow-inner">
-             <Database size={48} className="mx-auto mb-6 text-slate-200" />
-             <p className="text-slate-400 font-black text-xl">غذایی یافت نشد!</p>
+        {allDishes.length === 0 ? (
+          <div className="py-24 px-6 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-100 shadow-inner flex flex-col items-center max-w-2xl mx-auto animate-enter">
+             <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mb-8 animate-pulse">
+                <CloudDownload size={48} />
+             </div>
+             <h3 className="text-2xl font-black text-slate-800 mb-4">دیتابیس ابری هنوز دریافت نشده است</h3>
+             <p className="text-slate-500 font-bold text-sm mb-10 leading-relaxed">
+                برای مشاهده لیست غذاها و دستور پخت‌ها، باید یک بار اطلاعات را از سرور مرکزی دریافت کنید. این کار فقط چند ثانیه زمان می‌برد.
+             </p>
+             <button 
+              onClick={handleSyncDb}
+              disabled={isSyncing}
+              className="px-12 py-5 bg-teal-600 hover:bg-teal-700 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-teal-100 flex items-center gap-4 transition-all active:scale-95 disabled:opacity-50"
+             >
+               {isSyncing ? <RefreshCw className="animate-spin" /> : <CloudDownload />}
+               {isSyncing ? 'در حال دریافت اطلاعات...' : 'دریافت اطلاعات از سرور'}
+             </button>
+          </div>
+        ) : filteredDishes.length === 0 ? (
+          <div className="py-24 text-center bg-white rounded-[4rem] border-4 border-dashed border-slate-100 shadow-inner max-w-2xl mx-auto animate-enter">
+             <AlertCircle size={48} className="mx-auto mb-6 text-slate-200" />
+             <p className="text-slate-400 font-black text-xl">موردی با این مشخصات یافت نشد.</p>
+             <button onClick={() => {setSearchTerm(''); setSelectedCategory('all');}} className="mt-6 text-teal-600 font-black text-sm hover:underline">پاکسازی فیلترها</button>
           </div>
         ) : (
           <>
@@ -217,44 +177,22 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser }) => {
                 const isFavorite = user.favoriteDishIds?.includes(dish.id);
                 const isBlacklisted = user.blacklistedDishIds?.includes(dish.id);
                 const isLocked = !isAccessible;
-
                 return (
                   <div key={dish.id} className={`group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col hover:shadow-2xl transition-all duration-500 ${isBlacklisted ? 'opacity-60 grayscale-[0.5]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`} style={{ animationDelay: `${idx * 0.02}s` }}>
                     <div className="h-52 relative cursor-pointer overflow-hidden" onClick={() => handleDishClick(dish)}>
                       <DishVisual category={dish.category} className="w-full h-full transition-transform duration-1000 group-hover:scale-110" imageUrl={dish.imageUrl} dishId={dish.id} />
-                      
-                      {isLocked && (
-                        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-30">
-                           <div className="bg-white/90 p-3 rounded-2xl shadow-xl flex flex-col items-center gap-1">
-                              <Lock size={20} className="text-slate-800" />
-                              <span className="text-[8px] font-black text-slate-800">قفل پیش‌نمایش</span>
-                           </div>
-                        </div>
-                      )}
-
+                      {isLocked && <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-30"><div className="bg-white/90 p-3 rounded-2xl shadow-xl flex flex-col items-center gap-1"><Lock size={20} className="text-slate-800" /><span className="text-[8px] font-black text-slate-800">قفل پیش‌نمایش</span></div></div>}
                       {!isLocked && (
                         <div className="absolute top-4 left-4 z-10 flex gap-2">
-                          <button 
-                            onClick={(e) => handleToggleFavorite(e, dish.id)} 
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-xl ring-2 ring-white/20 ${isFavorite ? 'bg-rose-500 text-white' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-rose-500'}`}
-                          >
-                            <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
-                          </button>
-                          <button 
-                            onClick={(e) => handleToggleBlacklist(e, dish.id)} 
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-xl ring-2 ring-white/20 ${isBlacklisted ? 'bg-black text-white' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-black'}`}
-                          >
-                            <ThumbsDown size={20} fill={isBlacklisted ? "currentColor" : "none"} />
-                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); UserService.toggleFavorite(user.username, dish.id).then(onUpdateUser); }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-xl ring-2 ring-white/20 ${isFavorite ? 'bg-rose-500 text-white' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-rose-500'}`}><Heart size={20} fill={isFavorite ? "currentColor" : "none"} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); UserService.toggleBlacklist(user.username, dish.id).then(onUpdateUser); }} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-xl ring-2 ring-white/20 ${isBlacklisted ? 'bg-black text-white' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-black'}`}><ThumbsDown size={20} fill={isBlacklisted ? "currentColor" : "none"} /></button>
                         </div>
                       )}
                     </div>
                     <div className="p-6 flex flex-col flex-grow">
-                      <h4 className={`font-black text-lg transition-colors mb-2 line-clamp-1 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{dish.name}</h4>
+                      <h4 className={`font-black text-lg mb-2 line-clamp-1 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{dish.name}</h4>
                       <div className="text-xs text-slate-400 font-bold mb-6 line-clamp-2 leading-relaxed h-10">{dish.description}</div>
-                      <button onClick={() => handleDishClick(dish)} className={`w-full mt-auto py-3 rounded-2xl font-black text-xs transition-all shadow-sm ${isLocked ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 hover:bg-teal-600 hover:text-white text-slate-700'}`}>
-                        {isLocked ? 'در انتظار تایید' : 'مشاهده جزئیات'}
-                      </button>
+                      <button onClick={() => handleDishClick(dish)} className={`w-full mt-auto py-3 rounded-2xl font-black text-xs shadow-sm ${isLocked ? 'bg-slate-100 text-slate-400' : 'bg-slate-50 hover:bg-teal-600 hover:text-white text-slate-700'}`}>{isLocked ? 'در انتظار تایید' : 'مشاهده جزئیات'}</button>
                     </div>
                   </div>
                 );

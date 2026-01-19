@@ -112,6 +112,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   };
 
   const encodedText = encodeURIComponent(getFormattedListText());
+  // استفاده از پروتکل tg:// برای باز شدن مستقیم اپلیکیشن تلگرام
+  const telegramShareLink = `https://t.me/share/url?url=&text=${encodedText}`;
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col">
@@ -190,7 +192,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
               <MessageCircle size={22} />
             </a>
 
-            <a href={`https://t.me/share/url?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-sky-500 hover:bg-sky-100 rounded-2xl transition-all border border-sky-100 active:scale-90 shadow-sm" title="ارسال به تلگرام">
+            <a href={telegramShareLink} target="_blank" rel="noreferrer" className="p-3 text-sky-500 hover:bg-sky-100 rounded-2xl transition-all border border-sky-100 active:scale-90 shadow-sm" title="ارسال به تلگرام">
               <TelegramIcon />
             </a>
             

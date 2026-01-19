@@ -108,4 +108,6 @@ export interface UserProfile {
   meatlessMode?: boolean;
   quickMealsMode?: boolean;
   weeklyPlan?: DayPlan[]; 
+  currentSessionId?: string;
+  registeredDevices?: string[]; // لیست شناسه‌های دستگاه‌های مجاز (حداکثر ۲ مورد)
 }

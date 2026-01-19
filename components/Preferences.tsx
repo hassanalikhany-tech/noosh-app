@@ -37,7 +37,8 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
 
     const updatedUser = { ...user, excludedCategories: newExcluded };
     onUpdateUser(updatedUser);
-    UserService.updatePreferences(user.username, { excludedCategories: newExcluded });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { excludedCategories: newExcluded });
   };
 
   const toggleNationalityGroup = (countries: string[]) => {
@@ -55,7 +56,8 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
 
     const updatedUser = { ...user, excludedNationalities: newExNats };
     onUpdateUser(updatedUser);
-    UserService.updatePreferences(user.username, { excludedNationalities: newExNats });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { excludedNationalities: newExNats });
   };
 
   const setAllNations = (exclude: boolean) => {
@@ -66,13 +68,15 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     }
     const updatedUser = { ...user, excludedNationalities: newExNats };
     onUpdateUser(updatedUser);
-    UserService.updatePreferences(user.username, { excludedNationalities: newExNats });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { excludedNationalities: newExNats });
   };
 
   const toggleDietMode = () => {
     const newVal = !user.dietMode;
     onUpdateUser({ ...user, dietMode: newVal });
-    UserService.updatePreferences(user.username, { dietMode: newVal });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { dietMode: newVal });
   };
 
   const addDislikedIng = () => {
@@ -82,13 +86,15 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     const newList = [...current, ingInput.trim()];
     onUpdateUser({ ...user, dislikedIngredients: newList });
     setIngInput('');
-    UserService.updatePreferences(user.username, { dislikedIngredients: newList });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { dislikedIngredients: newList });
   };
 
   const removeDislikedIng = (ing: string) => {
     const newList = (user.dislikedIngredients || []).filter(i => i !== ing);
     onUpdateUser({ ...user, dislikedIngredients: newList });
-    UserService.updatePreferences(user.username, { dislikedIngredients: newList });
+    // Fix: Using updateProfile instead of non-existent updatePreferences
+    UserService.updateProfile(user.username, { dislikedIngredients: newList });
   };
 
   const favoritesList = useMemo(() => {

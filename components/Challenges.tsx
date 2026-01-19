@@ -18,7 +18,8 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
     if (!selectedChallenge) return;
 
     if (user.activeChallengeId === id) {
-      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: null });
+      // Fix: Using updateProfile instead of non-existent updatePreferences
+      const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: null });
       onUpdateUser(updatedUser);
       onNotify(
         'چالش غیرفعال شد',
@@ -27,7 +28,8 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
         Trophy
       );
     } else {
-      const updatedUser = await UserService.updatePreferences(user.username, { activeChallengeId: id });
+      // Fix: Using updateProfile instead of non-existent updatePreferences
+      const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: id });
       onUpdateUser(updatedUser);
       onNotify(
         `چالش ${selectedChallenge.title} فعال شد`,

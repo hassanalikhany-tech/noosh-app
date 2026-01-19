@@ -1,19 +1,19 @@
 
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, Wifi, WifiOff, Database, ShieldAlert, AlertTriangle, ArrowRight, CloudDownload, Rocket, UserX } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, LayoutDashboard } from 'lucide-react';
-import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
-import { DayPlan, UserProfile } from './types';
-import { UserService } from './services/userService';
-import { RecipeService } from './services/recipeService';
-import MealCard from './components/MealCard';
-import ShoppingList from './components/ShoppingList';
-import PantryChef from './components/PantryChef';
-import RecipeSearch from './components/RecipeSearch';
-import Preferences from './components/Preferences';
-import Challenges from './components/Challenges';
+import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
 import Subscription from './components/auth/Subscription';
-import AdminDashboard from './components/admin/AdminDashboard';
+import Challenges from './components/Challenges';
+import MealCard from './components/MealCard';
+import PantryChef from './components/PantryChef';
+import Preferences from './components/Preferences';
+import RecipeSearch from './components/RecipeSearch';
+import ShoppingList from './components/ShoppingList';
+import { RecipeService } from './services/recipeService';
+import { UserService } from './services/userService';
+import { DayPlan, UserProfile } from './types';
+import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -26,50 +26,25 @@ const App: React.FC = () => {
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initProgress, setInitProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState('در حال آماده‌سازی...');
+  const [showSkipButton, setShowSkipButton] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'connecting' | 'fetching' | 'done' | 'offline'>('connecting');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isMainSyncing, setIsMainSyncing] = useState(false);
+  const [isSessionValid, setIsSessionValid] = useState(true);
   const planResultsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const initApp = async () => {
-      const progressInterval = setInterval(() => {
-        setInitProgress(prev => (prev >= 95 ? prev : prev + 5));
-      }, 100);
-
-      await RecipeService.initialize();
-      const user = await UserService.getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
-        if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
-      }
-      
-      setInitProgress(100);
-      clearInterval(progressInterval);
-      setTimeout(() => setIsInitializing(false), 500);
-    };
-    initApp();
-
-    const handleUserUpdate = async () => {
-      const updated = await UserService.getCurrentUser();
-      if (updated) {
-        setCurrentUser({ ...updated });
-        if (updated.weeklyPlan) setDisplayPlan(updated.weeklyPlan);
-      }
-    };
-
-    window.addEventListener('user-data-updated', handleUserUpdate);
-    return () => window.removeEventListener('user-data-updated', handleUserUpdate);
-  }, []);
 
   const handleLogout = async () => {
     await UserService.logout();
     setCurrentUser(null);
     setIsAdminMode(false);
-    setDisplayPlan([]);
+    setIsSessionValid(true);
   };
 
   const handleToggleFilter = async (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
     if (!currentUser) return;
-    const updates: Partial<UserProfile> = { [filter]: !currentUser[filter] };
-    const updated = await UserService.updateProfile(currentUser.username, updates);
+    const newVal = !currentUser[filter];
+    const updated = await UserService.updateProfile(currentUser.username, { [filter]: newVal });
     setCurrentUser(updated);
   };
 
@@ -80,9 +55,9 @@ const App: React.FC = () => {
       const { plan, updatedUser } = await generateDailyPlan(currentUser);
       setDisplayPlan(plan);
       setCurrentUser(updatedUser);
-      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
-      console.error("Daily plan generation failed:", err);
+      console.error(err);
     } finally {
       setLoadingType(null);
     }
@@ -95,23 +70,161 @@ const App: React.FC = () => {
       const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
       setDisplayPlan(plan);
       setCurrentUser(updatedUser);
-      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+      setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
-      console.error("Weekly plan generation failed:", err);
+      console.error(err);
     } finally {
       setLoadingType(null);
     }
   };
 
+  const handleMainSync = async () => {
+    setIsMainSyncing(true);
+    await RecipeService.syncFromCloud();
+    setIsMainSyncing(false);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const startAppSequence = async () => {
+    setIsInitializing(true);
+    setInitProgress(5);
+    setLoadingStatus('در حال بررسی نشست کاربر...');
+    
+    const skipTimer = setTimeout(() => setShowSkipButton(true), 5000);
+
+    try {
+      const user = await UserService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        // چک کردن نشست در هنگام شروع
+        const isValid = await UserService.validateSession();
+        if (!isValid) {
+          setIsSessionValid(false);
+          setIsInitializing(false);
+          return;
+        }
+      }
+      setInitProgress(30);
+
+      const result = await RecipeService.initialize((p, status) => {
+        setInitProgress(prev => Math.max(prev, p));
+        setLoadingStatus(status);
+      });
+
+      if (result.source === 'offline-cache' || result.error) {
+        setSyncStatus('offline');
+      } else {
+        setSyncStatus('done');
+      }
+
+      if (user && user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
+      
+      setInitProgress(100);
+      clearTimeout(skipTimer);
+      setTimeout(() => setIsInitializing(false), 800);
+
+    } catch (err) {
+      console.error("Init Error:", err);
+      setSyncStatus('offline');
+      setInitProgress(100);
+      setTimeout(() => setIsInitializing(false), 1000);
+    }
+  };
+
+  useEffect(() => {
+    startAppSequence();
+
+    // ناظر دوره‌ای برای چک کردن امنیت اکانت (هر ۶۰ ثانیه)
+    const sessionInterval = setInterval(async () => {
+      if (currentUser && !currentUser.isAdmin) {
+        const isValid = await UserService.validateSession();
+        if (!isValid) setIsSessionValid(false);
+      }
+    }, 60000);
+
+    const handleUserUpdate = async () => {
+      const updated = await UserService.getCurrentUser();
+      if (updated) {
+        setCurrentUser({ ...updated });
+        if (updated.weeklyPlan) setDisplayPlan(updated.weeklyPlan);
+      }
+    };
+
+    window.addEventListener('user-data-updated', handleUserUpdate);
+    window.addEventListener('recipes-updated', () => setRefreshKey(prev => prev + 1));
+    
+    return () => {
+      window.removeEventListener('user-data-updated', handleUserUpdate);
+      clearInterval(sessionInterval);
+    };
+  }, []);
+
+  const handleSkipLoading = () => {
+    setIsInitializing(false);
+  };
+
+  const toPersian = (n: number) => Math.round(n).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
+
+  // نمایش پیام مسدودسازی نشست
+  if (!isSessionValid) return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-8 text-center">
+      <div className="bg-rose-500/10 w-24 h-24 rounded-full flex items-center justify-center mb-8 animate-pulse border border-rose-500/20">
+        <UserX size={48} className="text-rose-500" />
+      </div>
+      <h2 className="text-2xl font-black text-white mb-4">خروج اجباری از حساب</h2>
+      <p className="text-slate-400 font-bold max-w-sm mb-8 leading-relaxed">
+        یک دستگاه دیگر به تازگی وارد حساب کاربری شما شده است. برای حفظ امنیت، دسترسی این دستگاه متوقف شد. 
+        <br/>
+        <span className="text-rose-400 text-xs mt-4 block">لطفاً از اشتراک‌گذاری رمز عبور خود پرهیز کنید.</span>
+      </p>
+      <button 
+        onClick={handleLogout}
+        className="px-10 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all shadow-xl shadow-rose-900/40"
+      >
+        متوجه شدم (بازگشت به ورود)
+      </button>
+    </div>
+  );
+
   if (isInitializing) return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999]">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-6 text-right">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0"></div>
-      <div className="relative z-10 flex flex-col items-center gap-8 animate-enter">
-        <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain animate-float" />
-        <div className="w-64 h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
-          <div className="h-full bg-teal-500 transition-all duration-300" style={{ width: `${initProgress}%` }}></div>
+      
+      <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm animate-enter">
+        <div className="relative">
+          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain animate-float" />
+          <div className="absolute -inset-4 bg-teal-500/20 blur-2xl rounded-full -z-10 animate-pulse"></div>
         </div>
-        <p className="text-teal-500 text-xs font-black tracking-widest uppercase">در حال بارگذاری نوش اپ</p>
+        
+        <div className="w-full space-y-4">
+          <div className="flex items-center justify-between px-2">
+             <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Database Sync Progress</span>
+             <span className="text-sm font-black text-white bg-teal-600/20 px-3 py-1 rounded-lg border border-teal-500/30">{toPersian(initProgress)}٪</span>
+          </div>
+          
+          <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[2px] shadow-inner">
+            <div 
+              className="h-full bg-gradient-to-r from-teal-600 via-emerald-400 to-teal-500 rounded-full transition-all duration-500 shadow-[0_0_20px_rgba(45,212,191,0.5)]" 
+              style={{ width: `${initProgress}%` }}
+            ></div>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+            <p className="text-teal-400 text-xs font-black text-center mb-2 animate-pulse">
+              {loadingStatus}
+            </p>
+          </div>
+        </div>
+
+        {showSkipButton && (
+          <button 
+            onClick={handleSkipLoading}
+            className="flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-2xl font-black text-xs transition-all active:scale-95 group"
+          >
+            <span>ورود در حالت آفلاین (بدون انتظار)</span>
+            <ArrowRight size={16} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -120,8 +233,10 @@ const App: React.FC = () => {
   if (currentUser.isAdmin && isAdminMode) return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
   if (!UserService.isSubscriptionValid(currentUser)) return <Subscription user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />;
 
+  const isDatabaseEmpty = RecipeService.getAllDishes().length === 0;
+
   return (
-    <div className="min-h-screen flex flex-col font-sans text-right dir-rtl bg-slate-50">
+    <div className="min-h-screen flex flex-col font-sans text-right dir-rtl bg-slate-50" key={refreshKey}>
       <header className="sticky top-0 z-40 metallic-navy text-white shadow-xl no-print">
         <div className="container mx-auto h-[70px] flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -164,6 +279,31 @@ const App: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 py-6 pb-24">
         {viewMode === 'plan' && (
           <div className="space-y-8">
+            {isDatabaseEmpty && (
+              <div className="relative group overflow-hidden bg-gradient-to-r from-teal-600 to-indigo-700 rounded-[2.5rem] p-8 md:p-10 shadow-2xl animate-enter border border-white/10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                   <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow-inner">
+                      <CloudDownload size={32} />
+                   </div>
+                   <div className="text-center md:text-right flex-grow">
+                      <h2 className="text-xl font-black text-white mb-1">بروزرسانی دیتابیس</h2>
+                      <p className="text-teal-50 font-bold text-sm leading-relaxed opacity-90">
+                        برای بروز رسانی اطلاعات روی کلید فوق کلیک فرمایید
+                      </p>
+                   </div>
+                   <button 
+                    onClick={handleMainSync}
+                    disabled={isMainSyncing}
+                    className="flex-shrink-0 px-8 py-4 bg-white text-indigo-700 rounded-2xl font-black text-sm shadow-xl hover:bg-teal-50 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                   >
+                     {isMainSyncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />}
+                     {isMainSyncing ? 'در حال دریافت...' : 'بروزرسانی اطلاعات'}
+                   </button>
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-wrap gap-2 justify-center">
               <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-transparent text-slate-400'}`}>
                 <Heart size={16} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
@@ -182,10 +322,9 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <button 
                 onClick={handleGenerateDaily} 
-                disabled={!!loadingType}
-                className="group relative bg-white border-2 border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-[0_20px_50px_rgba(15,23,42,0.15)] hover:shadow-[0_30px_60px_rgba(15,23,42,0.25)] hover:border-teal-400 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                disabled={!!loadingType || isDatabaseEmpty}
+                className="group relative bg-white border-2 border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-teal-400 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="p-5 bg-teal-50 text-teal-600 rounded-3xl group-hover:scale-110 transition-transform duration-500">
                   {loadingType === 'daily' ? <RefreshCw size={40} className="animate-spin" /> : <Utensils size={40} />}
                 </div>
@@ -197,10 +336,9 @@ const App: React.FC = () => {
               
               <button 
                 onClick={handleGenerateWeekly} 
-                disabled={!!loadingType}
-                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-[0_20px_50px_rgba(2,6,23,0.4)] transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                disabled={!!loadingType || isDatabaseEmpty}
+                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-xl transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
               >
-                <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 opacity-20"></div>
                 <div className="p-5 bg-white/10 text-teal-400 rounded-3xl group-hover:scale-110 transition-transform duration-500">
                   {loadingType === 'weekly' ? <RefreshCw size={40} className="animate-spin" /> : <Calendar size={40} />}
                 </div>
