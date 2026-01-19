@@ -96,12 +96,15 @@ const App: React.FC = () => {
       const user = await UserService.getCurrentUser();
       if (user) {
         setCurrentUser(user);
-        // چک کردن نشست در هنگام شروع
-        const isValid = await UserService.validateSession();
-        if (!isValid) {
-          setIsSessionValid(false);
-          setIsInitializing(false);
-          return;
+        
+        // اگر کاربر مدیر نباشد، نشست او را در هنگام شروع چک کن
+        if (!user.isAdmin) {
+          const isValid = await UserService.validateSession();
+          if (!isValid) {
+            setIsSessionValid(false);
+            setIsInitializing(false);
+            return;
+          }
         }
       }
       setInitProgress(30);
@@ -134,13 +137,17 @@ const App: React.FC = () => {
   useEffect(() => {
     startAppSequence();
 
-    // ناظر دوره‌ای برای چک کردن امنیت اکانت (هر ۶۰ ثانیه)
+    // ناظر دوره‌ای امنیت نشست
     const sessionInterval = setInterval(async () => {
+      // فقط اگر کاربر لاگین باشد و مدیر نباشد، اعتبار نشست را چک کن
       if (currentUser && !currentUser.isAdmin) {
         const isValid = await UserService.validateSession();
-        if (!isValid) setIsSessionValid(false);
+        if (!isValid) {
+          console.warn("Unauthorized concurrent session detected. Locking app.");
+          setIsSessionValid(false);
+        }
       }
-    }, 60000);
+    }, 15000); // ۱۵ ثانیه برای تشخیص سریع‌تر
 
     const handleUserUpdate = async () => {
       const updated = await UserService.getCurrentUser();
@@ -157,7 +164,7 @@ const App: React.FC = () => {
       window.removeEventListener('user-data-updated', handleUserUpdate);
       clearInterval(sessionInterval);
     };
-  }, []);
+  }, [currentUser?.username, currentUser?.isAdmin]); // وابستگی به مشخصات کاربر برای آپدیت نشست
 
   const handleSkipLoading = () => {
     setIsInitializing(false);
@@ -165,17 +172,17 @@ const App: React.FC = () => {
 
   const toPersian = (n: number) => Math.round(n).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
-  // نمایش پیام مسدودسازی نشست
+  // نمایش صفحه مسدودسازی در صورت نشست غیرمجاز برای کاربر عادی
   if (!isSessionValid) return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-8 text-center">
       <div className="bg-rose-500/10 w-24 h-24 rounded-full flex items-center justify-center mb-8 animate-pulse border border-rose-500/20">
         <UserX size={48} className="text-rose-500" />
       </div>
-      <h2 className="text-2xl font-black text-white mb-4">خروج اجباری از حساب</h2>
+      <h2 className="text-2xl font-black text-white mb-4">خروج از حساب به دلیل ورود همزمان</h2>
       <p className="text-slate-400 font-bold max-w-sm mb-8 leading-relaxed">
-        یک دستگاه دیگر به تازگی وارد حساب کاربری شما شده است. برای حفظ امنیت، دسترسی این دستگاه متوقف شد. 
+        اشتراک شما از نوع تک‌نفره است. یک دستگاه دیگر به تازگی وارد حساب شما شده و دسترسی این دستگاه متوقف گردید. 
         <br/>
-        <span className="text-rose-400 text-xs mt-4 block">لطفاً از اشتراک‌گذاری رمز عبور خود پرهیز کنید.</span>
+        <span className="text-rose-400 text-xs mt-4 block">استفاده همزمان بیش از یک نفر ممنوع می‌باشد.</span>
       </p>
       <button 
         onClick={handleLogout}

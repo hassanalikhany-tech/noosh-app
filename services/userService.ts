@@ -61,7 +61,7 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
     customShoppingList: [],
     isAdmin: isOwner,
     isApproved: isOwner,
-    registeredDevices: [deviceId] // ثبت اولین دستگاه در هنگام ثبت‌نام
+    registeredDevices: [deviceId] 
   };
 };
 
@@ -83,23 +83,24 @@ export const UserService = {
         return { success: true, user: userData };
       }
 
-      const userData = userDoc.data() as UserProfile;
-      const registeredDevices = userData.registeredDevices || [];
+      let userData = userDoc.data() as UserProfile;
+      const userEmail = (firebaseUser.email || "").toLowerCase();
+      const isOwner = userEmail === ADMIN_EMAIL || userData.isAdmin;
 
-      // منطق بررسی محدودیت دستگاه (به جز ادمین)
-      if (!userData.isAdmin) {
+      // محدودیت دستگاه فقط برای کاربران عادی
+      if (!isOwner) {
+        const registeredDevices = userData.registeredDevices || [];
         const isDeviceKnown = registeredDevices.includes(deviceId);
         
         if (!isDeviceKnown) {
           if (registeredDevices.length >= 2) {
-            await signOut(auth); // خارج کردن کاربر به دلیل محدودیت
+            await signOut(auth);
             return { 
               success: false, 
-              message: "تعداد دستگاه‌های مجاز این اکانت (۲ دستگاه) تکمیل شده است. برای استفاده در این دستگاه باید یکی از دستگاه‌های قبلی را حذف کنید یا با پشتیبانی تماس بگیرید.",
+              message: "تعداد دستگاه‌های مجاز این اکانت (۲ دستگاه) تکمیل شده است.",
               code: 'auth/device-limit-reached' 
             };
           } else {
-            // ثبت دستگاه دوم
             await updateDoc(userDocRef, { 
               registeredDevices: arrayUnion(deviceId) 
             });
@@ -108,13 +109,20 @@ export const UserService = {
         }
       }
 
-      // مدیریت نشست فعال (Session Management - از قبل بود)
+      // تولید نشست جدید
       const newSessionId = crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
-      await updateDoc(userDocRef, { currentSessionId: newSessionId });
       
-      const finalData = { ...userData, currentSessionId: newSessionId };
-      return { success: true, user: finalData };
+      // فقط نشست کاربر عادی را در دیتابیس آپدیت می‌کنیم تا باعث اخراج بقیه نشود
+      if (!isOwner) {
+        await updateDoc(userDocRef, { currentSessionId: newSessionId });
+      } else {
+        // برای ادمین، کدی ثابت یا تهی می‌گذاریم تا چک نشست در App.tsx همیشه پاس شود
+        await updateDoc(userDocRef, { currentSessionId: 'ADMIN_SESSION' });
+        localStorage.setItem('noosh_active_session', 'ADMIN_SESSION');
+      }
+      
+      return { success: true, user: { ...userData, currentSessionId: localStorage.getItem('noosh_active_session') || '' } };
       
     } catch (error: any) {
       let msg = "ایمیل یا رمز عبور اشتباه است.";
@@ -128,15 +136,12 @@ export const UserService = {
     notifyUpdate();
   },
 
-  // سایر متدها بدون تغییر باقی می‌مانند...
   sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       await sendPasswordResetEmail(auth, email);
-      return { success: true, message: "لینک بازنشانی رمز عبور به ایمیل شما ارسال شد. لطفاً Inbox و پوشه Spam خود را چک کنید." };
-    } catch (error: any) {
-      let msg = "خطا در ارسال ایمیل بازیابی.";
-      if (error.code === 'auth/user-not-found') msg = "کاربری با این ایمیل یافت نشد.";
-      return { success: false, message: msg };
+      return { success: true, message: "لینک بازنشانی رمز عبور به ایمیل شما ارسال شد." };
+    } catch {
+      return { success: false, message: "خطا در ارسال ایمیل بازیابی." };
     }
   },
 
@@ -144,6 +149,7 @@ export const UserService = {
     try {
       await RecipeService.clearAllCache();
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider); 
       const user = result.user;
       const deviceId = getDeviceFingerprint();
@@ -158,18 +164,23 @@ export const UserService = {
       }
 
       let data = userDoc.data() as UserProfile;
-      const registeredDevices = data.registeredDevices || [];
+      const userEmail = (user.email || "").toLowerCase();
+      const isOwner = userEmail === ADMIN_EMAIL || data.isAdmin;
 
-      if (!data.isAdmin && !registeredDevices.includes(deviceId)) {
-        if (registeredDevices.length >= 2) {
-          await signOut(auth);
-          return { success: false, message: "تعداد دستگاه‌های مجاز (۲) تکمیل شده است.", code: 'auth/device-limit-reached' };
+      // بررسی محدودیت دستگاه برای کاربران عادی در گوگل لاگین
+      if (!isOwner) {
+        const registeredDevices = data.registeredDevices || [];
+        if (!registeredDevices.includes(deviceId)) {
+          if (registeredDevices.length >= 2) {
+            await signOut(auth);
+            return { success: false, message: "تعداد دستگاه‌های مجاز (۲) تکمیل شده است.", code: 'auth/device-limit-reached' };
+          }
+          await updateDoc(userDocRef, { registeredDevices: arrayUnion(deviceId) });
+          data.registeredDevices = [...registeredDevices, deviceId];
         }
-        await updateDoc(userDocRef, { registeredDevices: arrayUnion(deviceId) });
-        data.registeredDevices = [...registeredDevices, deviceId];
       }
 
-      const newSessionId = crypto.randomUUID();
+      const newSessionId = isOwner ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       await updateDoc(userDocRef, { currentSessionId: newSessionId });
       
@@ -182,10 +193,15 @@ export const UserService = {
   validateSession: async (): Promise<boolean> => {
     const user = auth.currentUser;
     if (!user) return true;
+    
+    // اگر کاربر ادمین است، هرگز نشست او نامعتبر نشود
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists() && userDoc.data().isAdmin) return true;
+
     const localSession = localStorage.getItem('noosh_active_session');
     if (!localSession) return true;
     try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const remoteSession = userDoc.data().currentSessionId;
         return localSession === remoteSession;
@@ -201,15 +217,14 @@ export const UserService = {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = createDefaultProfile(userCredential.user, fullName, phoneNumber);
       
-      const newSessionId = crypto.randomUUID();
+      const newSessionId = newUser.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       newUser.currentSessionId = newSessionId;
       
       await setDoc(doc(db, "users", userCredential.user.uid), newUser);
       return { success: true, user: newUser };
     } catch (error: any) {
-      let msg = "خطا در ثبت‌نام.";
-      return { success: false, message: msg, code: error.code };
+      return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
     }
   },
 
