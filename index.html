@@ -82,53 +82,38 @@
         color: white !important;
       }
 
-      /* تنظیمات پیشرفته چاپ - جلوگیری از تکرار و صفحات اضافی */
+      /* تنظیمات نهایی چاپ */
       @media print {
-        body * {
-          visibility: hidden;
-        }
-        .active-print, .active-print * {
-          visibility: visible;
-        }
-        .active-print {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          display: block !important;
-          background: white !important;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
         .no-print {
           display: none !important;
         }
-        @page {
-          size: auto;
-          margin: 1.5cm;
+        .print-only {
+          display: block !important;
         }
         body {
-          background: white !important;
+          background-color: white !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
-        table {
-          page-break-inside: auto;
+        @page {
+          size: auto;
+          margin: 1cm;
         }
-        tr {
-          page-break-inside: avoid;
-          page-break-after: auto;
+        #root {
+          padding: 0 !important;
         }
-        th, td {
-          border: 1px solid #e2e8f0;
-          padding: 8px;
-          text-align: right;
-        }
-        .print-brand {
-          border-bottom: 2px solid #0f172a;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
+        .active-print-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
         }
       }
       
+      .print-only {
+        display: none;
+      }
+
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>

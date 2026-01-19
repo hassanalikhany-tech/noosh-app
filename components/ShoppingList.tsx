@@ -21,7 +21,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
   
   useEffect(() => {
     setCustomItems(user.customShoppingList || []);
@@ -95,12 +94,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   };
 
   const handlePrint = () => {
-    setIsPrinting(true);
-    // تأخیر کوتاه برای اطمینان از اعمال کلاس‌های CSS قبل از باز شدن دیالوگ چاپ
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 300);
+    window.print();
   };
 
   const handleSMS = () => {
@@ -116,8 +110,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
-      {/* نسخه مخصوص چاپ - فقط در هنگام پرینت با استایل‌های index.html فعال می‌شود */}
-      <div className={`print-section ${isPrinting ? 'active-print' : 'hidden'} dir-rtl text-right`}>
+      {/* بخش مخصوص چاپ - در حالت عادی مخفی است */}
+      <div className="print-only dir-rtl text-right active-print-container">
         <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
            <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
               <div className="flex items-baseline gap-1">
@@ -138,22 +132,22 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
            </p>
         </div>
 
-        <table className="w-full border-collapse mb-8">
+        <table className="w-full border-collapse mb-8" style={{ border: '1px solid black' }}>
            <thead>
               <tr className="bg-slate-100">
-                <th className="border p-3 text-right font-black text-sm">ردیف</th>
-                <th className="border p-3 text-right font-black text-sm">شرح کالا</th>
-                <th className="border p-3 text-right font-black text-sm">مقدار/واحد</th>
-                <th className="border p-3 text-right font-black text-sm">بابت</th>
+                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>ردیف</th>
+                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>شرح کالا</th>
+                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>مقدار/واحد</th>
+                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>بابت</th>
               </tr>
            </thead>
            <tbody>
               {activeItems.map((item, idx) => (
                 <tr key={item.id}>
-                  <td className="border p-3 text-center text-sm">{toPersianDigits(idx + 1)}</td>
-                  <td className="border p-3 text-sm font-bold">{item.name}</td>
-                  <td className="border p-3 text-sm">{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
-                  <td className="border p-3 text-xs text-slate-500">{item.fromRecipe || '-'}</td>
+                  <td className="border p-3 text-center text-sm" style={{ border: '1px solid black' }}>{toPersianDigits(idx + 1)}</td>
+                  <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.name}</td>
+                  <td className="border p-3 text-sm" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
+                  <td className="border p-3 text-xs text-slate-500" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
                 </tr>
               ))}
            </tbody>
@@ -165,8 +159,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         </div>
       </div>
 
-      {/* نسخه نمایش در اپلیکیشن */}
-      <div className={`no-print p-6 flex flex-col flex-grow ${isPrinting ? 'opacity-0' : 'opacity-100'}`}>
+      {/* بخش نمایش در اپلیکیشن - در هنگام چاپ مخفی می‌شود */}
+      <div className="no-print p-6 flex flex-col flex-grow">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-0 pt-2">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl">
