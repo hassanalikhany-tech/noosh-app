@@ -71,70 +71,61 @@
         filter: grayscale(1);
       }
 
-      /* استایل متالیک سرمه‌ای تند */
       .metallic-navy {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #020617 100%) !important;
         box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.4);
         border: 1px solid rgba(255,255,255,0.1) !important;
       }
 
-      /* هاله درخشان دور متن */
       .text-halo {
         text-shadow: 0 0 12px rgba(45, 212, 191, 0.6), 0 0 24px rgba(45, 212, 191, 0.2);
         color: white !important;
       }
 
-      /* تنظیمات پیشرفته چاپ */
-      .print-only {
-        display: none !important;
-      }
-
+      /* تنظیمات پیشرفته چاپ - جلوگیری از تکرار و صفحات اضافی */
       @media print {
-        @page {
-          size: A4;
-          margin: 0;
+        body * {
+          visibility: hidden;
         }
-        .no-print { display: none !important; }
-        
-        html, body {
-          height: auto !important;
-          overflow: visible !important;
-          background: white !important;
+        .active-print, .active-print * {
+          visibility: visible;
         }
-
-        .print-only.active-print { 
-          display: block !important; 
-          background: white !important;
-          color: black !important;
-          position: absolute !important;
-          top: 0;
+        .active-print {
+          position: absolute;
           left: 0;
-          width: 100% !important;
-          padding: 1cm !important;
-          z-index: 9999 !important;
+          top: 0;
+          width: 100%;
+          display: block !important;
+          background: white !important;
+          padding: 0 !important;
+          margin: 0 !important;
         }
-
-        .bg-noosh-pattern { display: none !important; }
-        
-        table { 
-          width: 100%; 
-          border-collapse: collapse; 
-          margin-top: 10px; 
-          font-size: 11px;
+        .no-print {
+          display: none !important;
+        }
+        @page {
+          size: auto;
+          margin: 1.5cm;
+        }
+        body {
+          background: white !important;
+        }
+        table {
           page-break-inside: auto;
         }
-        tr { page-break-inside: avoid; page-break-after: auto; }
-        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: right; line-height: 1.6; }
-        th { background-color: #f8fafc !important; font-weight: 900; }
-        
-        .print-brand { 
-          display: flex !important; 
-          align-items: center; 
-          justify-content: space-between; 
-          border-bottom: 2px solid #0f172a; 
-          padding-bottom: 15px; 
-          margin-bottom: 20px; 
-          direction: rtl !important;
+        tr {
+          page-break-inside: avoid;
+          page-break-after: auto;
+        }
+        th, td {
+          border: 1px solid #e2e8f0;
+          padding: 8px;
+          text-align: right;
+        }
+        .print-brand {
+          border-bottom: 2px solid #0f172a;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
         }
       }
       
@@ -157,7 +148,7 @@
 <link rel="stylesheet" href="/index.css">
 </head>
   <body>
-    <div class="bg-noosh-pattern"></div>
+    <div class="bg-noosh-pattern no-print"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

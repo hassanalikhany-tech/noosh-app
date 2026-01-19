@@ -97,7 +97,6 @@ const App: React.FC = () => {
       if (user) {
         setCurrentUser(user);
         
-        // اگر کاربر مدیر نباشد، نشست او را در هنگام شروع چک کن
         if (!user.isAdmin) {
           const isValid = await UserService.validateSession();
           if (!isValid) {
@@ -137,9 +136,7 @@ const App: React.FC = () => {
   useEffect(() => {
     startAppSequence();
 
-    // ناظر دوره‌ای امنیت نشست
     const sessionInterval = setInterval(async () => {
-      // فقط اگر کاربر لاگین باشد و مدیر نباشد، اعتبار نشست را چک کن
       if (currentUser && !currentUser.isAdmin) {
         const isValid = await UserService.validateSession();
         if (!isValid) {
@@ -147,7 +144,7 @@ const App: React.FC = () => {
           setIsSessionValid(false);
         }
       }
-    }, 15000); // ۱۵ ثانیه برای تشخیص سریع‌تر
+    }, 15000);
 
     const handleUserUpdate = async () => {
       const updated = await UserService.getCurrentUser();
@@ -164,7 +161,7 @@ const App: React.FC = () => {
       window.removeEventListener('user-data-updated', handleUserUpdate);
       clearInterval(sessionInterval);
     };
-  }, [currentUser?.username, currentUser?.isAdmin]); // وابستگی به مشخصات کاربر برای آپدیت نشست
+  }, [currentUser?.username, currentUser?.isAdmin]);
 
   const handleSkipLoading = () => {
     setIsInitializing(false);
@@ -172,17 +169,14 @@ const App: React.FC = () => {
 
   const toPersian = (n: number) => Math.round(n).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
-  // نمایش صفحه مسدودسازی در صورت نشست غیرمجاز برای کاربر عادی
   if (!isSessionValid) return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-8 text-center">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-8 text-center no-print">
       <div className="bg-rose-500/10 w-24 h-24 rounded-full flex items-center justify-center mb-8 animate-pulse border border-rose-500/20">
         <UserX size={48} className="text-rose-500" />
       </div>
       <h2 className="text-2xl font-black text-white mb-4">خروج از حساب به دلیل ورود همزمان</h2>
       <p className="text-slate-400 font-bold max-w-sm mb-8 leading-relaxed">
         اشتراک شما از نوع تک‌نفره است. یک دستگاه دیگر به تازگی وارد حساب شما شده و دسترسی این دستگاه متوقف گردید. 
-        <br/>
-        <span className="text-rose-400 text-xs mt-4 block">استفاده همزمان بیش از یک نفر ممنوع می‌باشد.</span>
       </p>
       <button 
         onClick={handleLogout}
@@ -194,35 +188,30 @@ const App: React.FC = () => {
   );
 
   if (isInitializing) return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-6 text-right">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-6 text-right no-print">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0"></div>
-      
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm animate-enter">
         <div className="relative">
           <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain animate-float" />
           <div className="absolute -inset-4 bg-teal-500/20 blur-2xl rounded-full -z-10 animate-pulse"></div>
         </div>
-        
         <div className="w-full space-y-4">
           <div className="flex items-center justify-between px-2">
              <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Database Sync Progress</span>
              <span className="text-sm font-black text-white bg-teal-600/20 px-3 py-1 rounded-lg border border-teal-500/30">{toPersian(initProgress)}٪</span>
           </div>
-          
           <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[2px] shadow-inner">
             <div 
               className="h-full bg-gradient-to-r from-teal-600 via-emerald-400 to-teal-500 rounded-full transition-all duration-500 shadow-[0_0_20px_rgba(45,212,191,0.5)]" 
               style={{ width: `${initProgress}%` }}
             ></div>
           </div>
-
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
             <p className="text-teal-400 text-xs font-black text-center mb-2 animate-pulse">
               {loadingStatus}
             </p>
           </div>
         </div>
-
         {showSkipButton && (
           <button 
             onClick={handleSkipLoading}
@@ -283,7 +272,7 @@ const App: React.FC = () => {
         </nav>
       </header>
 
-      <main className="flex-grow container mx-auto px-4 py-6 pb-24">
+      <main className="flex-grow container mx-auto px-4 py-6 pb-24 no-print">
         {viewMode === 'plan' && (
           <div className="space-y-8">
             {isDatabaseEmpty && (
@@ -310,7 +299,6 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
-
             <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-wrap gap-2 justify-center">
               <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-transparent text-slate-400'}`}>
                 <Heart size={16} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
@@ -325,7 +313,6 @@ const App: React.FC = () => {
                 <span className="font-black text-xs">گیاهی</span>
               </button>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <button 
                 onClick={handleGenerateDaily} 
@@ -340,7 +327,6 @@ const App: React.FC = () => {
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Daily Recommendation</span>
                 </div>
               </button>
-              
               <button 
                 onClick={handleGenerateWeekly} 
                 disabled={!!loadingType || isDatabaseEmpty}
@@ -355,7 +341,6 @@ const App: React.FC = () => {
                 </div>
               </button>
             </div>
-
             {displayPlan.length > 0 && (
               <div ref={planResultsRef} className="animate-enter pt-4">
                 <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-5">
@@ -388,7 +373,7 @@ const App: React.FC = () => {
       </main>
 
       {isShoppingListOpen && currentUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsShoppingListOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm no-print" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-[110] hover:bg-gray-200 transition-all"><X size={20} /></button>
               <div className="flex-grow overflow-y-auto">
