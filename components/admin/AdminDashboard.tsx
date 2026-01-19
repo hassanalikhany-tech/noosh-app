@@ -61,10 +61,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
     alert('اشتراک کاربر ۳۰ روز تمدید شد.');
   };
 
-  const handleDelete = async (username: string) => {
-    if (confirm(`حذف کاربر ${username}؟`)) {
-      await UserService.deleteUser(username);
-      loadInitialData();
+  const handleDelete = async (uid: string, fullName: string) => {
+    if (confirm(`آیا از حذف کامل کاربر «${fullName}» اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
+      try {
+        await UserService.deleteUser(uid);
+        await loadInitialData();
+        alert('کاربر با موفقیت حذف شد.');
+      } catch (err) {
+        alert('خطا در حذف کاربر. لطفاً اتصال خود را بررسی کنید.');
+      }
     }
   };
 
@@ -180,7 +185,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                           </td>
                           <td className="p-5 flex gap-2">
                             <button onClick={() => handleExtend(user.username)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="تمدید ۳۰ روز"><CalendarPlus size={18}/></button>
-                            <button onClick={() => handleDelete(user.username)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg" title="حذف کاربر"><Trash2 size={18}/></button>
+                            <button onClick={() => handleDelete(user.uid, user.fullName)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg" title="حذف کامل کاربر"><Trash2 size={18}/></button>
                           </td>
                         </tr>
                       ))}
@@ -190,7 +195,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             </div>
           </div>
         )}
-        {/* سایر تب‌ها باقی می‌مانند... */}
         {activeTab === 'csv-converter' && <CsvToJsonConverter />}
         {activeTab === 'database' && <DatabaseManager />}
         {activeTab === 'duplicates' && <DuplicateResolver />}

@@ -300,10 +300,9 @@ export const UserService = {
     } catch (e: any) { return { success: false, data: [], error: e.code }; }
   },
 
-  deleteUser: async (username: string): Promise<void> => {
-    const querySnapshot = await getDocs(collection(db, "users"));
-    const userDoc = querySnapshot.docs.find(d => (d.data() as UserProfile).username === username);
-    if (userDoc) await deleteDoc(userDoc.ref);
+  deleteUser: async (uid: string): Promise<void> => {
+    await deleteDoc(doc(db, "users", uid));
+    notifyUpdate();
   },
 
   logout: async () => {
