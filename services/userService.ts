@@ -301,8 +301,13 @@ export const UserService = {
   },
 
   deleteUser: async (uid: string): Promise<void> => {
-    await deleteDoc(doc(db, "users", uid));
-    notifyUpdate();
+    try {
+      await deleteDoc(doc(db, "users", uid));
+      notifyUpdate();
+    } catch (e) {
+      console.error("Firebase delete error:", e);
+      throw e;
+    }
   },
 
   logout: async () => {

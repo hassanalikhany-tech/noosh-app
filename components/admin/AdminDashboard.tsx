@@ -9,6 +9,7 @@ import DuplicateResolver from './DuplicateResolver';
 import BackupManager from './BackupManager';
 import ImageGuide from './ImageGuide';
 import CsvToJsonConverter from './CsvToJsonConverter';
+import { auth } from '../../services/firebase';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -62,20 +63,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
   };
 
   const handleDelete = async (uid: string, fullName: string) => {
+    // جلوگیری از حذف اکانت خود ادمین
+    const currentAuthUser = auth.currentUser;
+    if (currentAuthUser && currentAuthUser.uid === uid) {
+      alert('شما نمی‌توانید اکانت فعلی خود را حذف کنید!');
+      return;
+    }
+
     if (confirm(`آیا از حذف کامل کاربر «${fullName}» اطمینان دارید؟ این عمل غیرقابل بازگشت است.`)) {
       try {
         await UserService.deleteUser(uid);
         await loadInitialData();
         alert('کاربر با موفقیت حذف شد.');
-      } catch (err) {
-        alert('خطا در حذف کاربر. لطفاً اتصال خود را بررسی کنید.');
+      } catch (err: any) {
+        console.error("Delete user failed:", err);
+        // نمایش خطای دقیق به جای پیام عمومی
+        alert(`خطا در حذف کاربر: ${err.message || 'خطای ناشناخته در فایربیس'}`);
       }
     }
   };
 
   const filteredUsers = users.filter(u => 
-    u.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.fullName || "").includes(searchTerm)
+    (u.username || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (u.fullName || "").includes(searchTerm) ||
+    (u.email || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toPersian = (n: number) => n.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
@@ -90,7 +101,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight uppercase">پنل مدیریت نوش</h1>
-              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Version 15.0 | Multi-Device Guard</p>
+              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest">Version 15.1 | Multi-Device Guard</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -142,7 +153,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                 <div className="relative w-full md:w-64">
                   <input 
                     type="text" 
-                    placeholder="جستجو..." 
+                    placeholder="جستجو در نام، ایمیل یا یوزرنیم..." 
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"
@@ -155,7 +166,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                     <thead className="bg-slate-50 text-slate-500 font-black text-[10px]">
                       <tr>
                         <th className="p-5">نام کاربر</th>
-                        <th className="p-5">ایمیل</th>
+                        <th className="p-5">ایمیل / یوزرنیم</th>
                         <th className="p-5">دستگاه‌ها</th>
                         <th className="p-5">وضعیت</th>
                         <th className="p-5">عملیات</th>
@@ -165,9 +176,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                       {isLoading ? (
                         <tr><td colSpan={5} className="p-20 text-center animate-pulse">در حال بارگذاری...</td></tr>
                       ) : filteredUsers.map(user => (
-                        <tr key={user.uid} className="hover:bg-slate-50">
-                          <td className="p-5 font-black">{user.fullName}</td>
-                          <td className="p-5 text-slate-500">{user.email}</td>
+                        <tr key={user.uid} className={`hover:bg-slate-50 ${auth.currentUser?.uid === user.uid ? 'bg-emerald-50/30' : ''}`}>
+                          <td className="p-5 font-black">
+                            <div className="flex flex-col">
+                              <span>{user.fullName}</span>
+                              {auth.currentUser?.uid === user.uid && <span className="text-[8px] text-emerald-600 font-black uppercase">اکانت شما (ادمین)</span>}
+                            </div>
+                          </td>
+                          <td className="p-5">
+                            <div className="flex flex-col">
+                              <span className="text-slate-700 font-bold">{user.email}</span>
+                              <span className="text-slate-400 text-[10px]">@{user.username}</span>
+                            </div>
+                          </td>
                           <td className="p-5">
                             <div className="flex items-center gap-2">
                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black ${user.registeredDevices?.length >= 2 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -185,7 +206,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                           </td>
                           <td className="p-5 flex gap-2">
                             <button onClick={() => handleExtend(user.username)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="تمدید ۳۰ روز"><CalendarPlus size={18}/></button>
-                            <button onClick={() => handleDelete(user.uid, user.fullName)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg" title="حذف کامل کاربر"><Trash2 size={18}/></button>
+                            {auth.currentUser?.uid !== user.uid && (
+                              <button onClick={() => handleDelete(user.uid, user.fullName)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg" title="حذف کامل کاربر"><Trash2 size={18}/></button>
+                            )}
                           </td>
                         </tr>
                       ))}
