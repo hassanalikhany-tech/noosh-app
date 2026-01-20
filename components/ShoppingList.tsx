@@ -34,6 +34,15 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const activeItems = useMemo(() => uniqueItems.filter(i => !i.checked), [uniqueItems]);
 
+  // منطق تقسیم‌بندی اقلام برای چاپ (۱۲ قلم در هر صفحه)
+  const chunkedItemsForPrint = useMemo(() => {
+    const chunks: ShoppingItem[][] = [];
+    for (let i = 0; i < activeItems.length; i += 12) {
+      chunks.push(activeItems.slice(i, i + 12));
+    }
+    return chunks;
+  }, [activeItems]);
+
   const updateCustomItems = async (newItems: ShoppingItem[]) => {
     setCustomItems(newItems);
     onUpdateUser({ ...user, customShoppingList: newItems });
@@ -115,70 +124,81 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const encodedText = encodeURIComponent(shareText);
   const appUrl = encodeURIComponent('https://nooshapp.ir');
   
-  // لینک استاندارد تلگرام که باعث باز شدن اپلیکیشن و انتخاب مخاطب می‌شود
   const telegramShareLink = `https://t.me/share/url?url=${appUrl}&text=${encodedText}`;
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
-      {/* بخش مخصوص چاپ - لوگو در مرکز هدر */}
-      <div className="print-only dir-rtl text-right active-print-container">
-        <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
-           {/* سمت چپ هدر (انگلیسی) */}
-           <div className="flex-1 flex flex-col items-start" style={{ direction: 'ltr' }}>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
-                <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+      
+      {/* بخش مخصوص چاپ - صفحه‌بندی شده */}
+      <div className="print-only dir-rtl text-right">
+        {chunkedItemsForPrint.length === 0 ? (
+          <div className="p-10 text-center font-black">لیست خرید خالی است.</div>
+        ) : (
+          chunkedItemsForPrint.map((chunk, pageIdx) => (
+            <div key={pageIdx} className="print-page">
+              <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
+                <div className="flex-1 flex flex-col items-start" style={{ direction: 'ltr' }}>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
+                    <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Premium Kitchen Assistant</span>
+                </div>
+
+                <div className="flex-1 flex justify-center">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-16 h-16 object-contain" />
+                </div>
+                
+                <div className="flex-1 text-left font-black text-slate-800">
+                  <div className="text-[10px] opacity-50 mb-1">تاریخ تهیه لیست</div>
+                  <div className="text-lg">{toPersianDigits(persianDate)}</div>
+                  <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedItemsForPrint.length)}</div>
+                </div>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Premium Kitchen Assistant</span>
-           </div>
 
-           {/* لوگوی مرکزی */}
-           <div className="flex-1 flex justify-center">
-              <img 
-                src="https://i.ibb.co/gMDKtj4p/3.png" 
-                alt="Noosh Logo" 
-                className="w-16 h-16 object-contain"
-              />
-           </div>
-           
-           {/* سمت راست هدر (فارسی) */}
-           <div className="flex-1 text-left font-black text-slate-800">
-              <div className="text-[10px] opacity-50 mb-1">تاریخ تهیه لیست</div>
-              <div className="text-lg">{toPersianDigits(persianDate)}</div>
-           </div>
-        </div>
+              <div className="mb-6 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
+                <p className="text-sm font-black text-slate-700 leading-relaxed">
+                  لیست مواد اولیه مورد نیاز جهت خرید - همراه سلامتی و آسایش شما
+                </p>
+              </div>
 
-        <div className="mb-6 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
-           <p className="text-sm font-black text-slate-700 leading-relaxed">
-             لیست مواد اولیه مورد نیاز جهت خرید - همراه سلامتی و آسایش شما
-           </p>
-        </div>
+              <table className="w-full border-collapse mb-8" style={{ border: '2px solid black' }}>
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>ردیف</th>
+                    <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>شرح کالا</th>
+                    <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>مقدار/واحد</th>
+                    <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>بابت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chunk.map((item, idx) => (
+                    <tr key={item.id}>
+                      <td className="border p-3 text-center text-sm" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 12) + idx + 1)}</td>
+                      <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.name}</td>
+                      <td className="border p-3 text-sm" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
+                      <td className="border p-3 text-xs text-slate-500" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
+                    </tr>
+                  ))}
+                  {/* ردیف‌های خالی برای حفظ ارتفاع ثابت صفحه در صورت کم بودن اقلام */}
+                  {chunk.length < 12 && Array.from({ length: 12 - chunk.length }).map((_, emptyIdx) => (
+                    <tr key={`empty-${emptyIdx}`}>
+                      <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-        <table className="w-full border-collapse mb-8" style={{ border: '1px solid black' }}>
-           <thead>
-              <tr className="bg-slate-100">
-                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>ردیف</th>
-                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>شرح کالا</th>
-                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>مقدار/واحد</th>
-                <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>بابت</th>
-              </tr>
-           </thead>
-           <tbody>
-              {activeItems.map((item, idx) => (
-                <tr key={item.id}>
-                  <td className="border p-3 text-center text-sm" style={{ border: '1px solid black' }}>{toPersianDigits(idx + 1)}</td>
-                  <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.name}</td>
-                  <td className="border p-3 text-sm" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
-                  <td className="border p-3 text-xs text-slate-500" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
-                </tr>
-              ))}
-           </tbody>
-        </table>
-
-        <div className="text-center border-t pt-6">
-           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن هوشمند آشپزی نوش</div>
-           <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
-        </div>
+              <div className="text-center border-t pt-6 mt-auto">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن هوشمند آشپزی نوش</div>
+                <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* بخش نمایش در اپلیکیشن - در هنگام چاپ مخفی می‌شود */}

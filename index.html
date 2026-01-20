@@ -90,23 +90,25 @@
         .print-only {
           display: block !important;
         }
+        .print-page {
+          page-break-after: always;
+          padding: 1cm;
+          background: white !important;
+        }
+        .print-page:last-child {
+          page-break-after: auto;
+        }
         body {
           background-color: white !important;
           margin: 0 !important;
           padding: 0 !important;
         }
         @page {
-          size: auto;
-          margin: 1cm;
+          size: A4;
+          margin: 0;
         }
         #root {
           padding: 0 !important;
-        }
-        .active-print-container {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
         }
       }
       
