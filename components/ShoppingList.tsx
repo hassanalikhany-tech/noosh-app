@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, X } from 'lucide-react';
+import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, X, Hash, Ruler } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
 
@@ -20,6 +20,8 @@ const TelegramIcon = () => (
 const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateUser, onPrintInternal }) => {
   const [customItems, setCustomItems] = useState<ShoppingItem[]>(user.customShoppingList || []);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemAmount, setNewItemAmount] = useState('');
+  const [newItemUnit, setNewItemUnit] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   useEffect(() => {
@@ -43,10 +45,14 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     const newItem: ShoppingItem = {
       id: Date.now().toString(),
       name: newItemName.trim(),
+      amount: newItemAmount ? parseFloat(newItemAmount) : undefined,
+      unit: newItemUnit.trim() || undefined,
       checked: false
     };
     updateCustomItems([...customItems, newItem]);
     setNewItemName('');
+    setNewItemAmount('');
+    setNewItemUnit('');
   };
 
   const handleDeleteItem = (id: string) => {
@@ -225,18 +231,47 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
         <div className="flex-grow overflow-y-auto">
           <div className="space-y-8 max-w-2xl mx-auto pb-12 pr-1">
-            <div className="flex gap-3 sticky top-0 bg-white z-10 py-3">
-              <input 
-                type="text" 
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                placeholder="افزودن کالای دستی..."
-                className="flex-grow px-6 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-base font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner"
-              />
-              <button onClick={handleAddItem} className="px-6 bg-teal-600 text-white rounded-[1.5rem] hover:bg-teal-700 shadow-xl shadow-teal-100 active:scale-95 transition-all">
-                <Plus size={32} />
-              </button>
+            <div className="sticky top-0 bg-white z-10 py-3 space-y-2">
+              <div className="flex gap-2">
+                <div className="relative flex-grow">
+                  <input 
+                    type="text" 
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+                    placeholder="نام کالای جدید..."
+                    className="w-full px-6 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-base font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner"
+                  />
+                </div>
+                <div className="relative w-24">
+                   <input 
+                    type="number" 
+                    value={newItemAmount}
+                    onChange={(e) => setNewItemAmount(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+                    placeholder="مقدار"
+                    className="w-full px-4 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-sm font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner text-center"
+                  />
+                </div>
+                <div className="relative w-28">
+                   <input 
+                    type="text" 
+                    value={newItemUnit}
+                    onChange={(e) => setNewItemUnit(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
+                    placeholder="واحد"
+                    className="w-full px-4 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-sm font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner text-center"
+                  />
+                </div>
+                <button onClick={handleAddItem} className="px-5 bg-teal-600 text-white rounded-[1.5rem] hover:bg-teal-700 shadow-xl shadow-teal-100 active:scale-95 transition-all flex items-center justify-center">
+                  <Plus size={32} />
+                </button>
+              </div>
+              <div className="flex justify-center gap-6 px-4">
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><ShoppingCart size={10} /> نام کالا</span>
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Hash size={10} /> مقدار</span>
+                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Ruler size={10} /> واحد</span>
+              </div>
             </div>
 
             <div className="space-y-3">
