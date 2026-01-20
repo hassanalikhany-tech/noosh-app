@@ -82,33 +82,56 @@
         color: white !important;
       }
 
-      /* تنظیمات نهایی چاپ */
+      /* تنظیمات پیشرفته چاپ برای جلوگیری از بریده شدن صفحات */
       @media print {
+        /* مخفی کردن المان‌های اضافی */
         .no-print {
           display: none !important;
         }
+        
+        /* نمایش بخش چاپ */
         .print-only {
           display: block !important;
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
         }
-        .print-page {
-          page-break-after: always;
-          padding: 1cm;
-          background: white !important;
-        }
-        .print-page:last-child {
-          page-break-after: auto;
-        }
-        body {
-          background-color: white !important;
+
+        /* خنثی کردن تمام محدودیت‌های ارتفاعی و اسکرول در کل سلسله مراتب */
+        body, html, #root, div, section, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
           margin: 0 !important;
           padding: 0 !important;
         }
+
+        .print-page {
+          page-break-after: always !important;
+          page-break-inside: avoid !important;
+          display: block !important;
+          padding: 1.5cm !important;
+          background: white !important;
+          min-height: 25cm; /* تخمین ارتفاع صفحه A4 */
+        }
+
+        .print-page:last-child {
+          page-break-after: auto !important;
+        }
+
+        table {
+          page-break-inside: auto !important;
+        }
+
+        tr {
+          page-break-inside: avoid !important;
+          page-break-after: auto !important;
+        }
+
         @page {
           size: A4;
           margin: 0;
-        }
-        #root {
-          padding: 0 !important;
         }
       }
       
