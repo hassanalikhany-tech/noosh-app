@@ -31,6 +31,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     phoneNumber: '',
   });
@@ -51,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setSuccessMsg('');
     setDetailedError(null);
     if (mode === 'register') {
-      setFormData(prev => ({ ...prev, fullName: '', phoneNumber: '' }));
+      setFormData(prev => ({ ...prev, fullName: '', phoneNumber: '', confirmPassword: '' }));
     }
   }, [mode]);
 
@@ -119,6 +120,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError('تکمیل تمامی فیلدها الزامی است.');
         return;
       }
+      if (password !== formData.confirmPassword) {
+        setError('رمز عبور و تکرار آن با هم مطابقت ندارند.');
+        return;
+      }
+      if (password.length < 6) {
+        setError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -150,18 +159,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
-      <div className="bg-noosh-pattern" style={{ opacity: 0.08 }}></div>
+      <div className="bg-noosh-pattern opacity-10 absolute inset-0 pointer-events-none"></div>
       
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
         
         {/* بخش برندینگ */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
-          <div className="bg-noosh-pattern" style={{ opacity: 0.1 }}></div>
           
           <div className="relative z-10 text-center space-y-8">
             <div className="animate-float">
-               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(45,212,191,0.5)]" />
+               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-48 h-48 mx-auto object-contain drop-shadow-[0_0_25px_rgba(45,212,191,0.5)]" />
             </div>
             <div>
               <div className="flex flex-row items-baseline justify-center gap-3" style={{ direction: 'ltr' }}>
@@ -198,7 +206,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <Info className="text-blue-500 shrink-0" size={18} />
               <p className="text-[10px] text-blue-800 font-black leading-relaxed">
                 <span className="block text-[11px] mb-0.5">توجه بسیار مهم:</span>
-                لطفاً از <span className="underline">ایمیل و شماره همراه معتبر</span> استفاده کنید. در صورت فراموشی رمز عبور، تنها راه بازیابی حساب شما ارسال لینک به این ایمیل خواهد بود.
+                لطفاً از ایمیل معتبر و فعال استفاده کنید. لینک‌های بازیابی و فاکتورها به این آدرس ارسال خواهد شد.
               </p>
             </div>
           )}
@@ -228,14 +236,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input type="email" name="email" dir="ltr" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="example@gmail.com" />
             </div>
 
-            {mode !== 'forgot-password' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
                   <Lock size={12}/> رمز عبور
                 </label>
                 <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
               </div>
-            )}
+
+              {mode === 'register' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
+                    <Lock size={12}/> تکرار رمز عبور
+                  </label>
+                  <input type="password" name="confirmPassword" dir="ltr" value={formData.confirmPassword} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
+                </div>
+              )}
+            </div>
 
             {mode === 'login' && (
               <div className="flex items-center justify-between px-1">
@@ -243,7 +260,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   {rememberMe ? <CheckSquare size={16} className="text-teal-600" /> : <Square size={16} />}
                   <span className="text-[10px] font-black">مرا به خاطر بسپار</span>
                 </button>
-                <button type="button" onClick={() => setMode('forgot-password')} className="text-[10px] font-black text-teal-600 hover:text-teal-700">رمز عبور را فراموش کرده‌اید؟</button>
+                <button type="button" onClick={() => setMode('forgot-password')} className="text-[10px] font-black text-teal-600 hover:text-teal-700">فراموشی رمز؟</button>
               </div>
             )}
 
@@ -253,55 +270,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             )}
 
-            {successMsg && (
-              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black flex items-center gap-2 border border-emerald-100 animate-enter">
-                <Sparkles size={14} className="shrink-0" /> <span>{successMsg}</span>
-              </div>
-            )}
+            <div className="space-y-3 pt-2">
+              <button 
+                type="submit" 
+                disabled={isLoading || isGoogleLoading} 
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3.5 rounded-xl shadow-xl shadow-teal-100 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 group"
+              >
+                {isLoading ? <Loader2 size={20} className="animate-spin" /> : (
+                  <>
+                    <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'تایید و ثبت‌نام' : 'ارسال لینک بازیابی'}</span>
+                    <ArrowRight size={20} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
 
-            <button 
-              type="submit" 
-              disabled={isLoading || isGoogleLoading} 
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3.5 rounded-xl shadow-xl shadow-teal-100 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 group"
-            >
-              {isLoading ? <Loader2 size={20} className="animate-spin" /> : (
-                <>
-                  <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'تایید و ثبت‌نام' : 'ارسال لینک بازیابی'}</span>
-                  <ArrowRight size={20} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
-
-            {mode !== 'forgot-password' && (
-              <>
-                <div className="relative py-2 flex items-center justify-center">
-                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                   <span className="relative bg-white px-3 text-slate-400 text-[9px] font-bold">یا ورود با</span>
-                </div>
-
+              {mode === 'login' && (
                 <button 
-                  type="button"
+                  type="button" 
                   onClick={handleGoogleLogin}
                   disabled={isLoading || isGoogleLoading}
-                  className="w-full bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-black py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-3.5 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  <GoogleIcon />
-                  <span className="text-xs">حساب گوگل</span>
+                  {isGoogleLoading ? <Loader2 size={20} className="animate-spin" /> : <GoogleIcon />}
+                  <span>ورود با حساب گوگل</span>
                 </button>
-              </>
-            )}
-
-            <div className="pt-2 text-center">
-              {mode === 'forgot-password' ? (
-                <button type="button" onClick={() => setMode('login')} className="text-teal-600 font-black text-[11px] flex items-center justify-center gap-1 mx-auto hover:gap-2 transition-all">
-                  <ArrowLeft size={14} /> بازگشت به صفحه ورود
-                </button>
-              ) : (
-                <p className="text-slate-400 text-[11px] font-bold">
-                  {mode === 'login' ? 'هنوز عضو نشده‌اید؟' : 'قبلاً ثبت‌نام کرده‌اید؟'}
-                  <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black mr-1.5">{mode === 'login' ? 'ساخت حساب جدید' : 'وارد شوید'}</button>
-                </p>
               )}
+            </div>
+
+            <div className="pt-4 text-center">
+              <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black text-[11px]">{mode === 'login' ? 'ساخت حساب جدید' : 'وارد شوید'}</button>
             </div>
           </form>
         </div>

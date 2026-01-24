@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, Wifi, WifiOff, Database, ShieldAlert, AlertTriangle, ArrowRight, CloudDownload, Rocket, UserX } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2 } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
@@ -22,371 +22,298 @@ const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [displayPlan, setDisplayPlan] = useState<DayPlan[]>([]);
   const [loadingType, setLoadingType] = useState<'daily' | 'weekly' | null>(null);
-  const [lastPlanType, setLastPlanType] = useState<'daily' | 'weekly' | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [initProgress, setInitProgress] = useState(0);
-  const [loadingStatus, setLoadingStatus] = useState('در حال آماده‌سازی...');
-  const [showSkipButton, setShowSkipButton] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'connecting' | 'fetching' | 'done' | 'offline'>('connecting');
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [isMainSyncing, setIsMainSyncing] = useState(false);
-  const [isSessionValid, setIsSessionValid] = useState(true);
+  const [footerSearchTerm, setFooterSearchTerm] = useState('');
+  const [recipeCount, setRecipeCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const planResultsRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     await UserService.logout();
     setCurrentUser(null);
     setIsAdminMode(false);
-    setIsSessionValid(true);
   };
 
+  // بهبود سرعت: به‌روزرسانی آنی وضعیت (Optimistic Update)
   const handleToggleFilter = async (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
     if (!currentUser) return;
     const newVal = !currentUser[filter];
-    const updated = await UserService.updateProfile(currentUser.username, { [filter]: newVal });
-    setCurrentUser(updated);
+    
+    // ۱. به‌روزرسانی فوری در ظاهر (بدون معطلی برای سرور)
+    const optimisticUser = { ...currentUser, [filter]: newVal };
+    setCurrentUser(optimisticUser);
+    
+    // ۲. همگام‌سازی در پس‌زمینه با دیتابیس
+    try {
+      await UserService.updateProfile(currentUser.username, { [filter]: newVal });
+    } catch (err) {
+      // در صورت بروز خطا در شبکه، وضعیت را به حالت قبل برگردان
+      setCurrentUser(currentUser);
+      console.error("Sync failed:", err);
+    }
+  };
+
+  const handleDismissForever = async () => {
+    setShowOnboarding(false);
+    localStorage.setItem('noosh_onboarding_dismissed', 'true');
+    if (currentUser) {
+      const updated = await UserService.updateProfile(currentUser.username, { hasCompletedSetup: true });
+      setCurrentUser(updated);
+    }
   };
 
   const handleGenerateDaily = async () => {
     if (!currentUser) return;
+    if (recipeCount === 0) {
+      setShowOnboarding(true);
+      return;
+    }
     setLoadingType('daily');
     try {
       const { plan, updatedUser } = await generateDailyPlan(currentUser);
       setDisplayPlan(plan);
-      setLastPlanType('daily');
       setCurrentUser(updatedUser);
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingType(null);
-    }
+    } catch (err) { console.error(err); } finally { setLoadingType(null); }
   };
 
   const handleGenerateWeekly = async () => {
     if (!currentUser) return;
+    if (recipeCount === 0) {
+      setShowOnboarding(true);
+      return;
+    }
     setLoadingType('weekly');
     try {
       const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
       setDisplayPlan(plan);
-      setLastPlanType('weekly');
       setCurrentUser(updatedUser);
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingType(null);
-    }
-  };
-
-  const handleMainSync = async () => {
-    setIsMainSyncing(true);
-    await RecipeService.syncFromCloud();
-    setIsMainSyncing(false);
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const startAppSequence = async () => {
-    setIsInitializing(true);
-    setInitProgress(5);
-    setLoadingStatus('در حال بررسی نشست کاربر...');
-    
-    const skipTimer = setTimeout(() => setShowSkipButton(true), 5000);
-
-    try {
-      const user = await UserService.getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
-        
-        if (!user.isAdmin) {
-          const isValid = await UserService.validateSession();
-          if (!isValid) {
-            setIsSessionValid(false);
-            setIsInitializing(false);
-            return;
-          }
-        }
-      }
-      setInitProgress(30);
-
-      const result = await RecipeService.initialize((p, status) => {
-        setInitProgress(prev => Math.max(prev, p));
-        setLoadingStatus(status);
-      });
-
-      if (result.source === 'offline-cache' || result.error) {
-        setSyncStatus('offline');
-      } else {
-        setSyncStatus('done');
-      }
-
-      if (user && user.weeklyPlan && user.weeklyPlan.length > 0) {
-        setDisplayPlan(user.weeklyPlan);
-        setLastPlanType(user.weeklyPlan.length <= 3 ? 'daily' : 'weekly');
-      }
-      
-      setInitProgress(100);
-      clearTimeout(skipTimer);
-      setTimeout(() => setIsInitializing(false), 800);
-
-    } catch (err) {
-      console.error("Init Error:", err);
-      setSyncStatus('offline');
-      setInitProgress(100);
-      setTimeout(() => setIsInitializing(false), 1000);
-    }
+    } catch (err) { console.error(err); } finally { setLoadingType(null); }
   };
 
   useEffect(() => {
-    startAppSequence();
-
-    const sessionInterval = setInterval(async () => {
-      if (currentUser && !currentUser.isAdmin) {
-        const isValid = await UserService.validateSession();
-        if (!isValid) {
-          console.warn("Unauthorized concurrent session detected. Locking app.");
-          setIsSessionValid(false);
-        }
+    const startApp = async () => {
+      const user = await UserService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
       }
-    }, 15000);
-
-    const handleUserUpdate = async () => {
-      const updated = await UserService.getCurrentUser();
-      if (updated) {
-        setCurrentUser({ ...updated });
-        if (updated.weeklyPlan) {
-          setDisplayPlan(updated.weeklyPlan);
-          setLastPlanType(updated.weeklyPlan.length <= 3 ? 'daily' : 'weekly');
-        }
+      const result = await RecipeService.initialize();
+      setRecipeCount(result.count);
+      const isDismissedLocal = localStorage.getItem('noosh_onboarding_dismissed') === 'true';
+      if (result.count === 0 && user && !user.hasCompletedSetup && !isDismissedLocal) {
+        setShowOnboarding(true);
       }
+      setIsInitializing(false);
     };
+    startApp();
 
-    window.addEventListener('user-data-updated', handleUserUpdate);
-    window.addEventListener('recipes-updated', () => setRefreshKey(prev => prev + 1));
-    
-    return () => {
-      window.removeEventListener('user-data-updated', handleUserUpdate);
-      clearInterval(sessionInterval);
+    const handleUpdate = () => {
+      const count = RecipeService.getRawDishes().length;
+      setRecipeCount(count);
+      if (count > 0) setShowOnboarding(false);
     };
-  }, [currentUser?.username, currentUser?.isAdmin]);
-
-  const handleSkipLoading = () => {
-    setIsInitializing(false);
-  };
-
-  const toPersian = (n: number) => Math.round(n).toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-
-  if (!isSessionValid) return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-8 text-center no-print">
-      <div className="bg-rose-500/10 w-24 h-24 rounded-full flex items-center justify-center mb-8 animate-pulse border border-rose-500/20">
-        <UserX size={48} className="text-rose-500" />
-      </div>
-      <h2 className="text-2xl font-black text-white mb-4">خروج از حساب به دلیل ورود همزمان</h2>
-      <p className="text-slate-400 font-bold max-w-sm mb-8 leading-relaxed">
-        اشتراک شما از نوع تک‌نفره است. یک دستگاه دیگر به تازگی وارد حساب شما شده و دسترسی این دستگاه متوقف گردید. 
-      </p>
-      <button 
-        onClick={handleLogout}
-        className="px-10 py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-sm transition-all shadow-xl shadow-rose-900/40"
-      >
-        متوجه شدم (بازگشت به ورود)
-      </button>
-    </div>
-  );
-
-  if (isInitializing) return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 z-[9999] p-6 text-right no-print">
-      <div className="bg-noosh-pattern opacity-10 absolute inset-0"></div>
-      <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm animate-enter">
-        <div className="relative">
-          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain animate-float" />
-          <div className="absolute -inset-4 bg-teal-500/20 blur-2xl rounded-full -z-10 animate-pulse"></div>
-        </div>
-        <div className="w-full space-y-4">
-          <div className="flex items-center justify-between px-2">
-             <span className="text-[10px] font-black text-teal-500 uppercase tracking-widest">Database Sync Progress</span>
-             <span className="text-sm font-black text-white bg-teal-600/20 px-3 py-1 rounded-lg border border-teal-500/30">{toPersian(initProgress)}٪</span>
-          </div>
-          <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[2px] shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-teal-600 via-emerald-400 to-teal-500 rounded-full transition-all duration-500 shadow-[0_0_20px_rgba(45,212,191,0.5)]" 
-              style={{ width: `${initProgress}%` }}
-            ></div>
-          </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
-            <p className="text-teal-400 text-xs font-black text-center mb-2 animate-pulse">
-              {loadingStatus}
-            </p>
-          </div>
-        </div>
-        {showSkipButton && (
-          <button 
-            onClick={handleSkipLoading}
-            className="flex items-center gap-3 px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-2xl font-black text-xs transition-all active:scale-95 group"
-          >
-            <span>ورود در حالت آفلاین (بدون انتظار)</span>
-            <ArrowRight size={16} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
+    window.addEventListener('recipes-updated', handleUpdate);
+    return () => window.removeEventListener('recipes-updated', handleUpdate);
+  }, []);
 
   if (!currentUser) return <Login onLogin={setCurrentUser} />;
   if (currentUser.isAdmin && isAdminMode) return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
   if (!UserService.isSubscriptionValid(currentUser)) return <Subscription user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />;
 
-  const isDatabaseEmpty = RecipeService.getAllDishes().length === 0;
+  const activeChallengeName = currentUser.activeChallengeId ? (currentUser.activeChallengeId === 'vegan-week' ? 'هفته گیاهخواری' : currentUser.activeChallengeId === 'protein-power' ? 'پروتئین پلاس' : 'حذف قند') : null;
+
+  const getActiveFilterMessage = () => {
+    if (activeChallengeName) return null;
+    if (viewMode !== 'plan') return null;
+
+    if (currentUser.onlyFavoritesMode) {
+      return { text: 'فیلتر محبوب‌ها فعال.', icon: Heart, color: 'text-rose-600 bg-rose-50/40 border-rose-100/50' };
+    }
+    if (currentUser.meatlessMode) {
+      return { text: 'رژیم گیاهی فعال.', icon: Leaf, color: 'text-emerald-600 bg-emerald-50/40 border-emerald-100/50' };
+    }
+    if (currentUser.quickMealsMode) {
+      return { text: 'پخت سریع فعال.', icon: Clock, color: 'text-amber-600 bg-amber-50/40 border-amber-100/50' };
+    }
+    return null;
+  };
+
+  const activeFilterInfo = getActiveFilterMessage();
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-right dir-rtl bg-slate-50" key={refreshKey}>
-      <header className="sticky top-0 z-40 metallic-navy text-white shadow-xl no-print">
-        <div className="container mx-auto h-[70px] flex items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-10 h-10" />
-            <div className="flex flex-row items-baseline gap-1.5" style={{ direction: 'ltr' }}>
-              <span className="text-2xl font-black italic uppercase text-halo">NOOSH</span>
-              <span className="text-sm font-black text-teal-500 italic uppercase">APP</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <button onClick={() => setIsShoppingListOpen(true)} className="relative p-2.5 bg-white/5 rounded-2xl text-teal-400 border border-white/10">
-              <ShoppingCart size={22} />
-              {currentUser.customShoppingList?.filter(i => !i.checked).length ? (
-                <span className="absolute -top-1 -left-1 bg-rose-500 text-white w-5 h-5 flex items-center justify-center text-[10px] font-black rounded-full">{currentUser.customShoppingList.filter(i => !i.checked).length}</span>
-              ) : null}
-            </button>
-            {currentUser.isAdmin && (
-              <button onClick={() => setIsAdminMode(true)} className="p-2.5 bg-white/5 rounded-2xl text-amber-400 border border-white/10" title="پنل مدیریت">
-                <ShieldCheck size={22} />
-              </button>
-            )}
-          </div>
-        </div>
-        <nav className="bg-white border-b border-gray-100 flex p-1 gap-1 overflow-x-auto no-scrollbar">
-          {[
-            {id: 'plan', label: 'برنامه ریزی', icon: CalendarDays}, 
-            {id: 'pantry', label: 'آشپز برتر', icon: ChefHat}, 
-            {id: 'search', label: 'جستجو', icon: Search}, 
-            {id: 'challenges', label: 'چالش', icon: Trophy},
-            {id: 'settings', label: 'تنظیمات', icon: Settings}
-          ].map(nav => (
-            <button key={nav.id} onClick={() => setViewMode(nav.id as ViewMode)} className={`flex-1 min-w-[70px] py-3 rounded-2xl flex flex-col items-center gap-1 transition-all ${viewMode === nav.id ? 'text-teal-700 bg-teal-50 font-black' : 'text-slate-400'}`}>
-              <nav.icon size={18} />
-              <span className="text-[10px]">{nav.label}</span>
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      <main className="flex-grow container mx-auto px-4 py-6 pb-24 no-print">
-        {viewMode === 'plan' && (
-          <div className="space-y-8">
-            {isDatabaseEmpty && (
-              <div className="relative group overflow-hidden bg-gradient-to-r from-teal-600 to-indigo-700 rounded-[2.5rem] p-8 md:p-10 shadow-2xl animate-enter border border-white/10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                   <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow-inner">
-                      <CloudDownload size={32} />
-                   </div>
-                   <div className="text-center md:text-right flex-grow">
-                      <h2 className="text-xl font-black text-white mb-1">بروزرسانی دیتابیس</h2>
-                      <p className="text-teal-50 font-bold text-sm leading-relaxed opacity-90">
-                        برای بروز رسانی اطلاعات روی کلید فوق کلیک فرمایید
-                      </p>
-                   </div>
-                   <button 
-                    onClick={handleMainSync}
-                    disabled={isMainSyncing}
-                    className="flex-shrink-0 px-8 py-4 bg-white text-indigo-700 rounded-2xl font-black text-sm shadow-xl hover:bg-teal-50 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                   >
-                     {isMainSyncing ? <RefreshCw className="animate-spin" /> : <RefreshCw />}
-                     {isMainSyncing ? 'در حال دریافت...' : 'بروزرسانی اطلاعات'}
-                   </button>
-                </div>
+    <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
+      
+      {/* هدر هوشمند - طراحی دو ردیفه Grid برای دسترسی کامل در موبایل */}
+      <div className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[100] no-print">
+        <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] p-3 sm:px-8 sm:h-[85px] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-all">
+          
+          {/* ردیف اول موبایل: لوگو و سبد خرید */}
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />
+              <div className="flex flex-col" style={{ direction: 'ltr' }}>
+                <span className="text-xl sm:text-2xl font-black italic text-slate-900 leading-none">NOOSH</span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase">Premium</span>
               </div>
-            )}
-            <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex flex-wrap gap-2 justify-center">
-              <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-transparent text-slate-400'}`}>
-                <Heart size={16} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
-                <span className="font-black text-xs">محبوب‌ها</span>
-              </button>
-              <button onClick={() => handleToggleFilter('quickMealsMode')} className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-2 transition-all ${currentUser.quickMealsMode ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-slate-50 border-transparent text-slate-400'}`}>
-                <Clock size={16} />
-                <span className="font-black text-xs">سریع</span>
-              </button>
-              <button onClick={() => handleToggleFilter('meatlessMode')} className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-2 transition-all ${currentUser.meatlessMode ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-slate-50 border-transparent text-slate-400'}`}>
-                <Leaf size={16} />
-                <span className="font-black text-xs">گیاهی</span>
+            </div>
+
+            <div className="sm:hidden flex items-center">
+              <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3 bg-emerald-600 text-white rounded-xl shadow-md active:scale-95 transition-all">
+                <ShoppingCart size={20} />
+                {currentUser.customShoppingList?.filter(i => !i.checked).length > 0 && (
+                  <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-black ring-2 ring-white">
+                    {currentUser.customShoppingList.filter(i => !i.checked).length}
+                  </span>
+                )}
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          </div>
+
+          {/* ردیف دوم موبایل: منوی اصلی بصورت گرید ۲x۲ */}
+          <nav className="w-full sm:flex-1 grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-3xl p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-white/20 sm:mx-4">
+            {[
+              { id: 'plan', label: 'برنامه', icon: CalendarDays },
+              { id: 'pantry', label: 'آشپز برتر', icon: ChefHat },
+              { id: 'search', label: 'جستجو', icon: Search },
+              { id: 'challenges', label: 'چالش‌ها', icon: Trophy }
+            ].map(nav => (
               <button 
-                onClick={handleGenerateDaily} 
-                disabled={!!loadingType || isDatabaseEmpty}
-                className="group relative bg-white border-2 border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-teal-400 transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                key={nav.id} 
+                onClick={() => setViewMode(nav.id as ViewMode)}
+                className={`px-3 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-full flex items-center justify-center sm:justify-start gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap ${
+                  viewMode === nav.id 
+                  ? 'bg-emerald-900 text-amber-400 shadow-md scale-[1.02] sm:scale-105' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/30'
+                }`}
               >
-                <div className="p-5 bg-teal-50 text-teal-600 rounded-3xl group-hover:scale-110 transition-transform duration-500">
-                  {loadingType === 'daily' ? <RefreshCw size={40} className="animate-spin" /> : <Utensils size={40} />}
-                </div>
-                <div className="text-center">
-                  <span className="block font-black text-xl text-slate-800">برنامه پیشنهادی امروز</span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Daily Recommendation</span>
-                </div>
+                <nav.icon size={16} className={viewMode === nav.id ? 'text-amber-400' : ''} />
+                <span className="text-[11px] sm:text-base font-black">{nav.label}</span>
               </button>
-              <button 
-                onClick={handleGenerateWeekly} 
-                disabled={!!loadingType || isDatabaseEmpty}
-                className="group relative metallic-navy p-8 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-xl transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
-              >
-                <div className="p-5 bg-white/10 text-teal-400 rounded-3xl group-hover:scale-110 transition-transform duration-500">
-                  {loadingType === 'weekly' ? <RefreshCw size={40} className="animate-spin" /> : <Calendar size={40} />}
+            ))}
+          </nav>
+
+          <div className="hidden sm:flex items-center shrink-0">
+             <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3.5 bg-emerald-600 text-white rounded-2xl shadow-md hover:scale-105 transition-all">
+              <ShoppingCart size={22} />
+              {currentUser.customShoppingList?.filter(i => !i.checked).length > 0 && (
+                <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-black ring-2 ring-white">
+                  {currentUser.customShoppingList.filter(i => !i.checked).length}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
+      </div>
+
+      <main className="pt-48 sm:pt-36 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto">
+        {viewMode === 'plan' && (
+          <div className="space-y-6 sm:space-y-10 animate-enter">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 max-w-4xl mx-auto">
+              <button onClick={handleGenerateDaily} disabled={!!loadingType} className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center gap-3 sm:gap-4 hover:shadow-lg transition-all">
+                <div className="p-4 sm:p-5 bg-emerald-50 text-emerald-600 rounded-2xl sm:rounded-3xl">
+                  {loadingType === 'daily' ? <RefreshCw className="animate-spin" size={24} /> : <Utensils size={32} />}
                 </div>
-                <div className="text-center">
-                  <span className="block font-black text-xl text-white text-halo">برنامه پیشنهادی هفتگی</span>
-                  <span className="text-[10px] text-teal-500/60 font-bold uppercase tracking-wider">Weekly Meal Planner</span>
+                <span className="font-black text-lg sm:text-xl text-slate-800">پیشنهاد امروز</span>
+              </button>
+              <button onClick={handleGenerateWeekly} disabled={!!loadingType} className="bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl flex flex-col items-center gap-3 sm:gap-4 hover:scale-[1.01] transition-all">
+                <div className="p-4 sm:p-5 bg-white/10 text-emerald-400 rounded-2xl sm:rounded-3xl">
+                  {loadingType === 'weekly' ? <RefreshCw className="animate-spin" size={24} /> : <Calendar size={32} />}
                 </div>
+                <span className="font-black text-lg sm:text-xl text-white">برنامه هفتگی</span>
               </button>
             </div>
             {displayPlan.length > 0 && (
-              <div ref={planResultsRef} className="animate-enter pt-4">
-                <div className="flex items-center justify-between mb-8 border-b border-slate-200 pb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-teal-600 text-white rounded-xl shadow-lg shadow-teal-200">
-                      <Sparkles size={20} />
-                    </div>
-                    <h2 className="text-2xl font-black text-slate-800">
-                      {lastPlanType === 'daily' ? 'برنامه غذایی پیشنهادی برای امروز' : 'برنامه غذایی پیشنهادی برای هفته پیش رو'}
-                    </h2>
-                  </div>
-                  <button onClick={async () => { setDisplayPlan([]); if (currentUser) await UserService.updateProfile(currentUser.username, { weeklyPlan: [] }); }} className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all font-black text-xs">
-                    <Trash2 size={16} />
-                    <span>پاکسازی لیست</span>
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                  {displayPlan.map((plan, idx) => (
-                    <div key={`${plan.dish.id}-${idx}`} className="animate-enter" style={{ animationDelay: `${idx * 0.05}s` }}>
-                      <MealCard plan={plan} user={currentUser!} onUpdateUser={setCurrentUser} />
-                    </div>
-                  ))}
-                </div>
+              <div ref={planResultsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+                {displayPlan.map((plan, idx) => (
+                  <MealCard key={idx} plan={plan} user={currentUser} onUpdateUser={setCurrentUser} />
+                ))}
               </div>
             )}
           </div>
         )}
-        {viewMode === 'pantry' && currentUser && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
-        {viewMode === 'search' && currentUser && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} />}
-        {viewMode === 'challenges' && currentUser && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={() => {}} />}
-        {viewMode === 'settings' && currentUser && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
+        {viewMode === 'pantry' && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
+        {viewMode === 'search' && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} externalSearchTerm={footerSearchTerm} />}
+        {viewMode === 'challenges' && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={() => {}} />}
+        {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {isShoppingListOpen && currentUser && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsShoppingListOpen(false)}>
-           <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-gray-100 rounded-full text-gray-500 z-[110] hover:bg-gray-200 transition-all no-print"><X size={20} /></button>
+      {/* فوتر هوشمند - بازگرداندن متن فیلترها و بهینه‌سازی سرعت واکنش */}
+      <div className="fixed bottom-2 sm:bottom-6 left-2 sm:left-6 right-2 sm:right-6 z-[110] no-print">
+        <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] h-[75px] sm:h-[85px] px-3 sm:px-8 flex items-center">
+          <div className="flex w-full items-center justify-between gap-1">
+            
+            {/* فیلترها و جستجو - با متن کامل برای درک بهتر */}
+            <div className="flex items-center shrink-0">
+              {viewMode === 'search' ? (
+                <div className="relative w-36 sm:w-64 md:w-80 animate-enter">
+                  <input
+                    type="text"
+                    placeholder="جستجو..."
+                    value={footerSearchTerm}
+                    onChange={(e) => setFooterSearchTerm(e.target.value)}
+                    className="w-full pr-10 pl-3 py-2.5 bg-white/50 backdrop-blur-3xl border border-white/40 rounded-xl outline-none font-black text-[10px] sm:text-sm"
+                  />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} sm:size={20} />
+                </div>
+              ) : viewMode === 'plan' ? (
+                <div className="flex items-center gap-1 sm:gap-2.5 animate-enter">
+                  <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all duration-200 ${currentUser.onlyFavoritesMode ? 'bg-rose-500 text-white border-rose-500 shadow-sm' : 'bg-white/40 border-white/20 text-slate-700'}`}>
+                    <Heart size={14} sm:size={18} fill={currentUser.onlyFavoritesMode ? "white" : "none"} />
+                    <span className="text-[9px] sm:text-xs font-black">محبوب</span>
+                  </button>
+                  <button onClick={() => handleToggleFilter('meatlessMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all duration-200 ${currentUser.meatlessMode ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white/40 border-white/20 text-slate-700'}`}>
+                    <Leaf size={14} sm:size={18} />
+                    <span className="text-[9px] sm:text-xs font-black">گیاهی</span>
+                  </button>
+                  <button onClick={() => handleToggleFilter('quickMealsMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all duration-200 ${currentUser.quickMealsMode ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white/40 border-white/20 text-slate-700'}`}>
+                    <Clock size={14} sm:size={18} />
+                    <span className="text-[9px] sm:text-xs font-black">سریع</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            
+            {/* پیام وضعیت مرکزی */}
+            <div className="flex-1 flex items-center justify-center px-1 overflow-hidden">
+              {activeChallengeName ? (
+                <div className="flex items-center gap-1.5 bg-indigo-50/50 backdrop-blur-3xl text-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-100/30 animate-pulse">
+                  <Trophy size={12} />
+                  <span className="text-[8px] font-black whitespace-nowrap">{activeChallengeName}</span>
+                </div>
+              ) : activeFilterInfo ? (
+                <div className={`flex items-center gap-1.5 backdrop-blur-3xl px-3 py-1.5 rounded-xl border animate-pulse ${activeFilterInfo.color}`}>
+                  <activeFilterInfo.icon size={12} />
+                  <span className="text-[8px] font-black leading-tight line-clamp-1">{activeFilterInfo.text}</span>
+                </div>
+              ) : null}
+            </div>
+
+            {/* تنظیمات */}
+            <div className="flex items-center shrink-0">
+              <button 
+                onClick={() => setViewMode('settings')} 
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all duration-300 ${
+                  viewMode === 'settings' 
+                  ? 'bg-slate-900 text-white shadow-lg' 
+                  : 'bg-white/40 border border-white/20 text-slate-700 hover:bg-white/60'
+                }`}
+              >
+                <span className="text-[10px] sm:text-base font-black">تنظیمات</span>
+                <Settings size={18} sm:size={22} className={viewMode === 'settings' ? 'animate-spin-slow' : ''} />
+              </button>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      {isShoppingListOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setIsShoppingListOpen(false)}>
+           <div className="relative w-full max-w-2xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 sm:top-6 left-4 sm:left-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 z-[210] transition-all"><X size={18} /></button>
               <div className="flex-grow overflow-y-auto">
                 <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
               </div>
