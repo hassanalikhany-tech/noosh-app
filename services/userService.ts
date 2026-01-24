@@ -296,12 +296,31 @@ export const UserService = {
     return UserService.updateProfile(username, { blacklistedDishIds: blacklist, favoriteDishIds: favorites });
   },
 
-  extendSubscription: async (username: string, days: number): Promise<UserProfile> => {
-    const user = await UserService.getCurrentUser();
-    if (!user) throw new Error("User not found");
-    const currentExpiry = user.subscriptionExpiry || Date.now();
-    const newExpiry = Math.max(currentExpiry, Date.now()) + (days * 24 * 60 * 60 * 1000);
-    return UserService.updateProfile(username, { subscriptionExpiry: newExpiry });
+  extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
+    // مرحله ۱: دریافت اطلاعات دقیق کاربر مورد نظر از دیتابیس (نه مدیر)
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
+    
+    const userData = userDoc.data() as UserProfile;
+    const now = Date.now();
+    
+    // مرحله ۲: محاسبه مبدا تمدید
+    // اگر اعتبار فعلی کاربر هنوز تمام نشده، به انتهای آن اضافه می‌کنیم
+    // اگر تمام شده، از همین لحظه اضافه می‌کنیم
+    const currentExpiry = userData.subscriptionExpiry || now;
+    const baseTime = currentExpiry > now ? currentExpiry : now;
+    
+    // مرحله ۳: افزودن دقیق ۳۱ روز به میلی‌ثانیه
+    const thirtyOneDaysInMs = 31 * 24 * 60 * 60 * 1000;
+    const newExpiry = baseTime + thirtyOneDaysInMs;
+    
+    // مرحله ۴: بروزرسانی دیتابیس برای همان کاربر
+    await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
+    
+    notifyUpdate();
+    return { ...userData, subscriptionExpiry: newExpiry };
   },
 
   getAllUsers: async (): Promise<{ success: boolean; data: any[]; error?: string }> => {
@@ -314,13 +333,11 @@ export const UserService = {
 
   deleteUser: async (uid: string): Promise<void> => {
     try {
-      // تغییر اطلاعات برای آزادسازی ایمیل و یوزرنیم
-      // این کار باعث می‌شود اگر ادمین اکانت را از Auth پاک کرد، ثبت‌نام جدید بدون تداخل با رکوردهای قدیمی انجام شود.
       await updateDoc(doc(db, "users", uid), { 
         isDeleted: true,
         email: `deleted_${uid}@noosh.old`,
         username: `deleted_${uid}`,
-        registeredDevices: [] // پاکسازی دستگاه‌ها
+        registeredDevices: [] 
       });
       notifyUpdate();
     } catch (e) {

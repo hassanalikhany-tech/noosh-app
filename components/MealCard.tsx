@@ -64,7 +64,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
 
   const handleCardClick = () => {
     if (isLocked) {
-      alert("مشترک گرامی، شما در حال حاضر از نسخه محدود استفاده می‌کنید. با پرداخت حق اشتراک و تایید نهایی توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      alert("مشترک گرامی، دسترسی به این محتوا نیازمند تایید حساب توسط مدیریت می‌باشد.");
       return;
     }
     setIsModalOpen(true);
@@ -73,17 +73,17 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-[2.5rem] shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.08] hover:z-50 transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
+        className={`group bg-white rounded-[2.5rem] shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] hover:scale-[1.1] hover:z-[60] transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
-        <div className="relative h-56 overflow-hidden">
-          <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-1000 ${isLocked ? '' : 'group-hover:scale-125 group-hover:brightness-110'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
+        <div className="relative h-60 overflow-hidden">
+          <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-700 ${isLocked ? '' : 'group-hover:scale-125 group-hover:brightness-110'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
           
           {isLocked && (
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-20">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-20">
                <div className="bg-white/95 p-4 rounded-[1.5rem] shadow-2xl flex flex-col items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                  <Lock size={28} className="text-rose-600" />
-                  <span className="text-[10px] font-black text-slate-800">مخصوص اعضای ویژه</span>
+                  <Lock size={32} className="text-rose-600" />
+                  <span className="text-[10px] font-black text-slate-800">نیاز به تایید مدیر</span>
                </div>
             </div>
           )}
@@ -93,10 +93,10 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
           {!isLocked && (
             <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                <div className="flex gap-2">
-                  <button onClick={handleToggleFavorite} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white/50 active:scale-90 ${localFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-rose-50'}`}>
+                  <button onClick={handleToggleFavorite} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white active:scale-90 ${localFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-rose-500'}`}>
                     <Heart size={22} fill={localFavorite ? "currentColor" : "none"} />
                   </button>
-                  <button onClick={handleToggleBlacklist} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white/50 active:scale-90 ${localBlacklisted ? 'bg-slate-900 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-black'}`}>
+                  <button onClick={handleToggleBlacklist} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white active:scale-90 ${localBlacklisted ? 'bg-slate-900 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-black'}`}>
                     <ThumbsDown size={22} fill={localBlacklisted ? "currentColor" : "none"} />
                   </button>
                </div>
@@ -125,10 +125,10 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
              </p>
           </div>
           
-          <button className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' : 'bg-slate-900 text-white group-hover:bg-teal-600 shadow-xl shadow-slate-200 group-hover:shadow-teal-100'}`}>
+          <button className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' : 'bg-slate-900 text-white group-hover:bg-teal-600 shadow-xl shadow-slate-200'}`}>
              {isLocked ? <Lock size={18} /> : <Utensils size={18} />} 
-             <span>{isLocked ? 'غیرفعال (نیاز به ارتقا)' : 'مشاهده کامل دستور'}</span> 
-             {!isLocked && <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />}
+             <span>{isLocked ? 'غیرفعال (نیاز به تایید)' : 'مشاهده کامل دستور'}</span> 
+             {!isLocked && <ChevronLeft size={18} className="group-hover:-translate-x-2 transition-transform" />}
           </button>
         </div>
       </div>
