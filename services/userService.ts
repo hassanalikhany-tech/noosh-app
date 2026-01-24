@@ -134,8 +134,16 @@ export const UserService = {
   },
 
   resetUserDevices: async (uid: string): Promise<void> => {
-    await updateDoc(doc(db, "users", uid), { registeredDevices: [] });
-    notifyUpdate();
+    try {
+      const userDocRef = doc(db, "users", uid);
+      await updateDoc(userDocRef, { registeredDevices: [] });
+      notifyUpdate();
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        throw new Error("خطای دسترسی: ادمین اجازه تغییر اطلاعات کاربران دیگر را ندارد. لطفاً Firestore Rules را در کنسول فایربیس اصلاح کنید.");
+      }
+      throw error;
+    }
   },
 
   sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
@@ -266,8 +274,15 @@ export const UserService = {
   },
 
   toggleUserApproval: async (uid: string, currentStatus: boolean) => {
-    await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
-    notifyUpdate();
+    try {
+      await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
+      notifyUpdate();
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        throw new Error("خطای دسترسی: قوانین فایربیس اجازه تغییر وضعیت کاربران دیگر را به شما نمی‌دهد.");
+      }
+      throw error;
+    }
   },
 
   updateShoppingList: async (username: string, items: ShoppingItem[]): Promise<UserProfile> => {
@@ -297,30 +312,36 @@ export const UserService = {
   },
 
   extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
-    // مرحله ۱: دریافت اطلاعات دقیق کاربر مورد نظر از دیتابیس (نه مدیر)
-    const userDocRef = doc(db, "users", uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
-    
-    const userData = userDoc.data() as UserProfile;
-    const now = Date.now();
-    
-    // مرحله ۲: محاسبه مبدا تمدید
-    // اگر اعتبار فعلی کاربر هنوز تمام نشده، به انتهای آن اضافه می‌کنیم
-    // اگر تمام شده، از همین لحظه اضافه می‌کنیم
-    const currentExpiry = userData.subscriptionExpiry || now;
-    const baseTime = currentExpiry > now ? currentExpiry : now;
-    
-    // مرحله ۳: افزودن دقیق ۳۱ روز به میلی‌ثانیه
-    const thirtyOneDaysInMs = 31 * 24 * 60 * 60 * 1000;
-    const newExpiry = baseTime + thirtyOneDaysInMs;
-    
-    // مرحله ۴: بروزرسانی دیتابیس برای همان کاربر
-    await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
-    
-    notifyUpdate();
-    return { ...userData, subscriptionExpiry: newExpiry };
+    try {
+      // دریافت اطلاعات دقیق کاربر هدف از دیتابیس
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
+      
+      const userData = userDoc.data() as UserProfile;
+      const now = Date.now();
+      
+      // اگر اعتبار فعلی تمام نشده، ۳۱ روز به انتهای آن اضافه کن
+      // اگر اعتبار تمام شده، ۳۱ روز از همین لحظه حساب کن
+      const currentExpiry = userData.subscriptionExpiry || now;
+      const baseTime = currentExpiry > now ? currentExpiry : now;
+      
+      // عدد دقیق میلی‌ثانیه برای ۳۱ روز
+      const extensionMs = 31 * 24 * 60 * 60 * 1000;
+      const newExpiry = baseTime + extensionMs;
+      
+      // بروزرسانی دیتابیس کاربر هدف
+      await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
+      
+      notifyUpdate();
+      return { ...userData, subscriptionExpiry: newExpiry };
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        throw new Error("خطای دسترسی: شما اجازه تمدید اشتراک دیگران را ندارید. (Firestore Rules)");
+      }
+      throw error;
+    }
   },
 
   getAllUsers: async (): Promise<{ success: boolean; data: any[]; error?: string }> => {
@@ -340,8 +361,10 @@ export const UserService = {
         registeredDevices: [] 
       });
       notifyUpdate();
-    } catch (e) {
-      console.error("Soft delete error:", e);
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        throw new Error("خطای دسترسی: اجازه حذف کاربر از سمت سرور صادر نشد.");
+      }
       throw e;
     }
   },

@@ -43,7 +43,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         setPermissionError(null);
       } else {
         if (result.error === 'permission-denied' || result.error?.includes('permissions')) {
-          setPermissionError('سطح دسترسی شما کافی نیست. ادمین باید دسترسی isAdmin را برای شما فعال کند.');
+          setPermissionError('سطح دسترسی شما کافی نیست. ادمین باید دسترسی isAdmin را برای شما فعال کند و Firestore Rules را در کنسول فایربیس تنظیم نماید.');
         } else {
           setPermissionError(result.error || 'خطا در بارگذاری اطلاعات.');
         }
@@ -65,7 +65,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
       await UserService.toggleUserApproval(uid, currentStatus);
       setUsers(prev => prev.map(u => u.uid === uid ? { ...u, isApproved: !currentStatus } : u));
     } catch (err: any) {
-      alert("خطای دسترسی یا شبکه: " + (err.message || "امکان تغییر وضعیت وجود ندارد"));
+      alert(err.message || "خطای غیرمنتظره در تغییر وضعیت تایید");
     } finally {
       setProcessingAction(null);
     }
@@ -77,8 +77,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
     try {
       await UserService.resetUserDevices(uid);
       setUsers(prev => prev.map(u => u.uid === uid ? { ...u, registeredDevices: [] } : u));
+      alert("تمامی دستگاه‌های متصل به این کاربر با موفقیت حذف شدند.");
     } catch (err: any) {
-      alert("خطا: " + err.message);
+      alert(err.message);
     } finally {
       setProcessingAction(null);
     }
@@ -87,11 +88,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
   const handleExtend = async (uid: string) => {
     setProcessingAction({ uid, action: 'extend' });
     try {
-      // استفاده از UID کاربر هدف برای تمدید دقیق
       const updatedUser = await UserService.extendSubscription(uid, 31);
       setUsers(prev => prev.map(u => u.uid === uid ? { ...u, subscriptionExpiry: updatedUser.subscriptionExpiry } : u));
+      alert("اشتراک کاربر دقیقاً ۳۱ روز تمدید شد.");
     } catch (err: any) {
-      alert("خطا در تمدید: " + err.message);
+      alert(err.message);
     } finally {
       setProcessingAction(null);
     }
@@ -106,7 +107,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
       await UserService.deleteUser(uid);
       setUsers(prev => prev.filter(u => u.uid !== uid));
     } catch (err: any) {
-      alert(`خطا: ${err.message}`);
+      alert(err.message);
     } finally {
       setProcessingAction(null);
     }
@@ -164,12 +165,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
   if (permissionError) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-50 p-6 dir-rtl text-right">
-        <div className="max-w-md w-full bg-white p-8 rounded-[2.5rem] shadow-2xl border border-rose-100 flex flex-col items-center gap-6">
-          <div className="p-5 bg-rose-50 text-rose-600 rounded-full">
+        <div className="max-w-md w-full bg-white p-8 rounded-[2.5rem] shadow-2xl border border-rose-100 flex flex-col items-center gap-6 text-center">
+          <div className="p-5 bg-rose-50 text-rose-600 rounded-full animate-pulse">
             <ShieldAlert size={48} />
           </div>
-          <h2 className="text-xl font-black text-slate-800">خطای دسترسی مدیریتی</h2>
-          <p className="text-sm text-slate-500 font-bold leading-relaxed text-center">{permissionError}</p>
+          <h2 className="text-xl font-black text-slate-800">خطای دسترسی ادمین</h2>
+          <p className="text-sm text-slate-500 font-bold leading-relaxed">{permissionError}</p>
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 text-[10px] text-amber-700 font-bold leading-relaxed">
+            راهنما: در کنسول فایربیس به بخش Rules بروید و اجازه نوشتن (Write) را برای کاربر ادمین در مجموعه users فعال کنید.
+          </div>
           <div className="flex gap-3 w-full">
              <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-slate-900 text-white rounded-2xl font-black text-sm">تلاش مجدد</button>
              <button onClick={onLogout} className="flex-1 py-3 bg-rose-600 text-white rounded-2xl font-black text-sm">خروج</button>
