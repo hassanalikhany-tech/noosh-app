@@ -87,11 +87,11 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
+        className={`group bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:z-20 transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
         <div className="relative h-52 overflow-hidden">
-          <DishVisual category={plan.dish.category} className={`w-full h-full transition-transform duration-700 ${isLocked ? '' : 'group-hover:scale-105'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
+          <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-700 ${isLocked ? '' : 'group-hover:scale-110 group-hover:brightness-110'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
           
           {isLocked && (
             <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-20">
@@ -140,7 +140,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
           </div>
         </div>
         
-        <div className="p-5 flex flex-col flex-grow text-right">
+        <div className="p-5 flex flex-col flex-grow text-right bg-gradient-to-b from-white to-slate-50/20">
           <h3 className={`text-xl font-black transition-colors line-clamp-1 mb-2 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{plan.dish.name}</h3>
           <div className="flex gap-3 mb-3 text-xs text-slate-500 font-black">
              <span className="flex items-center gap-1 bg-rose-50 text-rose-600 px-2 py-1 rounded-md"><Flame size={12} /> {toPersianDigits(calories)} کالری</span>
@@ -149,7 +149,9 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
           {localBlacklisted && (
             <div className="mb-2 bg-slate-900 text-white text-[10px] font-black py-1 px-2 rounded-lg inline-block w-fit">در لیست سیاه شماست</div>
           )}
-          <p className="text-slate-500 text-sm line-clamp-2 mb-4 flex-grow leading-relaxed font-bold">{plan.dish.description}</p>
+          <p className={`text-slate-500 text-sm mb-4 flex-grow leading-relaxed font-bold transition-all duration-500 ${isLocked ? '' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
+            {plan.dish.description}
+          </p>
           
           <button className={`w-full mt-auto flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 text-slate-700 group-hover:bg-teal-600 group-hover:text-white group-hover:shadow-lg'}`}>
              {isLocked ? <Lock size={16} /> : <Utensils size={18} />} <span>{isLocked ? 'غیرفعال (تایید نشده)' : 'مشاهده دستور'}</span> {!isLocked && <ChevronLeft size={16} />}
