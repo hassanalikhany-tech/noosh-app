@@ -17,11 +17,9 @@ interface MealCardProps {
 const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // استفاده از وضعیت محلی برای پاسخگویی آنی (Optimistic UI)
   const [localFavorite, setLocalFavorite] = useState(user?.favoriteDishIds?.includes(plan.dish.id));
   const [localBlacklisted, setLocalBlacklisted] = useState(user?.blacklistedDishIds?.includes(plan.dish.id));
   
-  // همگام‌سازی وضعیت محلی در صورت تغییر پروفایل کاربر از بیرون
   useEffect(() => {
     setLocalFavorite(user?.favoriteDishIds?.includes(plan.dish.id));
     setLocalBlacklisted(user?.blacklistedDishIds?.includes(plan.dish.id));
@@ -39,19 +37,13 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLocked) return;
-    
     const nextFavorite = !localFavorite;
-    
-    // ۱. به‌روزرسانی آنی در ظاهر
     setLocalFavorite(nextFavorite);
-    if (nextFavorite) setLocalBlacklisted(false); // انحصار متقابل
-    
-    // ۲. ارسال به سرور و اطلاع‌رسانی به والد
+    if (nextFavorite) setLocalBlacklisted(false);
     try {
       const updatedUser = await UserService.toggleFavorite(user.username, plan.dish.id);
       if (onUpdateUser) onUpdateUser(updatedUser);
     } catch (err) {
-      // بازگشت به حالت قبل در صورت خطا
       setLocalFavorite(!nextFavorite);
     }
   };
@@ -59,26 +51,20 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   const handleToggleBlacklist = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLocked) return;
-    
     const nextBlacklisted = !localBlacklisted;
-
-    // ۱. به‌روزرسانی آنی در ظاهر
     setLocalBlacklisted(nextBlacklisted);
-    if (nextBlacklisted) setLocalFavorite(false); // انحصار متقابل
-    
-    // ۲. ارسال به سرور و اطلاع‌رسانی به والد
+    if (nextBlacklisted) setLocalFavorite(false);
     try {
       const updatedUser = await UserService.toggleBlacklist(user.username, plan.dish.id);
       if (onUpdateUser) onUpdateUser(updatedUser);
     } catch (err) {
-      // بازگشت به حالت قبل در صورت خطا
       setLocalBlacklisted(!nextBlacklisted);
     }
   };
 
   const handleCardClick = () => {
     if (isLocked) {
-      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      alert("مشترک گرامی، شما در حال حاضر از نسخه محدود استفاده می‌کنید. با پرداخت حق اشتراک و تایید نهایی توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
       return;
     }
     setIsModalOpen(true);
@@ -87,74 +73,62 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:z-20 transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
+        className={`group bg-white rounded-[2.5rem] shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.08] hover:z-50 transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
-        <div className="relative h-52 overflow-hidden">
-          <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-700 ${isLocked ? '' : 'group-hover:scale-110 group-hover:brightness-110'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
+        <div className="relative h-56 overflow-hidden">
+          <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-1000 ${isLocked ? '' : 'group-hover:scale-125 group-hover:brightness-110'}`} iconSize={64} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
           
           {isLocked && (
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-20">
-               <div className="bg-white/90 p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-1">
-                  <Lock size={24} className="text-slate-800" />
-                  <span className="text-[10px] font-black text-slate-800">نیاز به تایید مدیر</span>
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-20">
+               <div className="bg-white/95 p-4 rounded-[1.5rem] shadow-2xl flex flex-col items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                  <Lock size={28} className="text-rose-600" />
+                  <span className="text-[10px] font-black text-slate-800">مخصوص اعضای ویژه</span>
                </div>
             </div>
           )}
 
-          <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-black text-gray-800 shadow-sm z-10 border border-gray-100">{plan.dayName}</div>
+          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-black text-gray-800 shadow-md z-10 border border-gray-100">{plan.dayName}</div>
           
           {!isLocked && (
-            <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center z-10">
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                <div className="flex gap-2">
-                  <button 
-                    onClick={handleToggleFavorite} 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 active:scale-90 ${
-                      localFavorite ? 'bg-rose-500 text-white shadow-rose-200 scale-110' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-rose-500'
-                    }`}
-                    title="علاقه‌مندی"
-                  >
-                    <Heart size={20} fill={localFavorite ? "currentColor" : "none"} className={localFavorite ? "animate-pulse" : ""} />
+                  <button onClick={handleToggleFavorite} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white/50 active:scale-90 ${localFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-rose-50'}`}>
+                    <Heart size={22} fill={localFavorite ? "currentColor" : "none"} />
                   </button>
-                  <button 
-                    onClick={handleToggleBlacklist} 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ring-1 ring-black/5 active:scale-90 ${
-                      localBlacklisted ? 'bg-slate-900 text-white scale-110' : 'bg-white/80 backdrop-blur-md text-slate-500 hover:text-black'
-                    }`}
-                    title="دیگر پیشنهاد نده"
-                  >
-                    <ThumbsDown size={20} fill={localBlacklisted ? "currentColor" : "none"} className={localBlacklisted ? "animate-pulse" : ""} />
+                  <button onClick={handleToggleBlacklist} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white/50 active:scale-90 ${localBlacklisted ? 'bg-slate-900 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-black'}`}>
+                    <ThumbsDown size={22} fill={localBlacklisted ? "currentColor" : "none"} />
                   </button>
                </div>
-               {user?.dietMode && calories < 500 && (
-                 <div className="bg-emerald-500 text-white px-2 py-1 rounded-lg text-[10px] font-black shadow-sm flex items-center gap-1"><Leaf size={10} /> رژیمی</div>
-               )}
             </div>
           )}
 
-          <div className="absolute top-3 left-3 z-10">
-            <div className={`px-2 py-1 rounded-lg text-[10px] font-black shadow-sm border ${
-              natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-200 text-orange-700' : 
-              natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+          <div className="absolute top-4 left-4 z-10">
+            <div className={`px-3 py-1 rounded-xl text-[10px] font-black shadow-md border ${
+              natureInfo.type === 'hot' ? 'bg-orange-500 text-white border-orange-400' : 
+              natureInfo.type === 'cold' ? 'bg-blue-500 text-white border-blue-400' : 'bg-emerald-500 text-white border-emerald-400'
             }`}>طبع {natureInfo.label}</div>
           </div>
         </div>
         
-        <div className="p-5 flex flex-col flex-grow text-right bg-gradient-to-b from-white to-slate-50/20">
-          <h3 className={`text-xl font-black transition-colors line-clamp-1 mb-2 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{plan.dish.name}</h3>
-          <div className="flex gap-3 mb-3 text-xs text-slate-500 font-black">
-             <span className="flex items-center gap-1 bg-rose-50 text-rose-600 px-2 py-1 rounded-md"><Flame size={12} /> {toPersianDigits(calories)} کالری</span>
-             <span className="flex items-center gap-1 bg-orange-50 text-orange-600 px-2 py-1 rounded-md"><Clock size={12} /> {toPersianDigits(time)} دقیقه</span>
-          </div>
-          {localBlacklisted && (
-            <div className="mb-2 bg-slate-900 text-white text-[10px] font-black py-1 px-2 rounded-lg inline-block w-fit">در لیست سیاه شماست</div>
-          )}
-          <p className={`text-slate-500 text-sm mb-4 flex-grow leading-relaxed font-bold transition-all duration-500 ${isLocked ? '' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
-            {plan.dish.description}
-          </p>
+        <div className="p-6 flex flex-col flex-grow text-right bg-gradient-to-b from-white to-slate-50/10">
+          <h3 className={`text-2xl font-black transition-colors mb-3 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{plan.dish.name}</h3>
           
-          <button className={`w-full mt-auto flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 text-slate-700 group-hover:bg-teal-600 group-hover:text-white group-hover:shadow-lg'}`}>
-             {isLocked ? <Lock size={16} /> : <Utensils size={18} />} <span>{isLocked ? 'غیرفعال (تایید نشده)' : 'مشاهده دستور'}</span> {!isLocked && <ChevronLeft size={16} />}
+          <div className="flex gap-3 mb-4 text-[10px] text-slate-500 font-black">
+             <span className="flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 py-1.5 rounded-xl border border-rose-100"><Flame size={14} /> {toPersianDigits(calories)} کالری</span>
+             <span className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl border border-orange-100"><Clock size={14} /> {toPersianDigits(time)} دقیقه</span>
+          </div>
+
+          <div className="relative flex-grow overflow-hidden">
+             <p className={`text-slate-500 text-sm leading-relaxed font-bold transition-all duration-700 ${isLocked ? 'line-clamp-2' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
+               {plan.dish.description}
+             </p>
+          </div>
+          
+          <button className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-sm transition-all ${isLocked ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' : 'bg-slate-900 text-white group-hover:bg-teal-600 shadow-xl shadow-slate-200 group-hover:shadow-teal-100'}`}>
+             {isLocked ? <Lock size={18} /> : <Utensils size={18} />} 
+             <span>{isLocked ? 'غیرفعال (نیاز به ارتقا)' : 'مشاهده کامل دستور'}</span> 
+             {!isLocked && <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />}
           </button>
         </div>
       </div>

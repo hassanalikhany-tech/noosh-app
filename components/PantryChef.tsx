@@ -50,7 +50,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   const handleDishClick = (dish: Dish) => {
     const isAccessible = RecipeService.isDishAccessible(dish.id, user);
     if (!isAccessible) {
-      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      alert("مشترک گرامی، دسترسی به این دستور پخت محدود به اعضای ویژه می‌باشد. با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و محتوای این اپلیکیشن استفاده کامل را بنمایید.");
       return;
     }
     setSelectedDish(dish);
@@ -231,13 +231,13 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
             {results.map(({ dish, available, missing, matchCount, isProteinBoost, proteinDensity }) => {
               const isAccessible = RecipeService.isDishAccessible(dish.id, user);
               return (
-                <div key={dish.id} className={`bg-white rounded-[3.5rem] overflow-hidden shadow-sm hover:shadow-2xl border ${isProteinBoost ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-50'} flex flex-col group transition-all ${!isAccessible ? 'grayscale opacity-75' : ''}`}>
+                <div key={dish.id} className={`bg-white rounded-[3.5rem] overflow-hidden shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.08] hover:z-50 transition-all duration-500 border ${isProteinBoost ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-50'} flex flex-col group ${!isAccessible ? 'grayscale opacity-75' : ''}`}>
                   <div className="h-64 relative cursor-pointer overflow-hidden" onClick={() => handleDishClick(dish)}>
-                    <DishVisual category={dish.category} className="w-full h-full transition-transform duration-1000 group-hover:scale-110" imageUrl={dish.imageUrl} dishId={dish.id} />
+                    <DishVisual category={dish.category} className="w-full h-full transition-transform duration-1000 group-hover:scale-125 group-hover:brightness-110" imageUrl={dish.imageUrl} dishId={dish.id} />
                     {!isAccessible && (
-                      <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center z-20">
-                        <div className="bg-white/90 p-4 rounded-3xl shadow-xl">
-                          <Lock size={32} className="text-slate-800" />
+                      <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] flex items-center justify-center z-20">
+                        <div className="bg-white/95 p-5 rounded-[2rem] shadow-2xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                          <Lock size={32} className="text-rose-600" />
                         </div>
                       </div>
                     )}
@@ -266,14 +266,18 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                           <div className="flex flex-wrap gap-2">{missing.map(m => <span key={m.name} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border ${m.isAdditive ? 'bg-slate-50 text-slate-400' : 'bg-rose-50 text-rose-700'}`}>{m.name}</span>)}</div>
                         </div>
                       )}
+                      
+                      <div className="relative overflow-hidden pt-4 border-t border-slate-100">
+                         <p className={`text-slate-500 text-xs font-bold leading-relaxed transition-all duration-700 ${!isAccessible ? 'line-clamp-2' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
+                            {dish.description}
+                         </p>
+                      </div>
                     </div>
                     <div className="mt-auto flex flex-col gap-4">
                       {missing.length > 0 && <button onClick={(e) => handleAddMissingToCart(e, missing, dish.name)} className={`w-full py-5 rounded-[2rem] text-sm font-black flex items-center justify-center gap-3 transition-all ${addingToCartId === dish.name ? 'bg-emerald-500 text-white shadow-lg scale-[0.98]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{addingToCartId === dish.name ? <CheckCircle2 size={20} /> : <ShoppingCart size={20}/>} خرید مواد کسری</button>}
-                      <button onClick={() => handleDishClick(dish)} className="w-full py-5 bg-slate-950 text-white rounded-[2rem] font-black text-sm transition-all hover:bg-teal-500 shadow-xl group">
-                        <span className="flex items-center justify-center gap-2">
-                          {isAccessible ? 'مشاهده دستور پخت' : 'ارتقای حساب کاربری'} 
-                          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        </span>
+                      <button onClick={() => handleDishClick(dish)} className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all shadow-xl flex items-center justify-center gap-2 ${isAccessible ? 'bg-slate-950 text-white hover:bg-teal-600' : 'bg-rose-600 text-white hover:bg-rose-700 animate-pulse'}`}>
+                        {isAccessible ? 'مشاهده دستور پخت' : 'ارتقای حساب کاربری (اعضای ویژه)'} 
+                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                       </button>
                     </div>
                   </div>

@@ -80,7 +80,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
   const handleDishClick = (dish: Dish) => {
     const isAccessible = RecipeService.isDishAccessible(dish.id, user);
     if (!isAccessible) {
-      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      alert("مشترک گرامی، دسترسی به این دستور پخت محدود به اعضای ویژه می‌باشد. با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و محتوای این اپلیکیشن استفاده کامل را بنمایید.");
       return;
     }
     setSelectedDish(dish);
@@ -113,34 +113,38 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
         {paginatedDishes.map((dish) => {
           const isAccessible = RecipeService.isDishAccessible(dish.id, user);
           return (
             <div 
               key={dish.id} 
-              className={`group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col hover:shadow-xl transition-all cursor-pointer ${!isAccessible ? 'grayscale opacity-70' : ''}`} 
+              className={`group bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.08] hover:z-50 transition-all duration-500 border border-slate-100 flex flex-col cursor-pointer ${!isAccessible ? 'grayscale opacity-70' : ''}`} 
               onClick={() => handleDishClick(dish)}
             >
-               <div className="h-48 relative overflow-hidden">
-                  <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} className="w-full h-full group-hover:scale-110 transition-transform duration-700" />
+               <div className="h-56 relative overflow-hidden">
+                  <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} className="w-full h-full group-hover:scale-125 transition-transform duration-1000 group-hover:brightness-110" />
                   {!isAccessible && (
-                    <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center z-20">
-                      <div className="bg-white/90 p-2.5 rounded-2xl shadow-lg border border-slate-200">
-                        <Lock size={20} className="text-slate-800" />
+                    <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] flex items-center justify-center z-20">
+                      <div className="bg-white/95 p-3.5 rounded-[1.5rem] shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <Lock size={24} className="text-rose-600" />
                       </div>
                     </div>
                   )}
                   <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-lg text-[10px] font-black text-slate-800 shadow-sm">{CATEGORY_LABELS[dish.category]}</span>
+                    <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-xl text-[10px] font-black text-slate-800 shadow-md">{CATEGORY_LABELS[dish.category]}</span>
                   </div>
                </div>
-               <div className="p-6">
-                  <h4 className="font-black text-lg text-slate-800 mb-2 group-hover:text-teal-600 transition-colors flex items-center justify-between">
+               <div className="p-6 bg-gradient-to-b from-white to-slate-50/10 flex-grow">
+                  <h4 className="font-black text-xl text-slate-800 mb-3 group-hover:text-teal-600 transition-colors flex items-center justify-between">
                     {dish.name}
-                    {!isAccessible && <Lock size={14} className="text-slate-400" />}
+                    {!isAccessible && <Lock size={16} className="text-slate-400" />}
                   </h4>
-                  <p className="text-xs text-slate-400 line-clamp-2 h-8 font-bold leading-relaxed">{dish.description}</p>
+                  <div className="relative overflow-hidden">
+                    <p className={`text-xs text-slate-400 font-bold leading-relaxed transition-all duration-700 ${!isAccessible ? 'line-clamp-2' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
+                      {dish.description}
+                    </p>
+                  </div>
                </div>
             </div>
           );
