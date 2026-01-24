@@ -22,22 +22,25 @@ let isInitialized = false;
 const freeDishIds = new Set<string>();
 
 export const RecipeService = {
+  // مقداردهی اولیه هوشمند با اولویت دریافت از ابر
   initialize: async (onProgress?: (p: number, status: string) => void): Promise<{count: number, error?: string, source: string}> => {
     try {
-      onProgress?.(20, 'در حال بررسی حافظه موقت دستگاه...');
+      onProgress?.(10, 'در حال بررسی حافظه موقت...');
       const localCache = await DB.getAll('dishes');
       
       if (localCache && localCache.length > 0) {
         cachedDishes = localCache;
         RecipeService.rebuildFreeAccessMap();
+        onProgress?.(30, 'داده‌های محلی بارگذاری شد. در حال همگام‌سازی با سرور...');
       }
 
-      onProgress?.(50, 'در حال دریافت اطلاعات از دیتابیس ابری...');
-      
-      const syncResult = await RecipeService.syncFromCloud(false); 
+      // تلاش برای همگام‌سازی خودکار با سرور
+      // از آنجا که این متد در ابتدای اپ فراخوانی می‌شود، 
+      // اگر کاربر لاگین باشد، داده‌های جدید را جایگزین می‌کند.
+      const syncResult = await RecipeService.syncFromCloud(true); 
 
       if (syncResult.count > 0) {
-        onProgress?.(100, 'دیتابیس ابری با موفقیت متصل شد.');
+        onProgress?.(100, 'دیتابیس ابری با موفقیت همگام شد.');
         isInitialized = true;
         return { count: syncResult.count, source: 'cloud' };
       }
@@ -51,7 +54,7 @@ export const RecipeService = {
 
     } catch (e: any) {
       console.error("Critical Init Error:", e);
-      return { count: 0, source: 'error', error: e.message };
+      return { count: cachedDishes.length || 0, source: 'error', error: e.message };
     }
   },
 
@@ -64,11 +67,14 @@ export const RecipeService = {
     });
   },
 
+  // همگام‌سازی با سرور - پارامتر پیش‌فرض به true تغییر یافت
   syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
     try {
+      // اگر هنوز کاربر لاگین نکرده باشد، نمی‌توانیم همگام‌سازی کنیم
       if (!auth.currentUser) return { count: 0, error: 'not-logged-in' };
 
       const q = query(collection(db, "dishes"), limit(3000));
+      // اجبار به خواندن از سرور برای اطمینان از دریافت آخرین تغییرات
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
       
@@ -88,15 +94,7 @@ export const RecipeService = {
         return { count: cloudDishes.length };
       }
       
-      if (snapshot.empty && forceServer) {
-        cachedDishes = [];
-        const dbInstance = await DB.init();
-        await dbInstance.transaction('dishes', 'readwrite').objectStore('dishes').clear();
-        window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { count: 0 } }));
-        return { count: 0 };
-      }
-
-      return { count: 0 };
+      return { count: cachedDishes.length };
     } catch (e: any) {
       console.error("Sync Error:", e.code || e.message);
       return { count: 0, error: e.code || 'unknown' };
@@ -154,21 +152,16 @@ export const RecipeService = {
 
   deleteDish: async (dishId: string): Promise<boolean> => {
     try {
-      // حذف چک کردن auth.currentUser برای جلوگیری از باگ‌های احتمالی در حالت ادمین
-      // فایربیس خودش در سطح Rules چک می‌کند.
       const dishRef = doc(db, "dishes", dishId);
       await deleteDoc(dishRef);
       
-      // آپدیت حافظه موقت
       cachedDishes = cachedDishes.filter(d => d.id !== dishId);
       await DB.delete('dishes', dishId);
       
       window.dispatchEvent(new CustomEvent('recipes-updated'));
-      console.log(`Dish ${dishId} successfully deleted from Firebase.`);
       return true;
     } catch (e: any) {
       console.error("Firebase Delete Doc Error:", e);
-      // پرتاب کردن خطا برای لایه UI
       throw e;
     }
   },
