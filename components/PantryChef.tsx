@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Layers, Trophy, Weight, ShieldCheck, Heart, Leaf, Lock } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Layers, Trophy, Weight, ShieldCheck, Heart, Leaf, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { PANTRY_ITEMS, SPICES_AND_ADDITIVES } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { UserService } from '../services/userService';
@@ -15,6 +15,95 @@ interface PantryChefProps {
 
 const PROTEIN_ITEMS = PANTRY_ITEMS.find(c => c.id === 'proteins')?.items || [];
 const MEAT_KEYWORDS = ['گوشت', 'مرغ', 'ماهی', 'میگو', 'فیله', 'ماهیچه', 'گردن', 'سردست', 'راسته', 'کباب', 'بوقلمون', 'بلدرچین'];
+
+// کامپوننت داخلی برای مدیریت اسکرول و نمایش فلش‌ها در هر دسته
+const CategoryItemsList: React.FC<{
+  items: string[];
+  selectedItems: string[];
+  dislikedIngredients: string[];
+  toggleItem: (item: string) => void;
+}> = ({ items, selectedItems, dislikedIngredients, toggleItem }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showTopArrow, setShowTopArrow] = useState(false);
+  const [showBottomArrow, setShowBottomArrow] = useState(false);
+
+  const checkScroll = () => {
+    const el = scrollRef.current;
+    if (el) {
+      const hasMoreBottom = el.scrollHeight > el.clientHeight + el.scrollTop + 5;
+      const hasMoreTop = el.scrollTop > 10;
+      setShowBottomArrow(hasMoreBottom);
+      setShowTopArrow(hasMoreTop);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    const timer = setTimeout(checkScroll, 100);
+    return () => clearTimeout(timer);
+  }, [items]);
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ 
+        top: scrollRef.current.scrollHeight, 
+        behavior: 'smooth' 
+      });
+    }
+  };
+
+  return (
+    <div className="relative flex flex-col h-full group/list">
+      {/* فلش بالا */}
+      {showTopArrow && (
+        <button 
+          onClick={scrollToTop}
+          className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 p-1.5 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-full shadow-lg text-teal-600 animate-bounce hover:bg-teal-50 transition-all"
+        >
+          <ChevronUp size={14} strokeWidth={3} />
+        </button>
+      )}
+
+      <div 
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex flex-wrap gap-2 overflow-y-auto h-64 no-scrollbar pr-0.5 pb-6"
+      >
+        {items.map((item) => {
+          const isSel = selectedItems.includes(item);
+          const isForbidden = dislikedIngredients?.includes(item);
+          return (
+            <button 
+              key={item} 
+              onClick={() => toggleItem(item)} 
+              className={`flex-grow px-2.5 py-2 rounded-xl text-[10px] font-black transition-all border-2 text-center leading-tight ${
+                isSel ? 'bg-teal-500 border-teal-500 text-navy-950 shadow-md scale-95' : 
+                isForbidden ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed' : 
+                'bg-slate-50 border-transparent text-slate-500 hover:border-teal-200'
+              }`}
+            >
+              {item} {isForbidden && <AlertCircle size={8} className="inline mr-0.5"/>}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* فلش پایین */}
+      {showBottomArrow && (
+        <button 
+          onClick={scrollToBottom}
+          className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-30 p-1.5 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-full shadow-lg text-teal-600 animate-bounce hover:bg-teal-50 transition-all"
+        >
+          <ChevronDown size={14} strokeWidth={3} />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -151,7 +240,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   }, [pantrySearchTerm]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-32 px-4 dir-rtl text-right">
+    <div className="max-w-7xl mx-auto space-y-6 pb-32 px-2 sm:px-4 dir-rtl text-right">
       {challengeWarning && (
         <div className="fixed inset-x-4 top-24 z-50 animate-bounce">
           <div className="max-w-md mx-auto bg-rose-600 text-white p-6 rounded-3xl shadow-2xl flex items-start gap-4 border-2 border-white/20">
@@ -162,64 +251,64 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
         </div>
       )}
 
-      <div className="relative group overflow-hidden metallic-navy rounded-[3rem] p-10 shadow-2xl border border-white/5">
+      <div className="relative group overflow-hidden metallic-navy rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border border-white/5">
         <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 animate-pulse"></div>
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="flex items-center gap-8 text-center lg:text-right flex-col lg:flex-row">
-            <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-teal-600 text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-teal-500/40 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
-              <ChefHat size={56} strokeWidth={1.5} />
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-12 relative z-10">
+          <div className="flex items-center gap-6 sm:gap-8 text-center lg:text-right flex-col lg:flex-row">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-teal-400 to-teal-600 text-white rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center shadow-2xl shadow-teal-500/40 transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
+              <ChefHat size={32} strokeWidth={1.5} className="sm:hidden" />
+              <ChefHat size={56} strokeWidth={1.5} className="hidden sm:block" />
             </div>
             <div className="max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-0 text-halo">آشپز برتر بر اساس مواد موجود و فیلترهای شخصی شما پیشنهاد می‌دهد</h2>
+              <h2 className="text-xl sm:text-3xl font-black text-white leading-tight mb-0 text-halo">آشپز برتر بر اساس مواد موجود و فیلترهای شخصی شما پیشنهاد می‌دهد</h2>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
             <div className="relative group/search flex-grow sm:w-80">
-              <input type="text" placeholder="جستجوی ماده غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full pr-14 pl-6 py-5 bg-white/5 border-2 border-white/10 focus:border-teal-500 rounded-[2rem] outline-none font-black text-white placeholder:text-slate-500" />
+              <input type="text" placeholder="جستجوی ماده غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full pr-14 pl-6 py-4 sm:py-5 bg-white/5 border-2 border-white/10 focus:border-teal-500 rounded-[1.5rem] sm:rounded-[2rem] outline-none font-black text-white placeholder:text-slate-500" />
               <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/search:text-teal-400" size={24} />
             </div>
-            <button onClick={findRecipes} disabled={selectedItems.length === 0 || isSearching} className="px-12 py-5 bg-teal-500 hover:bg-teal-400 text-navy-950 rounded-[2rem] font-black shadow-lg transition-all flex items-center justify-center gap-3">
+            <button onClick={findRecipes} disabled={selectedItems.length === 0 || isSearching} className="px-10 py-4 sm:py-5 bg-teal-500 hover:bg-teal-400 text-navy-950 rounded-[1.5rem] sm:rounded-[2rem] font-black shadow-lg transition-all flex items-center justify-center gap-3">
               {isSearching ? <div className="w-6 h-6 border-4 border-navy-950/30 border-t-navy-950 rounded-full animate-spin"></div> : <Sparkles size={24} />}
-              <span className="text-lg tracking-tight">چی میشه پخت؟</span>
+              <span className="text-base sm:text-lg tracking-tight">چی میشه پخت؟</span>
             </button>
           </div>
         </div>
       </div>
 
       {selectedItems.length > 0 && (
-        <div className="flex flex-wrap gap-3 animate-enter px-2">
-          <button onClick={() => setSelectedItems([])} className="px-6 py-3 bg-rose-500/10 text-rose-500 rounded-2xl text-xs font-black flex items-center gap-2 transition-all">
-            <X size={16} /> پاکسازی قفسه
+        <div className="flex flex-wrap gap-2 animate-enter px-2">
+          <button onClick={() => setSelectedItems([])} className="px-4 py-2.5 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-black flex items-center gap-1.5 transition-all">
+            <X size={14} /> پاکسازی قفسه
           </button>
           {selectedItems.map(item => (
-            <div key={item} className="px-5 py-3 bg-teal-500/10 text-teal-400 rounded-2xl text-xs font-black flex items-center gap-2 border border-teal-500/20 shadow-sm animate-enter">
-              <span className="w-2 h-2 bg-teal-400 rounded-full animate-glow"></span>
+            <div key={item} className="px-4 py-2.5 bg-teal-500/10 text-teal-400 rounded-xl text-[10px] font-black flex items-center gap-1.5 border border-teal-500/20 shadow-sm animate-enter">
+              <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-glow"></span>
               {item}
-              <button onClick={() => toggleItem(item)} className="mr-2 text-slate-500 hover:text-rose-500 transition-colors"><X size={16}/></button>
+              <button onClick={() => toggleItem(item)} className="mr-1 text-slate-500 hover:text-rose-500 transition-colors"><X size={14}/></button>
             </div>
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      {/* چیدمان ۴ ستونه دسته‌بندی‌ها */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {filteredCategories.map((category) => (
-          <div key={category.id} className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col h-full hover:shadow-xl transition-all">
-            <div className="flex items-center gap-4 mb-8 border-b border-slate-50 pb-6">
-              <div className="p-3 bg-slate-950 rounded-2xl text-white">
-                {category.id === 'proteins' ? <Drumstick size={20}/> : category.id === 'grains' ? <Wheat size={20}/> : category.id === 'vegetables' ? <Carrot size={20}/> : <UtensilsCrossed size={20}/>}
+          <div key={category.id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col h-[400px] hover:shadow-xl transition-all overflow-hidden">
+            <div className="flex items-center gap-3 mb-4 border-b border-slate-50 pb-4 shrink-0">
+              <div className="p-2 sm:p-3 bg-slate-950 rounded-xl sm:rounded-2xl text-white">
+                {category.id === 'proteins' ? <Drumstick size={16}/> : category.id === 'grains' ? <Wheat size={16}/> : category.id === 'vegetables' ? <Carrot size={16}/> : <UtensilsCrossed size={16}/>}
               </div>
-              <h3 className="font-black text-slate-800 text-lg">{category.title}</h3>
+              <h3 className="font-black text-slate-800 text-sm sm:text-base leading-tight">{category.title}</h3>
             </div>
-            <div className="flex flex-wrap gap-2.5 overflow-y-auto max-h-72 no-scrollbar pr-1">
-              {category.items.map((item) => {
-                const isSel = selectedItems.includes(item);
-                const isForbidden = user.dislikedIngredients?.includes(item);
-                return (
-                  <button key={item} onClick={() => toggleItem(item)} className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border-2 ${isSel ? 'bg-teal-500 border-teal-500 text-navy-950' : isForbidden ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed' : 'bg-slate-50 border-transparent text-slate-500 hover:border-teal-200'}`}>
-                    {item} {isForbidden && <AlertCircle size={10} className="inline mr-1"/>}
-                  </button>
-                )
-              })}
+            
+            <div className="flex-grow overflow-hidden relative">
+              <CategoryItemsList 
+                items={category.items}
+                selectedItems={selectedItems}
+                dislikedIngredients={user.dislikedIngredients || []}
+                toggleItem={toggleItem}
+              />
             </div>
           </div>
         ))}
