@@ -77,6 +77,15 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleDishClick = (dish: Dish) => {
+    const isAccessible = RecipeService.isDishAccessible(dish.id, user);
+    if (!isAccessible) {
+      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      return;
+    }
+    setSelectedDish(dish);
+  };
+
   const toPersian = (num: number) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
   return (
@@ -105,20 +114,37 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {paginatedDishes.map((dish) => (
-          <div key={dish.id} className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col hover:shadow-xl transition-all" onClick={() => setSelectedDish(dish)}>
-             <div className="h-48 relative overflow-hidden cursor-pointer">
-                <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} className="w-full h-full group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-lg text-[10px] font-black text-slate-800 shadow-sm">{CATEGORY_LABELS[dish.category]}</span>
-                </div>
-             </div>
-             <div className="p-6">
-                <h4 className="font-black text-lg text-slate-800 mb-2 group-hover:text-teal-600 transition-colors">{dish.name}</h4>
-                <p className="text-xs text-slate-400 line-clamp-2 h-8 font-bold leading-relaxed">{dish.description}</p>
-             </div>
-          </div>
-        ))}
+        {paginatedDishes.map((dish) => {
+          const isAccessible = RecipeService.isDishAccessible(dish.id, user);
+          return (
+            <div 
+              key={dish.id} 
+              className={`group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col hover:shadow-xl transition-all cursor-pointer ${!isAccessible ? 'grayscale opacity-70' : ''}`} 
+              onClick={() => handleDishClick(dish)}
+            >
+               <div className="h-48 relative overflow-hidden">
+                  <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} className="w-full h-full group-hover:scale-110 transition-transform duration-700" />
+                  {!isAccessible && (
+                    <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center z-20">
+                      <div className="bg-white/90 p-2.5 rounded-2xl shadow-lg border border-slate-200">
+                        <Lock size={20} className="text-slate-800" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute top-4 left-4">
+                    <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-lg text-[10px] font-black text-slate-800 shadow-sm">{CATEGORY_LABELS[dish.category]}</span>
+                  </div>
+               </div>
+               <div className="p-6">
+                  <h4 className="font-black text-lg text-slate-800 mb-2 group-hover:text-teal-600 transition-colors flex items-center justify-between">
+                    {dish.name}
+                    {!isAccessible && <Lock size={14} className="text-slate-400" />}
+                  </h4>
+                  <p className="text-xs text-slate-400 line-clamp-2 h-8 font-bold leading-relaxed">{dish.description}</p>
+               </div>
+            </div>
+          );
+        })}
       </div>
 
       {totalPages > 1 && (

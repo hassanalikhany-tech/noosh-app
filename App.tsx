@@ -173,7 +173,7 @@ const App: React.FC = () => {
 
           <nav className="w-full sm:flex-1 grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-3xl p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-white/20 sm:mx-4">
             {[
-              { id: 'plan', label: 'برنامه', icon: CalendarDays },
+              { id: 'plan', label: 'برنامه‌ریزی', icon: CalendarDays },
               { id: 'pantry', label: 'آشپز برتر', icon: ChefHat },
               { id: 'search', label: 'جستجو', icon: Search },
               { id: 'challenges', label: 'چالش‌ها', icon: Trophy }
@@ -206,7 +206,6 @@ const App: React.FC = () => {
         </header>
       </div>
 
-      {/* محتوای اصلی - اضافه کردن no-print */}
       <main className="pt-48 sm:pt-36 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto no-print">
         {viewMode === 'plan' && (
           <div className="space-y-6 sm:space-y-10 animate-enter">
@@ -239,7 +238,6 @@ const App: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {/* فوتر هوشمند */}
       <div className="fixed bottom-2 sm:bottom-6 left-2 sm:left-6 right-2 sm:right-6 z-[110] no-print">
         <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] h-[75px] sm:h-[85px] px-3 sm:px-8 flex items-center">
           <div className="flex w-full items-center justify-between gap-1">

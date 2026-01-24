@@ -78,7 +78,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
 
   const handleCardClick = () => {
     if (isLocked) {
-      alert("حساب شما در انتظار تایید مدیر است. در این مرحله فقط ۳ غذای اول هر دسته (مجموعاً ۲۴ غذا) در دسترس است. لطفاً منتظر تایید نهایی بمانید.");
+      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
       return;
     }
     setIsModalOpen(true);

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Layers, Trophy, Weight, ShieldCheck, Heart, Leaf } from 'lucide-react';
+import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Layers, Trophy, Weight, ShieldCheck, Heart, Leaf, Lock } from 'lucide-react';
 import { PANTRY_ITEMS, SPICES_AND_ADDITIVES } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { UserService } from '../services/userService';
@@ -45,6 +45,15 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     }
     setSelectedItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
     setResults(null);
+  };
+
+  const handleDishClick = (dish: Dish) => {
+    const isAccessible = RecipeService.isDishAccessible(dish.id, user);
+    if (!isAccessible) {
+      alert("با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و دستور پخت‌های این اپلیکیشن استفاده کامل را بنمایید.");
+      return;
+    }
+    setSelectedDish(dish);
   };
 
   const findRecipes = () => {
@@ -219,40 +228,58 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
       {results && (
         <div id="pantry-results" className="space-y-10 animate-enter pt-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {results.map(({ dish, available, missing, matchCount, isProteinBoost, proteinDensity }) => (
-              <div key={dish.id} className={`bg-white rounded-[3.5rem] overflow-hidden shadow-sm hover:shadow-2xl border ${isProteinBoost ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-50'} flex flex-col group transition-all`}>
-                <div className="h-64 relative cursor-pointer overflow-hidden" onClick={() => setSelectedDish(dish)}>
-                  <DishVisual category={dish.category} className="w-full h-full transition-transform duration-1000 group-hover:scale-110" imageUrl={dish.imageUrl} dishId={dish.id} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
-                  <div className="absolute top-6 left-6 flex flex-col gap-2 items-start">
-                    {isProteinBoost && <div className="bg-rose-600 text-white px-5 py-2 rounded-full text-[10px] font-black shadow-xl flex items-center gap-2 animate-pulse"><Trophy size={14} /> پیشنهاد ویژه</div>}
-                    <div className="bg-white/90 backdrop-blur-sm text-indigo-700 px-4 py-1.5 rounded-full text-[10px] font-black shadow-xl flex items-center gap-1.5"><ShieldCheck size={12}/> بررسی شده</div>
-                  </div>
-                  <div className="absolute bottom-8 right-8 text-white">
-                    <h4 className="text-2xl font-black mb-1 drop-shadow-lg">{dish.name}</h4>
-                    <div className="flex items-center gap-2 opacity-90 font-bold text-xs"><UtensilsCrossed size={14} className="text-teal-400" /><span>{toPersianDigits(dish.cookTime || 60)} دقیقه</span></div>
-                  </div>
-                </div>
-                <div className="p-10 flex flex-col flex-grow bg-gradient-to-b from-white to-slate-50/30">
-                  <div className="space-y-6 mb-10">
-                    <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                       <span className="text-[10px] font-black text-teal-600 block mb-3 flex items-center gap-2"><CheckCircle2 size={12}/> موجود در خانه ({toPersianDigits(available.length)}):</span>
-                       <div className="flex flex-wrap gap-2">{available.map(i => <span key={i} className="px-3 py-1.5 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-black border border-teal-100">{i}</span>)}</div>
-                    </div>
-                    {missing.length > 0 && (
-                      <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm">
-                        <span className="text-[10px] font-black text-rose-500 block mb-3 flex items-center gap-2"><AlertCircle size={12}/> باید بخرید:</span>
-                        <div className="flex flex-wrap gap-2">{missing.map(m => <span key={m.name} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border ${m.isAdditive ? 'bg-slate-50 text-slate-400' : 'bg-rose-50 text-rose-700'}`}>{m.name}</span>)}</div>
+            {results.map(({ dish, available, missing, matchCount, isProteinBoost, proteinDensity }) => {
+              const isAccessible = RecipeService.isDishAccessible(dish.id, user);
+              return (
+                <div key={dish.id} className={`bg-white rounded-[3.5rem] overflow-hidden shadow-sm hover:shadow-2xl border ${isProteinBoost ? 'border-rose-400 ring-4 ring-rose-50' : 'border-slate-50'} flex flex-col group transition-all ${!isAccessible ? 'grayscale opacity-75' : ''}`}>
+                  <div className="h-64 relative cursor-pointer overflow-hidden" onClick={() => handleDishClick(dish)}>
+                    <DishVisual category={dish.category} className="w-full h-full transition-transform duration-1000 group-hover:scale-110" imageUrl={dish.imageUrl} dishId={dish.id} />
+                    {!isAccessible && (
+                      <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] flex items-center justify-center z-20">
+                        <div className="bg-white/90 p-4 rounded-3xl shadow-xl">
+                          <Lock size={32} className="text-slate-800" />
+                        </div>
                       </div>
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+                    <div className="absolute top-6 left-6 flex flex-col gap-2 items-start">
+                      {isProteinBoost && <div className="bg-rose-600 text-white px-5 py-2 rounded-full text-[10px] font-black shadow-xl flex items-center gap-2 animate-pulse"><Trophy size={14} /> پیشنهاد ویژه</div>}
+                      <div className="bg-white/90 backdrop-blur-sm text-indigo-700 px-4 py-1.5 rounded-full text-[10px] font-black shadow-xl flex items-center gap-1.5"><ShieldCheck size={12}/> بررسی شده</div>
+                    </div>
+                    <div className="absolute bottom-8 right-8 text-white">
+                      <h4 className="text-2xl font-black mb-1 drop-shadow-lg flex items-center gap-2">
+                        {dish.name}
+                        {!isAccessible && <Lock size={18} className="text-white/60" />}
+                      </h4>
+                      <div className="flex items-center gap-2 opacity-90 font-bold text-xs"><UtensilsCrossed size={14} className="text-teal-400" /><span>{toPersianDigits(dish.cookTime || 60)} دقیقه</span></div>
+                    </div>
                   </div>
-                  <div className="mt-auto flex flex-col gap-4">
-                    {missing.length > 0 && <button onClick={(e) => handleAddMissingToCart(e, missing, dish.name)} className={`w-full py-5 rounded-[2rem] text-sm font-black flex items-center justify-center gap-3 transition-all ${addingToCartId === dish.name ? 'bg-emerald-500 text-white shadow-lg scale-[0.98]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{addingToCartId === dish.name ? <CheckCircle2 size={20} /> : <ShoppingCart size={20}/>} خرید مواد کسری</button>}
-                    <button onClick={() => setSelectedDish(dish)} className="w-full py-5 bg-slate-950 text-white rounded-[2rem] font-black text-sm transition-all hover:bg-teal-500 shadow-xl group"><span className="flex items-center justify-center gap-2">مشاهده دستور پخت <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /></span></button>
+                  <div className="p-10 flex flex-col flex-grow bg-gradient-to-b from-white to-slate-50/30">
+                    <div className="space-y-6 mb-10">
+                      <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                         <span className="text-[10px] font-black text-teal-600 block mb-3 flex items-center gap-2"><CheckCircle2 size={12}/> موجود در خانه ({toPersianDigits(available.length)}):</span>
+                         <div className="flex flex-wrap gap-2">{available.map(i => <span key={i} className="px-3 py-1.5 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-black border border-teal-100">{i}</span>)}</div>
+                      </div>
+                      {missing.length > 0 && (
+                        <div className="bg-white p-5 rounded-3xl border border-rose-100 shadow-sm">
+                          <span className="text-[10px] font-black text-rose-500 block mb-3 flex items-center gap-2"><AlertCircle size={12}/> باید بخرید:</span>
+                          <div className="flex flex-wrap gap-2">{missing.map(m => <span key={m.name} className={`px-3 py-1.5 rounded-xl text-[10px] font-black border ${m.isAdditive ? 'bg-slate-50 text-slate-400' : 'bg-rose-50 text-rose-700'}`}>{m.name}</span>)}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-auto flex flex-col gap-4">
+                      {missing.length > 0 && <button onClick={(e) => handleAddMissingToCart(e, missing, dish.name)} className={`w-full py-5 rounded-[2rem] text-sm font-black flex items-center justify-center gap-3 transition-all ${addingToCartId === dish.name ? 'bg-emerald-500 text-white shadow-lg scale-[0.98]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{addingToCartId === dish.name ? <CheckCircle2 size={20} /> : <ShoppingCart size={20}/>} خرید مواد کسری</button>}
+                      <button onClick={() => handleDishClick(dish)} className="w-full py-5 bg-slate-950 text-white rounded-[2rem] font-black text-sm transition-all hover:bg-teal-500 shadow-xl group">
+                        <span className="flex items-center justify-center gap-2">
+                          {isAccessible ? 'مشاهده دستور پخت' : 'ارتقای حساب کاربری'} 
+                          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
