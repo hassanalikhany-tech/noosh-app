@@ -73,7 +73,6 @@ const App: React.FC = () => {
     } catch (err) { console.error(err); } finally { setLoadingType(null); }
   };
 
-  // ۱. افکت شناسایی کاربر در هنگام لود اولیه سایت
   useEffect(() => {
     const checkAuth = async () => {
       const user = await UserService.getCurrentUser();
@@ -93,7 +92,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('recipes-updated', handleUpdate);
   }, []);
 
-  // ۲. افکت همگام‌سازی خودکار دیتابیس بلافاصله پس از ورود (Login) یا شناسایی کاربر
   useEffect(() => {
     const syncDatabase = async () => {
       if (currentUser && recipeCount === 0 && !isSyncing) {
@@ -109,10 +107,9 @@ const App: React.FC = () => {
     syncDatabase();
   }, [currentUser, recipeCount, isSyncing]);
 
-  // نمایش صفحه لودینگ اولیه برای همگام‌سازی اجباری
   if (isInitializing || (currentUser && recipeCount === 0)) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
         <div className="animate-float mb-8">
           <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(45,212,191,0.5)]" />
         </div>
@@ -209,7 +206,8 @@ const App: React.FC = () => {
         </header>
       </div>
 
-      <main className="pt-48 sm:pt-36 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto">
+      {/* محتوای اصلی - اضافه کردن no-print */}
+      <main className="pt-48 sm:pt-36 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto no-print">
         {viewMode === 'plan' && (
           <div className="space-y-6 sm:space-y-10 animate-enter">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 max-w-4xl mx-auto">
@@ -294,7 +292,7 @@ const App: React.FC = () => {
       {isShoppingListOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 z-[210] transition-all"><X size={18} /></button>
+              <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 z-[210] transition-all no-print"><X size={18} /></button>
               <div className="flex-grow overflow-y-auto">
                 <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
               </div>

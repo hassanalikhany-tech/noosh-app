@@ -130,13 +130,14 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
       
-      {/* بخش مخصوص چاپ - به صورت کاملاً مستقل در ریشه قرار می‌گیرد */}
-      <div className="print-only dir-rtl text-right w-full">
+      {/* بخش مخصوص چاپ - بهینه شده برای حذف تصاویر ناخواسته */}
+      <div className="print-only dir-rtl text-right w-full bg-white">
         {chunkedItemsForPrint.length === 0 ? (
-          <div className="p-10 text-center font-black">لیست خرید خالی است.</div>
+          <div className="p-10 text-center font-black bg-white">لیست خرید خالی است.</div>
         ) : (
           chunkedItemsForPrint.map((chunk, pageIdx) => (
-            <div key={pageIdx} className="print-page flex flex-col">
+            <div key={pageIdx} className="print-page flex flex-col bg-white">
+              {/* هدر پرینت */}
               <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
                 <div className="flex-1 flex flex-col items-start" style={{ direction: 'ltr' }}>
                   <div className="flex items-baseline gap-1">
@@ -147,7 +148,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                 </div>
 
                 <div className="flex-1 flex justify-center">
-                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-16 h-16 object-contain" />
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-12 h-12 object-contain" />
                 </div>
                 
                 <div className="flex-1 text-left font-black text-slate-800">
@@ -163,6 +164,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                 </p>
               </div>
 
+              {/* جدول اقلام */}
               <div className="flex-grow">
                 <table className="w-full border-collapse mb-8" style={{ border: '2px solid black' }}>
                   <thead>
@@ -176,13 +178,13 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                   <tbody>
                     {chunk.map((item, idx) => (
                       <tr key={item.id}>
-                        <td className="border p-3 text-center text-sm" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
-                        <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.name}</td>
-                        <td className="border p-3 text-sm" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
-                        <td className="border p-3 text-xs text-slate-500" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
+                        <td className="border p-3 text-center text-sm font-bold" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
+                        <td className="border p-3 text-sm font-black" style={{ border: '1px solid black' }}>{item.name}</td>
+                        <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
+                        <td className="border p-3 text-xs text-slate-500 font-bold" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
                       </tr>
                     ))}
-                    {/* ردیف‌های خالی برای حفظ ارتفاع ثابت صفحه */}
+                    {/* ردیف‌های خالی برای حفظ فرمت ثابت */}
                     {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, emptyIdx) => (
                       <tr key={`empty-${emptyIdx}`}>
                         <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
@@ -195,6 +197,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                 </table>
               </div>
 
+              {/* فوتر پرینت */}
               <div className="text-center border-t pt-6 mt-10">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن هوشمند آشپزی نوش</div>
                 <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
@@ -204,7 +207,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         )}
       </div>
 
-      {/* بخش نمایش در اپلیکیشن - در هنگام چاپ مخفی می‌شود */}
+      {/* بخش نمایش در اپلیکیشن */}
       <div className="no-print p-6 flex flex-col flex-grow overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-0 pt-2">
           <div className="flex items-center gap-4">
