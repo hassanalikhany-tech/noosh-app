@@ -27,6 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   
+  // بررسی فعال بودن ورود بیومتریک از دفعات قبل
   const [isBiometricActive] = useState(localStorage.getItem('noosh_biometric_active') === 'true');
   const [bioStatus, setBioStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
   
@@ -52,6 +53,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleTriggerBiometric = async () => {
     if (!isBiometricActive) return;
     setBioStatus('scanning');
+    setError('');
     try {
       const result = await UserService.loginWithBiometric();
       if (result.success && result.user) {
@@ -63,7 +65,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
     } catch (e) {
       setBioStatus('idle');
-      setError('خطا در برقراری ارتباط با سنسور گوشی');
+      setError('خطا در دسترسی به سنسور هویت گوشی');
     }
   };
 
@@ -76,12 +78,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
     setIsGoogleLoading(true);
+    setError('');
     try {
       const result = await UserService.loginWithGoogle();
       if (result.success && result.user) onLogin(result.user);
       else setIsGoogleLoading(false);
     } catch (err) {
       setIsGoogleLoading(false);
+      setError('ورود با گوگل با مشکل مواجه شد.');
     }
   };
 
@@ -115,14 +119,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        localStorage.setItem('noosh_saved_email', email);
-        localStorage.setItem('noosh_saved_password', password);
+        if (rememberMe) {
+          localStorage.setItem('noosh_saved_email', email);
+          localStorage.setItem('noosh_saved_password', password);
+          localStorage.setItem('noosh_remember_me', 'true');
+        } else {
+          localStorage.removeItem('noosh_saved_email');
+          localStorage.removeItem('noosh_saved_password');
+          localStorage.setItem('noosh_remember_me', 'false');
+        }
         onLogin(result.user);
       } else {
-        setError(result.message || 'خطا در عملیات');
+        setError(result.message || 'خطا در عملیات ورود');
       }
     } catch (err) {
-      setError('خطای سیستمی');
+      setError('خطای سیستمی در برقراری ارتباط با سرور');
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +145,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
         
-        {/* بخش لوگو (سمت چپ در دسکتاپ) */}
+        {/* بخش لوگو دسکتاپ (سمت چپ) */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="relative z-10 text-center space-y-8">
@@ -154,6 +165,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* بخش فرم ورود (سمت راست) */}
         <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-y-auto no-scrollbar">
           
+          {/* لوگوی مخصوص موبایل در هدر */}
+          <div className="md:hidden flex flex-col items-center mb-8 gap-2 animate-enter">
+            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]" />
+            <div className="flex flex-row items-baseline justify-center gap-1.5" style={{ direction: 'ltr' }}>
+              <span className="text-3xl font-black italic tracking-tighter text-slate-900 uppercase">NOOSH</span>
+              <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+            </div>
+          </div>
+
           <div className="mb-6">
             <h2 className="text-2xl font-black text-slate-800">
               {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
@@ -181,9 +201,32 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             )}
 
+            {/* بخش مرا به خاطر بسپار و فراموشی رمز عبور */}
+            {mode === 'login' && (
+              <div className="flex items-center justify-between px-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div 
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${rememberMe ? 'bg-teal-600 border-teal-600' : 'border-slate-200 group-hover:border-teal-400'}`}
+                  >
+                    {rememberMe && <CheckSquare size={14} className="text-white" />}
+                  </div>
+                  <span className="text-[10px] font-black text-slate-500">مرا به خاطر بسپار</span>
+                </label>
+                <button 
+                  type="button" 
+                  onClick={() => setMode('forgot-password')}
+                  className="text-[10px] font-black text-teal-600 hover:underline"
+                >
+                  فراموشی رمز عبور؟
+                </button>
+              </div>
+            )}
+
             {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black border border-rose-100 flex items-center gap-2"><AlertCircle size={14} /> {error}</div>}
             {successMsg && <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black border border-emerald-100">{successMsg}</div>}
 
+            {/* دکمه ورود اصلی */}
             <button type="submit" disabled={isLoading} className="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
               {isLoading ? <Loader2 size={20} className="animate-spin" /> : <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'ثبت‌نام' : 'ارسال لینک'}</span>}
               {!isLoading && <ArrowRight size={18} />}
@@ -197,7 +240,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <span className="text-[10px]">ورود با گوگل</span>
                 </button>
 
-                {/* دکمه ورود بیومتریک گوشی (مکان جدید: زیر گوگل) */}
+                {/* دکمه ورود با تشخیص چهره / هویت بیومتریک گوشی (دقیقاً زیر گوگل) */}
                 {isBiometricActive && (
                   <button 
                     type="button"
@@ -213,7 +256,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             )}
 
             <div className="pt-4 text-center">
-              <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black text-[11px] underline-offset-4 hover:underline">
+              <button 
+                type="button" 
+                onClick={() => setMode(mode === 'login' ? 'register' : 'login')} 
+                className="text-teal-600 font-black text-[11px] underline-offset-4 hover:underline"
+              >
                 {mode === 'login' ? 'هنوز ثبت‌نام نکرده‌اید؟ ساخت حساب' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
               </button>
             </div>
