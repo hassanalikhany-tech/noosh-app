@@ -23,8 +23,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isFaceLoading, setIsFaceLoading] = useState(false);
+  
+  // برای اینکه کاربر حتی برای یک لحظه پنل ورود را نبیند، اگر بیومتریک فعال است از ابتدا در حالت لودینگ می‌مانیم
+  const isBiometricActive = localStorage.getItem('noosh_biometric_active') === 'true';
+  const [isFaceLoading, setIsFaceLoading] = useState(isBiometricActive);
   const [faceStatus, setFaceStatus] = useState<'scanning' | 'verifying' | 'success'>('scanning');
+  
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -37,43 +41,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // چک کردن ورود بیومتریک بلافاصله پس از لود صفحه (بدون معطلی کاربر)
+  // ورود بیومتریک بلافاصله پس از سوار شدن کامپوننت
   useEffect(() => {
-    const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
-    const savedEmail = localStorage.getItem('noosh_saved_email');
-    const savedPassword = localStorage.getItem('noosh_saved_password');
-
-    if (isBioActive && savedEmail && savedPassword && window.PublicKeyCredential) {
+    if (isBiometricActive && window.PublicKeyCredential) {
       const runBiometric = async () => {
-        setIsFaceLoading(true);
-        setFaceStatus('scanning');
-        
-        // وقفه بسیار کوتاه برای نمایش انیمیشن اولیه
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // ۱ ثانیه وقفه برای اطمینان از آماده بودن کامل DOM و فایربیس
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         try {
           const result = await UserService.loginWithBiometric();
           if (result.success && result.user) {
             setFaceStatus('verifying');
-            // شبیه‌سازی تایید نهایی برای حس خوب کاربر
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise(resolve => setTimeout(resolve, 700));
             setFaceStatus('success');
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 400));
             
-            // ورود قطعی و انتقال به اپلیکیشن
+            // ورود قطعی - بدون هیچ کلیک اضافی
             onLogin(result.user);
           } else {
-            // اگر کاربر اسکن را کنسل کرد، فرم نمایش داده شود
+            // در صورت لغو یا نبود اعتبارنامه، به فرم معمولی برمی‌گردیم
             setIsFaceLoading(false);
           }
         } catch (e) {
-          console.error("Biometric Error:", e);
+          console.error("Biometric Failure:", e);
           setIsFaceLoading(false);
         }
       };
       runBiometric();
     }
-  }, [onLogin]);
+  }, [onLogin, isBiometricActive]);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
@@ -148,7 +144,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        // ذخیره الزامی برای فعال‌سازی بیومتریک در دفعات بعد
+        // ذخیره الزامی برای فعال‌سازی بیومتریک در آینده
         localStorage.setItem('noosh_saved_email', email);
         localStorage.setItem('noosh_saved_password', password);
         
@@ -166,12 +162,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   };
 
-  // رابط کاربری مخصوص ورود هوشمند (باید تمام صفحه را بپوشاند)
   if (isFaceLoading) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
         <div className="relative mb-16">
-          <div className={`absolute inset-0 rounded-full blur-[120px] transition-all duration-1000 ${faceStatus === 'success' ? 'bg-emerald-500/40' : 'bg-teal-500/20'}`}></div>
+          <div className={`absolute inset-0 rounded-full blur-[120px] transition-all duration-1000 ${faceStatus === 'success' ? 'bg-emerald-500/50' : 'bg-teal-500/20'}`}></div>
           <div className={`relative z-10 p-12 bg-slate-900/60 rounded-[4rem] border border-white/10 shadow-2xl backdrop-blur-3xl transition-all duration-500 ${faceStatus === 'success' ? 'scale-110 border-emerald-500/50' : ''}`}>
             {faceStatus === 'success' ? (
               <CheckCircle2 size={140} className="text-emerald-400 animate-enter" strokeWidth={1} />
@@ -179,7 +174,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <ScanFace size={140} className={`text-teal-400 ${faceStatus === 'scanning' ? 'animate-pulse' : 'animate-float'}`} strokeWidth={1} />
             )}
             
-            {/* خط اسکنر انیمیشنی */}
             {faceStatus === 'scanning' && (
                <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,1)] animate-[scan_2s_infinite] opacity-50"></div>
             )}
@@ -189,9 +183,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="text-center space-y-6 animate-enter">
           <div className="space-y-2">
             <h2 className={`text-4xl font-black transition-all duration-500 ${faceStatus === 'success' ? 'text-emerald-400' : 'text-white text-halo'}`}>
-              {faceStatus === 'scanning' ? 'در حال اسکن چهره...' : faceStatus === 'verifying' ? 'تایید هویت...' : 'خوش آمدید!'}
+              {faceStatus === 'scanning' ? 'در حال تشخیص چهره...' : faceStatus === 'verifying' ? 'تایید اعتبار...' : 'ورود موفقیت‌آمیز!'}
             </h2>
-            <p className="text-slate-500 text-xs font-black tracking-[0.2em] uppercase">Noosh Secure Login System</p>
+            <p className="text-slate-500 text-xs font-black tracking-[0.2em] uppercase">Noosh Intelligent Login</p>
           </div>
           
           <div className="flex justify-center gap-3">

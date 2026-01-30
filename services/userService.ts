@@ -138,15 +138,14 @@ export const UserService = {
 
   loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "مرورگر شما از سیستم تشخیص هویت بیومتریک پشتیبانی نمی‌کند." };
+      if (!window.PublicKeyCredential) return { success: false, message: "مرورگر شما پشتیبانی نمی‌کند." };
       
       const savedEmail = localStorage.getItem('noosh_saved_email');
       const savedPassword = localStorage.getItem('noosh_saved_password');
-      const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
+      
+      if (!savedEmail || !savedPassword) return { success: false, message: "اعتبارنامه یافت نشد." };
 
-      if (!isBioActive || !savedEmail || !savedPassword) return { success: false, message: "غیرفعال" };
-
-      // درخواست واقعی از سیستم‌عامل
+      // ایجاد چالش برای باز کردن پنجره تشخیص چهره سیستم‌عامل
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
 
@@ -159,12 +158,13 @@ export const UserService = {
       });
 
       if (credential) {
+        // اگر تایید شد، با استفاده از اطلاعات ذخیره شده ورود واقعی انجام شود
         return UserService.login(savedEmail, savedPassword);
       }
-      return { success: false, message: "احراز هویت لغو شد." };
+      return { success: false, message: "لغو شد." };
     } catch (e) {
-      console.error("Biometric Get Error:", e);
-      return { success: false, message: "خطا در ارتباط با حسگر بیومتریک" };
+      console.error("Biometric Scan Error:", e);
+      return { success: false, message: "خطا در سنسور بیومتریک" };
     }
   },
 
