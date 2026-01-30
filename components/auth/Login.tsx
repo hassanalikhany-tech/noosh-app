@@ -36,21 +36,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // چک کردن ورود بیومتریک در شروع برنامه
+  // چک کردن ورود بیومتریک بلافاصه پس از لود صفحه
   useEffect(() => {
-    const tryBiometric = async () => {
-      const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
-      if (isBioActive && window.PublicKeyCredential) {
+    const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
+    if (isBioActive && window.PublicKeyCredential) {
+      const runBiometric = async () => {
         setIsFaceLoading(true);
+        // تاخیر بسیار کوتاه برای اطمینان از رندر شدن صفحه و سپس باز شدن پنجره سیستمی
+        await new Promise(resolve => setTimeout(resolve, 500));
         const result = await UserService.loginWithBiometric();
         if (result.success && result.user) {
           onLogin(result.user);
         } else {
           setIsFaceLoading(false);
+          // اگر کنسل شد یا خطا داد، پیام خطا نمایش داده نشود تا کاربر فرم را ببیند
         }
-      }
-    };
-    tryBiometric();
+      };
+      runBiometric();
+    }
   }, []);
 
   useEffect(() => {
@@ -126,7 +129,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        // ذخیره اطلاعات برای دفعات بعد (مورد نیاز بیومتریک)
         localStorage.setItem('noosh_saved_email', email);
         localStorage.setItem('noosh_saved_password', password);
         
@@ -146,10 +148,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   if (isFaceLoading) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white">
-        <ScanFace size={64} className="text-teal-500 animate-pulse mb-6" />
-        <h2 className="text-xl font-black mb-2">احراز هویت بیومتریک</h2>
-        <p className="text-slate-400 text-sm">در حال بررسی هویت شما...</p>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl">
+        <div className="relative mb-10">
+          <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <ScanFace size={100} className="text-teal-500 animate-float relative z-10" strokeWidth={1.5} />
+        </div>
+        <h2 className="text-3xl font-black mb-4 text-halo">احراز هویت بیومتریک</h2>
+        <p className="text-slate-400 text-base font-bold animate-pulse">لطفاً چهره خود را مقابل دوربین قرار دهید...</p>
+        
+        <button 
+          onClick={() => setIsFaceLoading(false)}
+          className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-400 text-xs font-black transition-all"
+        >
+          ورود با نام کاربری و رمز عبور
+        </button>
       </div>
     );
   }

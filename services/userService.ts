@@ -86,7 +86,7 @@ export const UserService = {
       }
 
       let userData = userDoc.data() as UserProfile;
-      userData.uid = firebaseUser.uid; // اطمینان از وجود UID
+      userData.uid = firebaseUser.uid;
 
       if (userData.isDeleted) {
         await signOut(auth);
@@ -138,7 +138,7 @@ export const UserService = {
 
   loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی" };
+      if (!window.PublicKeyCredential) return { success: false, message: "مرورگر شما از سیستم تشخیص هویت بیومتریک پشتیبانی نمی‌کند." };
       
       const savedEmail = localStorage.getItem('noosh_saved_email');
       const savedPassword = localStorage.getItem('noosh_saved_password');
@@ -147,9 +147,12 @@ export const UserService = {
       if (!isBioActive || !savedEmail || !savedPassword) return { success: false, message: "غیرفعال" };
 
       // درخواست واقعی از سیستم‌عامل
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+
       const credential = await navigator.credentials.get({
         publicKey: {
-          challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+          challenge: challenge,
           userVerification: "required",
           timeout: 60000
         }
@@ -158,9 +161,10 @@ export const UserService = {
       if (credential) {
         return UserService.login(savedEmail, savedPassword);
       }
-      return { success: false, message: "لغو شد" };
+      return { success: false, message: "احراز هویت لغو شد." };
     } catch (e) {
-      return { success: false, message: "خطا" };
+      console.error("Biometric Get Error:", e);
+      return { success: false, message: "خطا در ارتباط با حسگر بیومتریک" };
     }
   },
 
@@ -177,7 +181,7 @@ export const UserService = {
       notifyUpdate();
       return true;
     } catch (e) {
-      console.error("Enable Biometric Error:", e);
+      console.error("Enable Biometric DB Error:", e);
       return false;
     }
   },
@@ -232,7 +236,7 @@ export const UserService = {
       
       return { success: true, user: { ...data, currentSessionId: newSessionId } };
     } catch (error: any) {
-      return { success: false, message: "خطا", code: error.code };
+      return { success: false, message: "خطا در ورود با گوگل", code: error.code };
     }
   },
 

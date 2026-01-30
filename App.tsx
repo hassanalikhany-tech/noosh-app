@@ -107,7 +107,7 @@ const App: React.FC = () => {
     syncDatabase();
   }, [currentUser, recipeCount, isSyncing]);
 
-  // بررسی نیاز به نمایش درخواست بیومتریک پس از لاگین
+  // بررسی نیاز به نمایش درخواست بیومتریک پس از لاگین اول
   useEffect(() => {
     if (currentUser && !currentUser.isBiometricEnabled && !localStorage.getItem('noosh_biometric_declined') && window.PublicKeyCredential) {
       const bioActive = localStorage.getItem('noosh_biometric_active');
@@ -120,13 +120,16 @@ const App: React.FC = () => {
   const handleEnableBiometric = async () => {
     if (currentUser) {
       try {
-        // ایجاد تاییدیه واقعی در مرورگر برای تشخیص چهره/اثرانگشت
+        const challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+        
+        // درخواست از سیستم‌عامل برای ثبت هویت
         await navigator.credentials.create({
           publicKey: {
-            challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+            challenge: challenge,
             rp: { name: "Noosh App" },
             user: {
-              id: new Uint8Array([1, 2, 3, 4]),
+              id: new TextEncoder().encode(currentUser.uid.slice(0, 16)),
               name: currentUser.email || currentUser.username,
               displayName: currentUser.fullName
             },
@@ -141,7 +144,7 @@ const App: React.FC = () => {
           setCurrentUser({ ...currentUser, isBiometricEnabled: true });
         }
       } catch (e) {
-        console.error("Biometric setup failed or cancelled", e);
+        console.error("Biometric registration failed", e);
       }
     }
     setShowBiometricPrompt(false);
@@ -190,14 +193,14 @@ const App: React.FC = () => {
               <div className="space-y-3">
                 <button 
                   type="button"
-                  onClick={handleEnableBiometric} 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEnableBiometric(); }} 
                   className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95 hover:bg-teal-700"
                 >
                   بله، فعال کن
                 </button>
                 <button 
                   type="button"
-                  onClick={handleDeclineBiometric} 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeclineBiometric(); }} 
                   className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all hover:bg-slate-200"
                 >
                   خیر، فعلاً نه
