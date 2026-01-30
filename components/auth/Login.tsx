@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, ScanFace } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, ScanFace, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -27,6 +27,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   
+  // وضعیت ورود هوشمند
+  const [isBiometricActive, setIsBiometricActive] = useState(localStorage.getItem('noosh_biometric_active') === 'true');
+  const [bioStatus, setBioStatus] = useState<'idle' | 'scanning' | 'verifying' | 'success'>('idle');
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -35,28 +39,40 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // فراخوانی سنسور تشخیص چهره گوشی به محض باز شدن برنامه
+  // ۱. اجرای خودکار سیستم بیومتریک گوشی به محض لود شدن کامپوننت
   useEffect(() => {
-    const isBiometricActive = localStorage.getItem('noosh_biometric_active') === 'true';
     if (isBiometricActive && window.PublicKeyCredential) {
-      const triggerBiometric = async () => {
-        // ۱ ثانیه وقفه برای اینکه کاربر ابتدا پنل ورود را ببیند و بعد پنجره گوشی ظاهر شود
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(true);
+      const triggerBiometricHardware = async () => {
+        // وقفه کوتاه برای اطمینان از آماده بودن کامل برنامه
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setBioStatus('scanning');
+        
         try {
+          // فراخوانی سخت‌افزار واقعی گوشی (FaceID/اثرانگشت)
           const result = await UserService.loginWithBiometric();
+          
           if (result.success && result.user) {
+            setBioStatus('verifying');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setBioStatus('success');
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // ورود قطعی و ۱۰۰٪ خودکار
             onLogin(result.user);
           } else {
-            setIsLoading(false);
+            // در صورت لغو توسط کاربر یا خطا، حالت اسکن را غیرفعال می‌کنیم تا فرم ورود عادی را ببیند
+            setBioStatus('idle');
+            setIsBiometricActive(false);
           }
         } catch (e) {
-          setIsLoading(false);
+          console.error("Hardware Auth Failed", e);
+          setBioStatus('idle');
+          setIsBiometricActive(false);
         }
       };
-      triggerBiometric();
+      triggerBiometricHardware();
     }
-  }, [onLogin]);
+  }, [onLogin, isBiometricActive]);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
@@ -156,9 +172,48 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0 pointer-events-none"></div>
       
+      {/* لایه اسکن بیومتریک سخت‌افزاری (فقط در زمان اسکن فعال می‌شود) */}
+      {bioStatus !== 'idle' && (
+        <div className="absolute inset-0 z-[100] bg-slate-950/90 backdrop-blur-3xl flex flex-col items-center justify-center text-white animate-enter">
+           <div className="relative mb-12">
+              <div className={`absolute inset-0 rounded-full blur-[100px] transition-all duration-1000 ${bioStatus === 'success' ? 'bg-emerald-500/40' : 'bg-teal-500/20'}`}></div>
+              <div className={`relative z-10 p-12 bg-slate-900/60 rounded-[4rem] border border-white/10 shadow-2xl transition-all duration-500 ${bioStatus === 'success' ? 'scale-110 border-emerald-500/50' : ''}`}>
+                {bioStatus === 'success' ? (
+                  <CheckCircle2 size={120} className="text-emerald-400 animate-enter" strokeWidth={1} />
+                ) : (
+                  <ScanFace size={120} className={`text-teal-400 ${bioStatus === 'scanning' ? 'animate-pulse' : 'animate-float'}`} strokeWidth={1} />
+                )}
+                
+                {bioStatus === 'scanning' && (
+                  <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 shadow-[0_0_20px_rgba(45,212,191,1)] animate-[scan_2s_infinite] opacity-70"></div>
+                )}
+              </div>
+           </div>
+           
+           <div className="text-center space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <ShieldCheck size={14} className="text-teal-400" />
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hardware Identity Link</span>
+                </div>
+                <h2 className={`text-4xl font-black transition-all duration-500 ${bioStatus === 'success' ? 'text-emerald-400' : 'text-white'}`}>
+                  {bioStatus === 'scanning' ? 'در حال تشخیص هویت...' : bioStatus === 'verifying' ? 'تایید نهایی...' : 'ورود موفقیت‌آمیز!'}
+                </h2>
+                <p className="text-slate-500 text-xs font-bold">پنجره تشخیص هویت سیستم‌عامل خود را تایید کنید</p>
+              </div>
+           </div>
+           
+           <button onClick={() => setBioStatus('idle')} className="mt-20 px-10 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-500 text-xs font-black transition-all">انصراف و ورود دستی</button>
+           
+           <style>{`
+             @keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+           `}</style>
+        </div>
+      )}
+
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
         
-        {/* بخش لوگو و برند (سمت چپ در دسکتاپ / بالا در موبایل) */}
+        {/* بخش لوگو و برند (سمت چپ در دسکتاپ) */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="relative z-10 text-center space-y-8">
@@ -186,11 +241,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
-              {localStorage.getItem('noosh_biometric_active') === 'true' && <ScanFace className="text-teal-500 animate-pulse" size={24} />}
-            </h2>
-            <p className="text-slate-400 text-xs font-bold mt-1">
+            <div className="flex items-center justify-between mb-2">
+               <h2 className="text-2xl font-black text-slate-800">
+                  {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
+               </h2>
+               {isBiometricActive && (
+                 <button onClick={() => setBioStatus('scanning')} className="p-2 bg-teal-50 text-teal-600 rounded-xl hover:bg-teal-100 transition-all active:scale-95" title="استفاده از تشخیص چهره">
+                    <ScanFace size={24} />
+                 </button>
+               )}
+            </div>
+            <p className="text-slate-400 text-xs font-bold">
               {mode === 'login' ? 'برای دسترسی به پنل کاربری وارد شوید' : mode === 'register' ? 'مشخصات خود را برای ثبت‌نام وارد کنید' : 'لینک بازنشانی به ایمیل شما ارسال خواهد شد'}
             </p>
           </div>
@@ -218,13 +279,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Lock size={12}/> رمز عبور</label>
                 <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
-              </div>
-            )}
-
-            {mode === 'register' && (
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><CheckSquare size={12}/> تایید رمز عبور</label>
-                <input type="password" name="confirmPassword" dir="ltr" value={formData.confirmPassword} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
               </div>
             )}
 

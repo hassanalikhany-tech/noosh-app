@@ -74,8 +74,7 @@ export const UserService = {
       
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-      const deviceId = getDeviceFingerprint();
-
+      
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
       
@@ -93,37 +92,31 @@ export const UserService = {
         return { success: false, message: "این حساب کاربری غیرفعال یا حذف شده است." };
       }
 
-      const userEmail = (firebaseUser.email || "").toLowerCase();
-      const isOwner = userEmail === ADMIN_EMAIL || userData.isAdmin;
-
-      const newSessionId = isOwner ? 'ADMIN_SESSION' : crypto.randomUUID();
+      const newSessionId = userData.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
-      
       await updateDoc(userDocRef, { currentSessionId: newSessionId });
       
       return { success: true, user: { ...userData, currentSessionId: newSessionId } };
       
     } catch (error: any) {
-      let msg = "ایمیل یا رمز عبور اشتباه است.";
-      return { success: false, message: msg, code: error.code };
+      return { success: false, message: "ایمیل یا رمز عبور اشتباه است.", code: error.code };
     }
   },
 
-  // متد اصلی که سخت‌افزار گوشی را فعال می‌کند
+  // این تابع مستقیماً با سخت‌افزار FaceID/Fingerprint گوشی ارتباط برقرار می‌کند
   loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی سخت‌افزاری" };
+      if (!window.PublicKeyCredential) return { success: false, message: "مرورگر یا دستگاه شما از بیومتریک پشتیبانی نمی‌کند." };
       
       const savedEmail = localStorage.getItem('noosh_saved_email');
       const savedPassword = localStorage.getItem('noosh_saved_password');
       
-      if (!savedEmail || !savedPassword) return { success: false, message: "اطلاعات ورود یافت نشد." };
+      if (!savedEmail || !savedPassword) return { success: false, message: "اعتبارنامه ذخیره شده یافت نشد." };
 
-      // ۱. ایجاد چالش امنیتی برای فعال‌سازی سنسور گوشی (FaceID/Fingerprint)
+      // ۱. ارسال درخواست به سخت‌افزار گوشی برای باز کردن پنجره تشخیص چهره/اثرانگشت
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
 
-      // ۲. باز کردن پنجره سیستمی تشخیص چهره گوشی
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: challenge,
@@ -132,15 +125,15 @@ export const UserService = {
         }
       });
 
-      // ۳. اگر سنسور گوشی هویت را تایید کرد (خروجی نال نباشد)
+      // ۲. اگر کاربر با موفقیت توسط گوشی تایید هویت شد
       if (credential) {
-        // ۴. ورود ۱۰۰٪ خودکار بدون نیاز به کلیک کاربر
+        // ۳. انجام خودکار عملیات ورود بدون نیاز به تایپ یا کلیک مجدد
         return await UserService.login(savedEmail, savedPassword);
       }
-      return { success: false, message: "تایید هویت انجام نشد." };
+      return { success: false, message: "تایید هویت توسط دستگاه لغو شد." };
     } catch (e) {
-      console.error("Biometric Hardware Error:", e);
-      return { success: false, message: "خطا در برقراری ارتباط با سنسور گوشی" };
+      console.error("Biometric Hardware Access Error:", e);
+      return { success: false, message: "خطا در دسترسی به سنسور امنیتی دستگاه." };
     }
   },
 
@@ -161,80 +154,14 @@ export const UserService = {
     }
   },
 
-  resetUserDevices: async (uid: string): Promise<void> => {
-    try {
-      const userDocRef = doc(db, "users", uid);
-      await updateDoc(userDocRef, { registeredDevices: [] });
-      notifyUpdate();
-    } catch (error: any) {
-      throw error;
-    }
+  logout: async () => {
+    localStorage.removeItem('noosh_active_session');
+    await RecipeService.clearAllCache();
+    await signOut(auth);
   },
 
-  sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true, message: "لینک بازنشانی رمز عبور ارسال شد." };
-    } catch {
-      return { success: false, message: "خطا در ارسال ایمیل." };
-    }
-  },
-
-  loginWithGoogle: async (): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
-    try {
-      await RecipeService.clearAllCache();
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider); 
-      const user = result.user;
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        const data = createDefaultProfile(user, user.displayName || "");
-        await setDoc(userDocRef, data);
-        return { success: true, user: data };
-      }
-
-      let data = userDoc.data() as UserProfile;
-      data.uid = user.uid;
-      const newSessionId = data.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
-      localStorage.setItem('noosh_active_session', newSessionId);
-      await updateDoc(userDocRef, { currentSessionId: newSessionId });
-      
-      return { success: true, user: { ...data, currentSessionId: newSessionId } };
-    } catch (error: any) {
-      return { success: false, message: "خطا در ورود با گوگل", code: error.code };
-    }
-  },
-
-  validateSession: async (): Promise<boolean> => {
-    const user = auth.currentUser;
-    if (!user) return true;
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-    const localSession = localStorage.getItem('noosh_active_session');
-    if (userDoc.exists()) {
-      return userDoc.data().isAdmin || localSession === userDoc.data().currentSessionId;
-    }
-    return true;
-  },
-
-  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
-    try {
-      await RecipeService.clearAllCache();
-      const { email, password, fullName, phoneNumber } = data;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = createDefaultProfile(userCredential.user, fullName, phoneNumber);
-      
-      const newSessionId = newUser.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
-      localStorage.setItem('noosh_active_session', newSessionId);
-      newUser.currentSessionId = newSessionId;
-      
-      await setDoc(doc(db, "users", userCredential.user.uid), newUser);
-      return { success: true, user: newUser };
-    } catch (error: any) {
-      return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
-    }
+  isSubscriptionValid: (user: UserProfile): boolean => {
+    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
   },
 
   getCurrentUser: async (): Promise<UserProfile | null> => {
@@ -265,33 +192,76 @@ export const UserService = {
     return updated.data() as UserProfile;
   },
 
-  toggleUserApproval: async (uid: string, currentStatus: boolean) => {
-    await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
-    notifyUpdate();
+  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
+    try {
+      await RecipeService.clearAllCache();
+      const { email, password, fullName, phoneNumber } = data;
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = createDefaultProfile(userCredential.user, fullName, phoneNumber);
+      
+      const newSessionId = newUser.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
+      localStorage.setItem('noosh_active_session', newSessionId);
+      newUser.currentSessionId = newSessionId;
+      
+      await setDoc(doc(db, "users", userCredential.user.uid), newUser);
+      return { success: true, user: newUser };
+    } catch (error: any) {
+      return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
+    }
   },
 
-  updateShoppingList: async (username: string, items: ShoppingItem[]): Promise<UserProfile> => {
-    return UserService.updateProfile(username, { customShoppingList: items });
+  sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true, message: "لینک بازنشانی به ایمیل شما ارسال شد." };
+    } catch {
+      return { success: false, message: "خطا در ارسال ایمیل." };
+    }
+  },
+
+  loginWithGoogle: async (): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider); 
+      const user = result.user;
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists()) {
+        const data = createDefaultProfile(user, user.displayName || "");
+        await setDoc(userDocRef, data);
+        return { success: true, user: data };
+      }
+      let data = userDoc.data() as UserProfile;
+      data.uid = user.uid;
+      const newSessionId = data.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
+      localStorage.setItem('noosh_active_session', newSessionId);
+      await updateDoc(userDocRef, { currentSessionId: newSessionId });
+      return { success: true, user: { ...data, currentSessionId: newSessionId } };
+    } catch (error: any) {
+      return { success: false, message: "خطا در ورود با گوگل", code: error.code };
+    }
   },
 
   toggleFavorite: async (username: string, dishId: string): Promise<UserProfile> => {
     const user = await UserService.getCurrentUser();
     if (!user) throw new Error("User not found");
-    const isAdding = !user.favoriteDishIds?.includes(dishId);
-    let favorites = [...(user.favoriteDishIds || [])];
-    if (isAdding) favorites.push(dishId);
-    else favorites = favorites.filter(id => id !== dishId);
+    const favorites = user.favoriteDishIds?.includes(dishId) 
+      ? user.favoriteDishIds.filter(id => id !== dishId) 
+      : [...(user.favoriteDishIds || []), dishId];
     return UserService.updateProfile(username, { favoriteDishIds: favorites });
   },
 
   toggleBlacklist: async (username: string, dishId: string): Promise<UserProfile> => {
     const user = await UserService.getCurrentUser();
     if (!user) throw new Error("User not found");
-    const isAdding = !user.blacklistedDishIds?.includes(dishId);
-    let blacklist = [...(user.blacklistedDishIds || [])];
-    if (isAdding) blacklist.push(dishId);
-    else blacklist = blacklist.filter(id => id !== dishId);
+    const blacklist = user.blacklistedDishIds?.includes(dishId) 
+      ? user.blacklistedDishIds.filter(id => id !== dishId) 
+      : [...(user.blacklistedDishIds || []), dishId];
     return UserService.updateProfile(username, { blacklistedDishIds: blacklist });
+  },
+
+  updateShoppingList: async (username: string, items: ShoppingItem[]): Promise<UserProfile> => {
+    return UserService.updateProfile(username, { customShoppingList: items });
   },
 
   extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
@@ -316,18 +286,18 @@ export const UserService = {
     } catch (e: any) { return { success: false, data: [], error: e.code }; }
   },
 
-  deleteUser: async (uid: string): Promise<void> => {
-    await updateDoc(doc(db, "users", uid), { isDeleted: true });
+  toggleUserApproval: async (uid: string, currentStatus: boolean) => {
+    await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
     notifyUpdate();
   },
 
-  logout: async () => {
-    localStorage.removeItem('noosh_active_session');
-    await RecipeService.clearAllCache();
-    await signOut(auth);
+  resetUserDevices: async (uid: string): Promise<void> => {
+    await updateDoc(doc(db, "users", uid), { registeredDevices: [] });
+    notifyUpdate();
   },
 
-  isSubscriptionValid: (user: UserProfile): boolean => {
-    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
+  deleteUser: async (uid: string): Promise<void> => {
+    await updateDoc(doc(db, "users", uid), { isDeleted: true });
+    notifyUpdate();
   }
 };
