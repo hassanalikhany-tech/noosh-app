@@ -83,6 +83,7 @@ export interface Challenge {
 }
 
 export interface UserProfile {
+  uid: string; // شناسه منحصر به فرد فایربیس
   username: string;
   fullName: string; 
   passwordCode: string; 

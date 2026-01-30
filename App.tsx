@@ -119,12 +119,32 @@ const App: React.FC = () => {
 
   const handleEnableBiometric = async () => {
     if (currentUser) {
-      const success = await UserService.enableBiometric(currentUser.username, true);
-      if (success) {
-        setCurrentUser({ ...currentUser, isBiometricEnabled: true });
-        setShowBiometricPrompt(false);
+      try {
+        // ایجاد تاییدیه واقعی در مرورگر برای تشخیص چهره/اثرانگشت
+        await navigator.credentials.create({
+          publicKey: {
+            challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+            rp: { name: "Noosh App" },
+            user: {
+              id: new Uint8Array([1, 2, 3, 4]),
+              name: currentUser.email || currentUser.username,
+              displayName: currentUser.fullName
+            },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+            timeout: 60000,
+            attestation: "direct"
+          }
+        });
+        
+        const success = await UserService.enableBiometric(currentUser.uid, true);
+        if (success) {
+          setCurrentUser({ ...currentUser, isBiometricEnabled: true });
+        }
+      } catch (e) {
+        console.error("Biometric setup failed or cancelled", e);
       }
     }
+    setShowBiometricPrompt(false);
   };
 
   const handleDeclineBiometric = () => {
@@ -151,24 +171,38 @@ const App: React.FC = () => {
   if (currentUser.isAdmin && isAdminMode) return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
   if (!UserService.isSubscriptionValid(currentUser)) return <Subscription user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />;
 
-  const activeChallengeName = currentUser.activeChallengeId ? (currentUser.activeChallengeId === 'vegan-week' ? 'هفته گیاهخواری' : currentUser.activeChallengeId === 'protein-power' ? 'پروتئین پلاس' : 'حذف قند') : null;
-
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
       {/* مدال درخواست بیومتریک */}
       {showBiometricPrompt && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-enter">
-          <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl">
-            <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ScanFace size={64} />
-            </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-4">ورود سریع و امن</h2>
-            <p className="text-slate-500 font-bold text-sm leading-relaxed mb-8">
-              آیا مایل هستید در دفعات بعدی با استفاده از تشخیص چهره یا اثرانگشت وارد برنامه شوید؟ این کار امنیت و سرعت ورود شما را افزایش می‌دهد.
-            </p>
-            <div className="space-y-3">
-              <button onClick={handleEnableBiometric} className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95">بله، فعال کن</button>
-              <button onClick={handleDeclineBiometric} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all">خیر، فعلاً نه</button>
+          <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-teal-50 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-50"></div>
+            
+            <div className="relative z-10">
+              <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-teal-50/50">
+                <ScanFace size={64} strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-black text-slate-800 mb-4">ورود سریع و امن</h2>
+              <p className="text-slate-500 font-bold text-sm leading-relaxed mb-8 px-4">
+                آیا مایل هستید در دفعات بعدی با استفاده از تشخیص چهره یا اثرانگشت وارد برنامه شوید؟ این کار امنیت و سرعت ورود شما را افزایش می‌دهد.
+              </p>
+              <div className="space-y-3">
+                <button 
+                  type="button"
+                  onClick={handleEnableBiometric} 
+                  className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95 hover:bg-teal-700"
+                >
+                  بله، فعال کن
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleDeclineBiometric} 
+                  className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all hover:bg-slate-200"
+                >
+                  خیر، فعلاً نه
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -43,6 +43,7 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
   const deviceId = getDeviceFingerprint();
   
   return {
+    uid: user.uid,
     username: user.email ? user.email.split('@')[0] : user.uid.slice(0, 8),
     fullName: fullName || user.displayName || "کاربر نوش",
     passwordCode: "PROTECTED",
@@ -85,6 +86,7 @@ export const UserService = {
       }
 
       let userData = userDoc.data() as UserProfile;
+      userData.uid = firebaseUser.uid; // اطمینان از وجود UID
 
       if (userData.isDeleted) {
         await signOut(auth);
@@ -134,10 +136,9 @@ export const UserService = {
     }
   },
 
-  // متد جدید برای ورود با بیومتریک
   loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی سخت‌افزاری" };
+      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی" };
       
       const savedEmail = localStorage.getItem('noosh_saved_email');
       const savedPassword = localStorage.getItem('noosh_saved_password');
@@ -145,7 +146,7 @@ export const UserService = {
 
       if (!isBioActive || !savedEmail || !savedPassword) return { success: false, message: "غیرفعال" };
 
-      // شبیه‌سازی درخواست تایید هویت از سیستم‌عامل
+      // درخواست واقعی از سیستم‌عامل
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
@@ -159,7 +160,7 @@ export const UserService = {
       }
       return { success: false, message: "لغو شد" };
     } catch (e) {
-      return { success: false, message: "خطا در احراز هویت بیومتریک" };
+      return { success: false, message: "خطا" };
     }
   },
 
@@ -169,12 +170,14 @@ export const UserService = {
       await updateDoc(userDocRef, { isBiometricEnabled: enabled });
       if (enabled) {
         localStorage.setItem('noosh_biometric_active', 'true');
+        localStorage.removeItem('noosh_biometric_declined');
       } else {
         localStorage.removeItem('noosh_biometric_active');
       }
       notifyUpdate();
       return true;
     } catch (e) {
+      console.error("Enable Biometric Error:", e);
       return false;
     }
   },
@@ -202,7 +205,6 @@ export const UserService = {
     try {
       await RecipeService.clearAllCache();
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
       const result = await signInWithPopup(auth, provider); 
       const user = result.user;
       const deviceId = getDeviceFingerprint();
@@ -217,51 +219,34 @@ export const UserService = {
       }
 
       let data = userDoc.data() as UserProfile;
+      data.uid = user.uid;
 
       if (data.isDeleted) {
         await signOut(auth);
-        return { success: false, message: "این حساب کاربری حذف شده است." };
+        return { success: false, message: "حساب حذف شده است." };
       }
 
-      const userEmail = (user.email || "").toLowerCase();
-      const isOwner = userEmail === ADMIN_EMAIL || data.isAdmin;
-
-      if (!isOwner) {
-        const registeredDevices = data.registeredDevices || [];
-        if (!registeredDevices.includes(deviceId)) {
-          if (registeredDevices.length >= 2) {
-            await signOut(auth);
-            return { success: false, message: "تعداد دستگاه‌های مجاز (۲) تکمیل شده است.", code: 'auth/device-limit-reached' };
-          }
-          await updateDoc(userDocRef, { registeredDevices: arrayUnion(deviceId) });
-          data.registeredDevices = [...registeredDevices, deviceId];
-        }
-      }
-
-      const newSessionId = isOwner ? 'ADMIN_SESSION' : crypto.randomUUID();
+      const newSessionId = data.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       await updateDoc(userDocRef, { currentSessionId: newSessionId });
       
       return { success: true, user: { ...data, currentSessionId: newSessionId } };
     } catch (error: any) {
-      return { success: false, message: "خطا در ورود با گوگل", code: error.code };
+      return { success: false, message: "خطا", code: error.code };
     }
   },
 
   validateSession: async (): Promise<boolean> => {
     const user = auth.currentUser;
     if (!user) return true;
-    
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
     if (userDoc.exists() && userDoc.data().isAdmin) return true;
-
     const localSession = localStorage.getItem('noosh_active_session');
     if (!localSession) return true;
     try {
       if (userDoc.exists()) {
-        const remoteSession = userDoc.data().currentSessionId;
-        return localSession === remoteSession;
+        return localSession === userDoc.data().currentSessionId;
       }
       return true;
     } catch { return true; }
@@ -281,9 +266,6 @@ export const UserService = {
       await setDoc(doc(db, "users", userCredential.user.uid), newUser);
       return { success: true, user: newUser };
     } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        return { success: false, message: "این ایمیل قبلاً ثبت شده است.", code: error.code };
-      }
       return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
     }
   },
@@ -298,6 +280,7 @@ export const UserService = {
             const userDoc = await getDoc(userDocRef);
             if (userDoc.exists()) {
               const data = userDoc.data() as UserProfile;
+              data.uid = user.uid;
               if (data.isDeleted) resolve(null);
               else resolve(data);
             } else { resolve(null); }
@@ -317,12 +300,8 @@ export const UserService = {
   },
 
   toggleUserApproval: async (uid: string, currentStatus: boolean) => {
-    try {
-      await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
-      notifyUpdate();
-    } catch (error: any) {
-      throw error;
-    }
+    await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
+    notifyUpdate();
   },
 
   updateShoppingList: async (username: string, items: ShoppingItem[]): Promise<UserProfile> => {
@@ -352,22 +331,18 @@ export const UserService = {
   },
 
   extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
-      const userData = userDoc.data() as UserProfile;
-      const now = Date.now();
-      const currentExpiry = userData.subscriptionExpiry || now;
-      const baseTime = currentExpiry > now ? currentExpiry : now;
-      const extensionMs = 31 * 24 * 60 * 60 * 1000;
-      const newExpiry = baseTime + extensionMs;
-      await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
-      notifyUpdate();
-      return { ...userData, subscriptionExpiry: newExpiry };
-    } catch (error: any) {
-      throw error;
-    }
+    const userDocRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
+    const userData = userDoc.data() as UserProfile;
+    const now = Date.now();
+    const currentExpiry = userData.subscriptionExpiry || now;
+    const baseTime = currentExpiry > now ? currentExpiry : now;
+    const extensionMs = 31 * 24 * 60 * 60 * 1000;
+    const newExpiry = baseTime + extensionMs;
+    await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
+    notifyUpdate();
+    return { ...userData, subscriptionExpiry: newExpiry };
   },
 
   getAllUsers: async (): Promise<{ success: boolean; data: any[]; error?: string }> => {
@@ -379,17 +354,11 @@ export const UserService = {
   },
 
   deleteUser: async (uid: string): Promise<void> => {
-    try {
-      await updateDoc(doc(db, "users", uid), { 
-        isDeleted: true,
-        email: `deleted_${uid}@noosh.old`,
-        username: `deleted_${uid}`,
-        registeredDevices: [] 
-      });
-      notifyUpdate();
-    } catch (e: any) {
-      throw e;
-    }
+    await updateDoc(doc(db, "users", uid), { 
+      isDeleted: true,
+      registeredDevices: [] 
+    });
+    notifyUpdate();
   },
 
   logout: async () => {
