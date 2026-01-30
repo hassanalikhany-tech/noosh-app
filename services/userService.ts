@@ -96,59 +96,34 @@ export const UserService = {
       const userEmail = (firebaseUser.email || "").toLowerCase();
       const isOwner = userEmail === ADMIN_EMAIL || userData.isAdmin;
 
-      if (!isOwner) {
-        const registeredDevices = userData.registeredDevices || [];
-        const isDeviceKnown = registeredDevices.includes(deviceId);
-        
-        if (!isDeviceKnown) {
-          if (registeredDevices.length >= 2) {
-            await signOut(auth);
-            return { 
-              success: false, 
-              message: "تعداد دستگاه‌های مجاز این اکانت (۲ دستگاه) تکمیل شده است.",
-              code: 'auth/device-limit-reached' 
-            };
-          } else {
-            await updateDoc(userDocRef, { 
-              registeredDevices: arrayUnion(deviceId) 
-            });
-            userData.registeredDevices = [...registeredDevices, deviceId];
-          }
-        }
-      }
-
-      const newSessionId = crypto.randomUUID();
+      const newSessionId = isOwner ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       
-      if (!isOwner) {
-        await updateDoc(userDocRef, { currentSessionId: newSessionId });
-      } else {
-        await updateDoc(userDocRef, { currentSessionId: 'ADMIN_SESSION' });
-        localStorage.setItem('noosh_active_session', 'ADMIN_SESSION');
-      }
+      await updateDoc(userDocRef, { currentSessionId: newSessionId });
       
-      return { success: true, user: { ...userData, currentSessionId: localStorage.getItem('noosh_active_session') || '' } };
+      return { success: true, user: { ...userData, currentSessionId: newSessionId } };
       
     } catch (error: any) {
       let msg = "ایمیل یا رمز عبور اشتباه است.";
-      if (error.code === 'auth/user-not-found') msg = "کاربری با این ایمیل یافت نشد.";
       return { success: false, message: msg, code: error.code };
     }
   },
 
+  // متد اصلی که سخت‌افزار گوشی را فعال می‌کند
   loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "مرورگر شما پشتیبانی نمی‌کند." };
+      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی سخت‌افزاری" };
       
       const savedEmail = localStorage.getItem('noosh_saved_email');
       const savedPassword = localStorage.getItem('noosh_saved_password');
       
-      if (!savedEmail || !savedPassword) return { success: false, message: "اعتبارنامه یافت نشد." };
+      if (!savedEmail || !savedPassword) return { success: false, message: "اطلاعات ورود یافت نشد." };
 
-      // ایجاد چالش برای باز کردن پنجره تشخیص چهره سیستم‌عامل
+      // ۱. ایجاد چالش امنیتی برای فعال‌سازی سنسور گوشی (FaceID/Fingerprint)
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
 
+      // ۲. باز کردن پنجره سیستمی تشخیص چهره گوشی
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: challenge,
@@ -157,14 +132,15 @@ export const UserService = {
         }
       });
 
+      // ۳. اگر سنسور گوشی هویت را تایید کرد (خروجی نال نباشد)
       if (credential) {
-        // اگر تایید شد، با استفاده از اطلاعات ذخیره شده ورود واقعی انجام شود
-        return UserService.login(savedEmail, savedPassword);
+        // ۴. ورود ۱۰۰٪ خودکار بدون نیاز به کلیک کاربر
+        return await UserService.login(savedEmail, savedPassword);
       }
-      return { success: false, message: "لغو شد." };
+      return { success: false, message: "تایید هویت انجام نشد." };
     } catch (e) {
-      console.error("Biometric Scan Error:", e);
-      return { success: false, message: "خطا در سنسور بیومتریک" };
+      console.error("Biometric Hardware Error:", e);
+      return { success: false, message: "خطا در برقراری ارتباط با سنسور گوشی" };
     }
   },
 
@@ -181,7 +157,6 @@ export const UserService = {
       notifyUpdate();
       return true;
     } catch (e) {
-      console.error("Enable Biometric DB Error:", e);
       return false;
     }
   },
@@ -199,9 +174,9 @@ export const UserService = {
   sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       await sendPasswordResetEmail(auth, email);
-      return { success: true, message: "لینک بازنشانی رمز عبور به ایمیل شما ارسال شد." };
+      return { success: true, message: "لینک بازنشانی رمز عبور ارسال شد." };
     } catch {
-      return { success: false, message: "خطا در ارسال ایمیل بازیابی." };
+      return { success: false, message: "خطا در ارسال ایمیل." };
     }
   },
 
@@ -211,8 +186,6 @@ export const UserService = {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider); 
       const user = result.user;
-      const deviceId = getDeviceFingerprint();
-
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
       
@@ -224,12 +197,6 @@ export const UserService = {
 
       let data = userDoc.data() as UserProfile;
       data.uid = user.uid;
-
-      if (data.isDeleted) {
-        await signOut(auth);
-        return { success: false, message: "حساب حذف شده است." };
-      }
-
       const newSessionId = data.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
       localStorage.setItem('noosh_active_session', newSessionId);
       await updateDoc(userDocRef, { currentSessionId: newSessionId });
@@ -245,15 +212,11 @@ export const UserService = {
     if (!user) return true;
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists() && userDoc.data().isAdmin) return true;
     const localSession = localStorage.getItem('noosh_active_session');
-    if (!localSession) return true;
-    try {
-      if (userDoc.exists()) {
-        return localSession === userDoc.data().currentSessionId;
-      }
-      return true;
-    } catch { return true; }
+    if (userDoc.exists()) {
+      return userDoc.data().isAdmin || localSession === userDoc.data().currentSessionId;
+    }
+    return true;
   },
 
   register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string; code?: string }> => {
@@ -285,8 +248,7 @@ export const UserService = {
             if (userDoc.exists()) {
               const data = userDoc.data() as UserProfile;
               data.uid = user.uid;
-              if (data.isDeleted) resolve(null);
-              else resolve(data);
+              resolve(data.isDeleted ? null : data);
             } else { resolve(null); }
           } catch { resolve(null); }
         } else { resolve(null); }
@@ -317,10 +279,9 @@ export const UserService = {
     if (!user) throw new Error("User not found");
     const isAdding = !user.favoriteDishIds?.includes(dishId);
     let favorites = [...(user.favoriteDishIds || [])];
-    let blacklist = [...(user.blacklistedDishIds || [])];
-    if (isAdding) { favorites.push(dishId); blacklist = blacklist.filter(id => id !== dishId); }
-    else { favorites = favorites.filter(id => id !== dishId); }
-    return UserService.updateProfile(username, { favoriteDishIds: favorites, blacklistedDishIds: blacklist });
+    if (isAdding) favorites.push(dishId);
+    else favorites = favorites.filter(id => id !== dishId);
+    return UserService.updateProfile(username, { favoriteDishIds: favorites });
   },
 
   toggleBlacklist: async (username: string, dishId: string): Promise<UserProfile> => {
@@ -328,10 +289,9 @@ export const UserService = {
     if (!user) throw new Error("User not found");
     const isAdding = !user.blacklistedDishIds?.includes(dishId);
     let blacklist = [...(user.blacklistedDishIds || [])];
-    let favorites = [...(user.favoriteDishIds || [])];
-    if (isAdding) { blacklist.push(dishId); favorites = favorites.filter(id => id !== dishId); }
-    else { blacklist = blacklist.filter(id => id !== dishId); }
-    return UserService.updateProfile(username, { blacklistedDishIds: blacklist, favoriteDishIds: favorites });
+    if (isAdding) blacklist.push(dishId);
+    else blacklist = blacklist.filter(id => id !== dishId);
+    return UserService.updateProfile(username, { blacklistedDishIds: blacklist });
   },
 
   extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
@@ -341,9 +301,8 @@ export const UserService = {
     const userData = userDoc.data() as UserProfile;
     const now = Date.now();
     const currentExpiry = userData.subscriptionExpiry || now;
-    const baseTime = currentExpiry > now ? currentExpiry : now;
-    const extensionMs = 31 * 24 * 60 * 60 * 1000;
-    const newExpiry = baseTime + extensionMs;
+    const baseTime = Math.max(currentExpiry, now);
+    const newExpiry = baseTime + (31 * 24 * 60 * 60 * 1000);
     await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
     notifyUpdate();
     return { ...userData, subscriptionExpiry: newExpiry };
@@ -358,10 +317,7 @@ export const UserService = {
   },
 
   deleteUser: async (uid: string): Promise<void> => {
-    await updateDoc(doc(db, "users", uid), { 
-      isDeleted: true,
-      registeredDevices: [] 
-    });
+    await updateDoc(doc(db, "users", uid), { isDeleted: true });
     notifyUpdate();
   },
 
@@ -372,7 +328,6 @@ export const UserService = {
   },
 
   isSubscriptionValid: (user: UserProfile): boolean => {
-    const userEmail = (user.email || "").toLowerCase();
-    return !!(userEmail === ADMIN_EMAIL || user.isAdmin || user.subscriptionExpiry > Date.now());
+    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
   }
 };

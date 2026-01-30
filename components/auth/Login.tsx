@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, Info, ScanFace, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, ScanFace } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -23,12 +23,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  
-  // برای اینکه کاربر حتی برای یک لحظه پنل ورود را نبیند، اگر بیومتریک فعال است از ابتدا در حالت لودینگ می‌مانیم
-  const isBiometricActive = localStorage.getItem('noosh_biometric_active') === 'true';
-  const [isFaceLoading, setIsFaceLoading] = useState(isBiometricActive);
-  const [faceStatus, setFaceStatus] = useState<'scanning' | 'verifying' | 'success'>('scanning');
-  
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -41,35 +35,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // ورود بیومتریک بلافاصله پس از سوار شدن کامپوننت
+  // فراخوانی سنسور تشخیص چهره گوشی به محض باز شدن برنامه
   useEffect(() => {
+    const isBiometricActive = localStorage.getItem('noosh_biometric_active') === 'true';
     if (isBiometricActive && window.PublicKeyCredential) {
-      const runBiometric = async () => {
-        // ۱ ثانیه وقفه برای اطمینان از آماده بودن کامل DOM و فایربیس
+      const triggerBiometric = async () => {
+        // ۱ ثانیه وقفه برای اینکه کاربر ابتدا پنل ورود را ببیند و بعد پنجره گوشی ظاهر شود
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        setIsLoading(true);
         try {
           const result = await UserService.loginWithBiometric();
           if (result.success && result.user) {
-            setFaceStatus('verifying');
-            await new Promise(resolve => setTimeout(resolve, 700));
-            setFaceStatus('success');
-            await new Promise(resolve => setTimeout(resolve, 400));
-            
-            // ورود قطعی - بدون هیچ کلیک اضافی
             onLogin(result.user);
           } else {
-            // در صورت لغو یا نبود اعتبارنامه، به فرم معمولی برمی‌گردیم
-            setIsFaceLoading(false);
+            setIsLoading(false);
           }
         } catch (e) {
-          console.error("Biometric Failure:", e);
-          setIsFaceLoading(false);
+          setIsLoading(false);
         }
       };
-      runBiometric();
+      triggerBiometric();
     }
-  }, [onLogin, isBiometricActive]);
+  }, [onLogin]);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
@@ -140,14 +127,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (mode === 'login') {
         result = await UserService.login(email, password);
       } else {
+        if (formData.password !== formData.confirmPassword) {
+           setError('رمز عبور و تاییدیه آن یکسان نیستند.');
+           setIsLoading(false);
+           return;
+        }
         result = await UserService.register({ ...formData, email });
       }
 
       if (result.success && result.user) {
-        // ذخیره الزامی برای فعال‌سازی بیومتریک در آینده
         localStorage.setItem('noosh_saved_email', email);
         localStorage.setItem('noosh_saved_password', password);
-        
         if (mode === 'login' && rememberMe) {
           localStorage.setItem('noosh_remember_me', 'true');
         }
@@ -156,67 +146,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError(result.message || 'خطایی رخ داده است.');
       }
     } catch (err: any) {
-      setError('خطای سیستمی');
+      setError('خطای سیستمی در ورود.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isFaceLoading) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
-        <div className="relative mb-16">
-          <div className={`absolute inset-0 rounded-full blur-[120px] transition-all duration-1000 ${faceStatus === 'success' ? 'bg-emerald-500/50' : 'bg-teal-500/20'}`}></div>
-          <div className={`relative z-10 p-12 bg-slate-900/60 rounded-[4rem] border border-white/10 shadow-2xl backdrop-blur-3xl transition-all duration-500 ${faceStatus === 'success' ? 'scale-110 border-emerald-500/50' : ''}`}>
-            {faceStatus === 'success' ? (
-              <CheckCircle2 size={140} className="text-emerald-400 animate-enter" strokeWidth={1} />
-            ) : (
-              <ScanFace size={140} className={`text-teal-400 ${faceStatus === 'scanning' ? 'animate-pulse' : 'animate-float'}`} strokeWidth={1} />
-            )}
-            
-            {faceStatus === 'scanning' && (
-               <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,1)] animate-[scan_2s_infinite] opacity-50"></div>
-            )}
-          </div>
-        </div>
-
-        <div className="text-center space-y-6 animate-enter">
-          <div className="space-y-2">
-            <h2 className={`text-4xl font-black transition-all duration-500 ${faceStatus === 'success' ? 'text-emerald-400' : 'text-white text-halo'}`}>
-              {faceStatus === 'scanning' ? 'در حال تشخیص چهره...' : faceStatus === 'verifying' ? 'تایید اعتبار...' : 'ورود موفقیت‌آمیز!'}
-            </h2>
-            <p className="text-slate-500 text-xs font-black tracking-[0.2em] uppercase">Noosh Intelligent Login</p>
-          </div>
-          
-          <div className="flex justify-center gap-3">
-             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${faceStatus === 'scanning' ? 'bg-teal-500 animate-bounce' : 'bg-emerald-500'}`}></div>
-             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 [animation-delay:-0.15s] ${faceStatus === 'verifying' || faceStatus === 'success' ? 'bg-emerald-500' : 'bg-slate-700 animate-bounce'}`}></div>
-             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 [animation-delay:-0.3s] ${faceStatus === 'success' ? 'bg-emerald-500' : 'bg-slate-700 animate-bounce'}`}></div>
-          </div>
-        </div>
-        
-        <button 
-          onClick={() => setIsFaceLoading(false)}
-          className="mt-28 px-14 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-500 text-xs font-black transition-all active:scale-95"
-        >
-          انصراف و ورود دستی
-        </button>
-        
-        <style>{`
-          @keyframes scan {
-            0% { top: 10%; }
-            50% { top: 90%; }
-            100% { top: 10%; }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0 pointer-events-none"></div>
+      
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
+        
+        {/* بخش لوگو و برند (سمت چپ در دسکتاپ / بالا در موبایل) */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
           <div className="relative z-10 text-center space-y-8">
@@ -233,13 +175,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
 
-        <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-hidden">
-          <div className="md:hidden flex flex-col items-center mb-6 gap-2 flex-shrink-0">
+        {/* بخش فرم ورود (سمت راست) */}
+        <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative">
+          <div className="md:hidden flex flex-col items-center mb-6 gap-2">
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]" />
             <div className="flex flex-row items-baseline justify-center gap-1.5" style={{ direction: 'ltr' }}>
               <span className="text-3xl font-black italic tracking-tighter text-slate-900 uppercase">NOOSH</span>
               <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
             </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+              {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
+              {localStorage.getItem('noosh_biometric_active') === 'true' && <ScanFace className="text-teal-500 animate-pulse" size={24} />}
+            </h2>
+            <p className="text-slate-400 text-xs font-bold mt-1">
+              {mode === 'login' ? 'برای دسترسی به پنل کاربری وارد شوید' : mode === 'register' ? 'مشخصات خود را برای ثبت‌نام وارد کنید' : 'لینک بازنشانی به ایمیل شما ارسال خواهد شد'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -261,10 +214,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <input type="email" name="email" dir="ltr" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="example@gmail.com" />
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Lock size={12}/> رمز عبور</label>
-              <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
-            </div>
+            {mode !== 'forgot-password' && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Lock size={12}/> رمز عبور</label>
+                <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><CheckSquare size={12}/> تایید رمز عبور</label>
+                <input type="password" name="confirmPassword" dir="ltr" value={formData.confirmPassword} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
+              </div>
+            )}
 
             {mode === 'login' && (
               <div className="flex items-center justify-between px-1">
@@ -281,17 +243,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
               {isLoading ? <Loader2 size={20} className="animate-spin" /> : <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'تایید و ثبت‌نام' : 'ارسال لینک بازیابی'}</span>}
+              {!isLoading && <ArrowRight size={18} />}
             </button>
 
             {mode === 'login' && (
-              <button type="button" onClick={handleGoogleLogin} disabled={isGoogleLoading} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">
-                {isGoogleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleIcon />}
-                <span className="text-[10px]">ورود با گوگل</span>
-              </button>
+              <div className="space-y-3">
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-slate-100"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-black text-slate-300">یا</span>
+                  <div className="flex-grow border-t border-slate-100"></div>
+                </div>
+                <button type="button" onClick={handleGoogleLogin} disabled={isGoogleLoading} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">
+                  {isGoogleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleIcon />}
+                  <span className="text-[10px]">ورود با اکانت گوگل</span>
+                </button>
+              </div>
             )}
 
             <div className="pt-4 text-center">
-              <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black text-[11px]">{mode === 'login' ? 'ساخت حساب جدید' : 'وارد شوید'}</button>
+              <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black text-[11px] underline-offset-4 hover:underline">
+                {mode === 'login' ? 'هنوز ثبت‌نام نکرده‌اید؟ ساخت حساب' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
+              </button>
             </div>
           </form>
         </div>
