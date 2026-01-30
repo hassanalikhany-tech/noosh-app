@@ -27,7 +27,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   
-  // وضعیت فعال بودن بیومتریک در حافظه
   const [isBiometricActive] = useState(localStorage.getItem('noosh_biometric_active') === 'true');
   const [bioStatus, setBioStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
   
@@ -50,18 +49,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   }, []);
 
-  // تابع اصلی برای بیدار کردن سخت‌افزار گوشی با لمس کاربر
   const handleTriggerBiometric = async () => {
     if (!isBiometricActive) return;
-    
     setBioStatus('scanning');
     try {
-      // این خط مستقیماً سخت‌افزار FaceID/اثرانگشت را فعال می‌کند
       const result = await UserService.loginWithBiometric();
-      
       if (result.success && result.user) {
         setBioStatus('success');
-        // وقفه کوتاه برای نمایش تیک سبز
         setTimeout(() => onLogin(result.user!), 600);
       } else {
         setBioStatus('idle');
@@ -158,38 +152,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* بخش فرم ورود (سمت راست) */}
-        <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative">
+        <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-y-auto no-scrollbar">
           
-          {/* دکمه اسکن هوشمند - لایه روی فرم برای فعالسازی قطعی سنسور */}
-          {isBiometricActive && mode === 'login' && (
-            <div className="mb-8 p-6 bg-teal-50 rounded-3xl border-2 border-teal-100 flex flex-col items-center gap-4 animate-enter relative overflow-hidden group">
-               <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 opacity-20 group-hover:opacity-100 animate-pulse transition-opacity"></div>
-               <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white rounded-2xl shadow-sm">
-                    {bioStatus === 'success' ? <CheckCircle2 className="text-emerald-500" size={32} /> : <ScanFace className="text-teal-600" size={32} />}
-                  </div>
-                  <div className="text-right">
-                    <h4 className="text-sm font-black text-slate-800">ورود سریع با تشخیص چهره</h4>
-                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">برای فعال‌سازی سنسور گوشی دکمه زیر را لمس کنید</p>
-                  </div>
-               </div>
-               <button 
-                type="button"
-                onClick={handleTriggerBiometric}
-                disabled={bioStatus !== 'idle'}
-                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black shadow-lg shadow-teal-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-               >
-                 {bioStatus === 'scanning' ? <Loader2 size={16} className="animate-spin" /> : <ScanFace size={16} />}
-                 {bioStatus === 'scanning' ? 'در حال تشخیص...' : 'لمس کنید و وارد شوید'}
-               </button>
-            </div>
-          )}
-
           <div className="mb-6">
             <h2 className="text-2xl font-black text-slate-800">
               {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
             </h2>
-            <p className="text-slate-400 text-xs font-bold mt-1">NOOSH PREMIUM ACCESS</p>
+            <p className="text-slate-400 text-xs font-bold mt-1 uppercase">NOOSH PREMIUM ACCESS</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,10 +190,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </button>
 
             {mode === 'login' && (
-              <button type="button" onClick={handleGoogleLogin} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 mt-2">
-                <GoogleIcon />
-                <span className="text-[10px]">ورود با گوگل</span>
-              </button>
+              <div className="space-y-3 pt-2">
+                {/* دکمه ورود با گوگل */}
+                <button type="button" onClick={handleGoogleLogin} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">
+                  <GoogleIcon />
+                  <span className="text-[10px]">ورود با گوگل</span>
+                </button>
+
+                {/* دکمه ورود بیومتریک گوشی (مکان جدید: زیر گوگل) */}
+                {isBiometricActive && (
+                  <button 
+                    type="button"
+                    onClick={handleTriggerBiometric}
+                    disabled={bioStatus !== 'idle'}
+                    className="w-full py-4 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl border-2 border-teal-100 border-dashed font-black transition-all active:scale-95 flex items-center justify-center gap-3"
+                  >
+                    {bioStatus === 'scanning' ? <Loader2 size={16} className="animate-spin" /> : bioStatus === 'success' ? <CheckCircle2 size={16} className="text-emerald-500" /> : <ScanFace size={18} />}
+                    <span className="text-[10px]">{bioStatus === 'scanning' ? 'در حال تایید...' : 'ورود سریع با تشخیص هویت گوشی'}</span>
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="pt-4 text-center">
