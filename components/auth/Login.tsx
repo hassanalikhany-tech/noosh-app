@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, Info, ScanFace } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, Info, ScanFace, CheckCircle2 } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -24,6 +24,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isFaceLoading, setIsFaceLoading] = useState(false);
+  const [faceStatus, setFaceStatus] = useState<'scanning' | 'verifying' | 'success'>('scanning');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -36,25 +37,37 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // چک کردن ورود بیومتریک بلافاصله پس از لود صفحه
+  // چک کردن ورود بیومتریک بلافاصله پس از لود صفحه (بدون معطلی کاربر)
   useEffect(() => {
     const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
-    if (isBioActive && window.PublicKeyCredential) {
+    const savedEmail = localStorage.getItem('noosh_saved_email');
+    const savedPassword = localStorage.getItem('noosh_saved_password');
+
+    if (isBioActive && savedEmail && savedPassword && window.PublicKeyCredential) {
       const runBiometric = async () => {
         setIsFaceLoading(true);
-        // تاخیر کوتاه برای نمایش انیمیشن و باز شدن پنجره سیستمی
-        await new Promise(resolve => setTimeout(resolve, 800));
+        setFaceStatus('scanning');
+        
+        // وقفه بسیار کوتاه برای نمایش انیمیشن اولیه
+        await new Promise(resolve => setTimeout(resolve, 600));
         
         try {
           const result = await UserService.loginWithBiometric();
           if (result.success && result.user) {
-            // ورود موفقیت‌آمیز: مستقیماً پروفایل را به App ارسال می‌کنیم
+            setFaceStatus('verifying');
+            // شبیه‌سازی تایید نهایی برای حس خوب کاربر
+            await new Promise(resolve => setTimeout(resolve, 800));
+            setFaceStatus('success');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // ورود قطعی و انتقال به اپلیکیشن
             onLogin(result.user);
           } else {
-            // در صورت لغو یا خطا توسط کاربر، به فرم ورود برمی‌گردیم
+            // اگر کاربر اسکن را کنسل کرد، فرم نمایش داده شود
             setIsFaceLoading(false);
           }
         } catch (e) {
+          console.error("Biometric Error:", e);
           setIsFaceLoading(false);
         }
       };
@@ -135,7 +148,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
-        // ذخیره برای دفعات بعدی ورود با چهره
+        // ذخیره الزامی برای فعال‌سازی بیومتریک در دفعات بعد
         localStorage.setItem('noosh_saved_email', email);
         localStorage.setItem('noosh_saved_password', password);
         
@@ -147,33 +160,61 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError(result.message || 'خطایی رخ داده است.');
       }
     } catch (err: any) {
-      setError('خطای سیستمی در ورود');
+      setError('خطای سیستمی');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // اگر در حال تشخیص چهره است، فقط انیمیشن را نشان بده
+  // رابط کاربری مخصوص ورود هوشمند (باید تمام صفحه را بپوشاند)
   if (isFaceLoading) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
-        <div className="relative mb-12">
-          <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-[100px] animate-pulse"></div>
-          <div className="relative z-10 p-8 bg-slate-900/50 rounded-full border border-white/10 shadow-2xl backdrop-blur-xl">
-            <ScanFace size={120} className="text-teal-400 animate-float" strokeWidth={1} />
+        <div className="relative mb-16">
+          <div className={`absolute inset-0 rounded-full blur-[120px] transition-all duration-1000 ${faceStatus === 'success' ? 'bg-emerald-500/40' : 'bg-teal-500/20'}`}></div>
+          <div className={`relative z-10 p-12 bg-slate-900/60 rounded-[4rem] border border-white/10 shadow-2xl backdrop-blur-3xl transition-all duration-500 ${faceStatus === 'success' ? 'scale-110 border-emerald-500/50' : ''}`}>
+            {faceStatus === 'success' ? (
+              <CheckCircle2 size={140} className="text-emerald-400 animate-enter" strokeWidth={1} />
+            ) : (
+              <ScanFace size={140} className={`text-teal-400 ${faceStatus === 'scanning' ? 'animate-pulse' : 'animate-float'}`} strokeWidth={1} />
+            )}
+            
+            {/* خط اسکنر انیمیشنی */}
+            {faceStatus === 'scanning' && (
+               <div className="absolute top-0 left-0 w-full h-1 bg-teal-400 shadow-[0_0_15px_rgba(45,212,191,1)] animate-[scan_2s_infinite] opacity-50"></div>
+            )}
           </div>
         </div>
-        <div className="text-center space-y-4 animate-enter">
-          <h2 className="text-3xl font-black text-white text-halo">در حال ورود هوشمند...</h2>
-          <p className="text-slate-400 text-lg font-bold">سیستم تشخیص چهره فعال شد</p>
+
+        <div className="text-center space-y-6 animate-enter">
+          <div className="space-y-2">
+            <h2 className={`text-4xl font-black transition-all duration-500 ${faceStatus === 'success' ? 'text-emerald-400' : 'text-white text-halo'}`}>
+              {faceStatus === 'scanning' ? 'در حال اسکن چهره...' : faceStatus === 'verifying' ? 'تایید هویت...' : 'خوش آمدید!'}
+            </h2>
+            <p className="text-slate-500 text-xs font-black tracking-[0.2em] uppercase">Noosh Secure Login System</p>
+          </div>
+          
+          <div className="flex justify-center gap-3">
+             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${faceStatus === 'scanning' ? 'bg-teal-500 animate-bounce' : 'bg-emerald-500'}`}></div>
+             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 [animation-delay:-0.15s] ${faceStatus === 'verifying' || faceStatus === 'success' ? 'bg-emerald-500' : 'bg-slate-700 animate-bounce'}`}></div>
+             <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 [animation-delay:-0.3s] ${faceStatus === 'success' ? 'bg-emerald-500' : 'bg-slate-700 animate-bounce'}`}></div>
+          </div>
         </div>
         
         <button 
           onClick={() => setIsFaceLoading(false)}
-          className="mt-20 px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-500 text-xs font-black transition-all active:scale-95"
+          className="mt-28 px-14 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-500 text-xs font-black transition-all active:scale-95"
         >
-          ورود دستی با رمز عبور
+          انصراف و ورود دستی
         </button>
+        
+        <style>{`
+          @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+          }
+        `}</style>
       </div>
     );
   }
