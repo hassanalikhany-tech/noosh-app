@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, Info, KeyRound, ArrowLeft } from 'lucide-react';
+import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Sparkles, Phone, CheckSquare, Square, Info, ScanFace } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -23,9 +23,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isFaceLoading, setIsFaceLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [detailedError, setDetailedError] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -35,6 +35,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     fullName: '',
     phoneNumber: '',
   });
+
+  // چک کردن ورود بیومتریک در شروع برنامه
+  useEffect(() => {
+    const tryBiometric = async () => {
+      const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
+      if (isBioActive && window.PublicKeyCredential) {
+        setIsFaceLoading(true);
+        const result = await UserService.loginWithBiometric();
+        if (result.success && result.user) {
+          onLogin(result.user);
+        } else {
+          setIsFaceLoading(false);
+        }
+      }
+    };
+    tryBiometric();
+  }, []);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
@@ -47,22 +64,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   }, []);
 
-  useEffect(() => {
-    setError('');
-    setSuccessMsg('');
-    setDetailedError(null);
-    if (mode === 'register') {
-      setFormData(prev => ({ ...prev, fullName: '', phoneNumber: '', confirmPassword: '' }));
-    }
-  }, [mode]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error || successMsg) {
       setError('');
       setSuccessMsg('');
-      setDetailedError(null);
     }
   };
 
@@ -84,30 +91,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.email) {
-      setError('لطفاً ایمیل خود را وارد کنید.');
-      return;
-    }
-    setIsLoading(true);
-    const result = await UserService.sendResetPassword(formData.email);
-    setIsLoading(false);
-    if (result.success) {
-      setSuccessMsg(result.message);
-    } else {
-      setError(result.message);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'forgot-password') return handleResetPassword(e);
+    if (mode === 'forgot-password') {
+      if (!formData.email) {
+        setError('لطفاً ایمیل خود را وارد کنید.');
+        return;
+      }
+      setIsLoading(true);
+      const result = await UserService.sendResetPassword(formData.email);
+      setIsLoading(false);
+      if (result.success) setSuccessMsg(result.message);
+      else setError(result.message);
+      return;
+    }
+
     if (isLoading) return;
-    
     const email = formData.email.trim();
     const password = formData.password;
-
     setError('');
 
     if (!email || !password) {
@@ -115,23 +116,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    if (mode === 'register') {
-      if (!formData.fullName.trim() || !formData.phoneNumber.trim()) {
-        setError('تکمیل تمامی فیلدها الزامی است.');
-        return;
-      }
-      if (password !== formData.confirmPassword) {
-        setError('رمز عبور و تکرار آن با هم مطابقت ندارند.');
-        return;
-      }
-      if (password.length < 6) {
-        setError('رمز عبور باید حداقل ۶ کاراکتر باشد.');
-        return;
-      }
-    }
-
     setIsLoading(true);
-
     try {
       let result;
       if (mode === 'login') {
@@ -141,9 +126,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
+        // ذخیره اطلاعات برای دفعات بعد (مورد نیاز بیومتریک)
+        localStorage.setItem('noosh_saved_email', email);
+        localStorage.setItem('noosh_saved_password', password);
+        
         if (mode === 'login' && rememberMe) {
-          localStorage.setItem('noosh_saved_email', email);
-          localStorage.setItem('noosh_saved_password', password);
           localStorage.setItem('noosh_remember_me', 'true');
         }
         onLogin(result.user);
@@ -151,22 +138,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError(result.message || 'خطایی رخ داده است.');
       }
     } catch (err: any) {
-      setError('خطای سیستمی: ' + (err.message || 'نامشخص'));
+      setError('خطای سیستمی');
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (isFaceLoading) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white">
+        <ScanFace size={64} className="text-teal-500 animate-pulse mb-6" />
+        <h2 className="text-xl font-black mb-2">احراز هویت بیومتریک</h2>
+        <p className="text-slate-400 text-sm">در حال بررسی هویت شما...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
       <div className="bg-noosh-pattern opacity-10 absolute inset-0 pointer-events-none"></div>
-      
       <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
-        
-        {/* بخش برندینگ */}
         <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
-          
           <div className="relative z-10 text-center space-y-8">
             <div className="animate-float">
                <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-48 h-48 mx-auto object-contain drop-shadow-[0_0_25px_rgba(45,212,191,0.5)]" />
@@ -181,9 +174,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* بخش فرم */}
         <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-hidden">
-          
           <div className="md:hidden flex flex-col items-center mb-6 gap-2 flex-shrink-0">
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]" />
             <div className="flex flex-row items-baseline justify-center gap-1.5" style={{ direction: 'ltr' }}>
@@ -192,66 +183,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           </div>
 
-          <div className="mb-4 text-center md:text-right">
-            <div className="inline-flex items-center gap-2 text-teal-600">
-              <Sparkles size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">
-                {mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
-              </span>
-            </div>
-          </div>
-
-          {mode === 'register' && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3 animate-enter">
-              <Info className="text-blue-500 shrink-0" size={18} />
-              <p className="text-[10px] text-blue-800 font-black leading-relaxed">
-                <span className="block text-[11px] mb-0.5">توجه بسیار مهم:</span>
-                لطفاً از ایمیل معتبر و فعال استفاده کنید. لینک‌های بازیابی و فاکتورها به این آدرس ارسال خواهد شد.
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4 flex-grow md:flex-grow-0 overflow-y-auto pr-1">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                    <User size={12}/> نام و نام خانوادگی
-                  </label>
+                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><User size={12}/> نام و نام خانوادگی</label>
                   <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm" placeholder="حمید رضایی" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                    <Phone size={12}/> شماره همراه
-                  </label>
+                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Phone size={12}/> شماره همراه</label>
                   <input type="tel" name="phoneNumber" dir="ltr" value={formData.phoneNumber} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="0912xxxxxxx" />
                 </div>
               </>
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                <Mail size={12}/> آدرس ایمیل
-              </label>
+              <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Mail size={12}/> آدرس ایمیل</label>
               <input type="email" name="email" dir="ltr" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="example@gmail.com" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                  <Lock size={12}/> رمز عبور
-                </label>
-                <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
-              </div>
-
-              {mode === 'register' && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1">
-                    <Lock size={12}/> تکرار رمز عبور
-                  </label>
-                  <input type="password" name="confirmPassword" dir="ltr" value={formData.confirmPassword} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
-                </div>
-              )}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Lock size={12}/> رمز عبور</label>
+              <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
             </div>
 
             {mode === 'login' && (
@@ -264,38 +217,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </div>
             )}
 
-            {error && (
-              <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black flex items-center gap-2 border border-rose-100 animate-enter">
-                <AlertCircle size={14} className="shrink-0" /> <span>{error}</span>
-              </div>
-            )}
+            {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black flex items-center gap-2 border border-rose-100"><AlertCircle size={14} /> <span>{error}</span></div>}
+            {successMsg && <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black border border-emerald-100">{successMsg}</div>}
 
-            <div className="space-y-3 pt-2">
-              <button 
-                type="submit" 
-                disabled={isLoading || isGoogleLoading} 
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3.5 rounded-xl shadow-xl shadow-teal-100 transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 group"
-              >
-                {isLoading ? <Loader2 size={20} className="animate-spin" /> : (
-                  <>
-                    <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'تایید و ثبت‌نام' : 'ارسال لینک بازیابی'}</span>
-                    <ArrowRight size={20} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
-                  </>
-                )}
+            <button type="submit" disabled={isLoading || isGoogleLoading} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
+              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'تایید و ثبت‌نام' : 'ارسال لینک بازیابی'}</span>}
+            </button>
+
+            {mode === 'login' && (
+              <button type="button" onClick={handleGoogleLogin} disabled={isGoogleLoading} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">
+                {isGoogleLoading ? <Loader2 size={16} className="animate-spin" /> : <GoogleIcon />}
+                <span className="text-[10px]">ورود با گوگل</span>
               </button>
-
-              {mode === 'login' && (
-                <button 
-                  type="button" 
-                  onClick={handleGoogleLogin}
-                  disabled={isLoading || isGoogleLoading}
-                  className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-3.5 rounded-xl border border-slate-200 shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
-                >
-                  {isGoogleLoading ? <Loader2 size={20} className="animate-spin" /> : <GoogleIcon />}
-                  <span>ورود با حساب گوگل</span>
-                </button>
-              )}
-            </div>
+            )}
 
             <div className="pt-4 text-center">
               <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-teal-600 font-black text-[11px]">{mode === 'login' ? 'ساخت حساب جدید' : 'وارد شوید'}</button>

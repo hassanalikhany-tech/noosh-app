@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, Dish } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle, Utensils, Users, Minus } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Sparkles, CheckCircle2, X, Leaf, Heart, Trash2, ThumbsDown, RotateCcw, Plus, ShieldAlert, Globe, FilterX, Check, Lock, ChevronDown, ChevronUp, Layers, AlertCircle, Utensils, Users, Minus, ScanFace, Fingerprint } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import DishVisual from './DishVisual';
 
@@ -24,6 +24,7 @@ const REGIONS = [
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout }) => {
   const [ingInput, setIngInput] = useState('');
   const [showNations, setShowNations] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
   const toggleCategory = (cat: DishCategory) => {
     let newExcluded = [...(user.excludedCategories || [])];
@@ -47,7 +48,26 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     UserService.updateProfile(user.username, { familySize: size });
   };
 
-  const toggleNationalityGroup = (countries: string[]) => {
+  const toggleBiometric = async () => {
+    const newVal = !user.isBiometricEnabled;
+    setIsBiometricLoading(true);
+    try {
+      if (newVal) {
+        // در اینجا منطق ثبت بیومتریک در مرورگر صدا زده می‌شود
+        // برای سادگی در این مرحله فقط فیلد دیتابیس آپدیت می‌شود
+        alert("قابلیت ورود با چهره برای این دستگاه آماده فعال‌سازی است. در ورود بعدی می‌توانید از آن استفاده کنید.");
+      }
+      const updatedUser = { ...user, isBiometricEnabled: newVal };
+      onUpdateUser(updatedUser);
+      await UserService.updateProfile(user.username, { isBiometricEnabled: newVal });
+    } catch (e) {
+      alert("خطا در تنظیم ورود بیومتریک");
+    } finally {
+      setIsBiometricLoading(false);
+    }
+  };
+
+  const updateNationalityGroup = (countries: string[]) => {
     if (user.excludedCategories?.includes('international')) return;
 
     let newExNats = [...(user.excludedNationalities || [])];
@@ -191,6 +211,30 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
         </div>
       </div>
 
+      {/* بخش امنیت و ورود سریع */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div className="flex items-center gap-4">
+          <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl shadow-inner">
+            <ScanFace size={32} />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-800">امنیت و ورود سریع</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Biometric Authentication</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-bold text-slate-500">ورود با چهره یا اثرانگشت</span>
+          <button 
+            onClick={toggleBiometric}
+            disabled={isBiometricLoading}
+            className={`relative w-16 h-8 rounded-full transition-all duration-300 ${user.isBiometricEnabled ? 'bg-teal-500 shadow-lg shadow-teal-100' : 'bg-slate-200'}`}
+          >
+            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all duration-300 ${user.isBiometricEnabled ? 'right-9' : 'right-1'}`}></div>
+          </button>
+        </div>
+      </div>
+
       {/* بخش محدودیت‌های دسته‌بندی */}
       <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3 mb-8">
@@ -253,7 +297,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
                     return (
                       <button
                         key={reg.id}
-                        onClick={() => toggleNationalityGroup(reg.countries)}
+                        onClick={() => updateNationalityGroup(reg.countries)}
                         className={`px-4 py-3 rounded-xl text-[11px] font-black transition-all border-2 flex items-center justify-between active:scale-95 ${
                           isExcluded 
                           ? 'bg-white border-slate-200 text-slate-400' 

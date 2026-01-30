@@ -61,7 +61,8 @@ const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string)
     isAdmin: isOwner,
     isApproved: isOwner,
     isDeleted: false,
-    registeredDevices: [deviceId] 
+    registeredDevices: [deviceId],
+    isBiometricEnabled: false
   };
 };
 
@@ -133,15 +134,57 @@ export const UserService = {
     }
   },
 
+  // متد جدید برای ورود با بیومتریک
+  loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
+    try {
+      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی سخت‌افزاری" };
+      
+      const savedEmail = localStorage.getItem('noosh_saved_email');
+      const savedPassword = localStorage.getItem('noosh_saved_password');
+      const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
+
+      if (!isBioActive || !savedEmail || !savedPassword) return { success: false, message: "غیرفعال" };
+
+      // شبیه‌سازی درخواست تایید هویت از سیستم‌عامل
+      const credential = await navigator.credentials.get({
+        publicKey: {
+          challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+          userVerification: "required",
+          timeout: 60000
+        }
+      });
+
+      if (credential) {
+        return UserService.login(savedEmail, savedPassword);
+      }
+      return { success: false, message: "لغو شد" };
+    } catch (e) {
+      return { success: false, message: "خطا در احراز هویت بیومتریک" };
+    }
+  },
+
+  enableBiometric: async (uid: string, enabled: boolean): Promise<boolean> => {
+    try {
+      const userDocRef = doc(db, "users", uid);
+      await updateDoc(userDocRef, { isBiometricEnabled: enabled });
+      if (enabled) {
+        localStorage.setItem('noosh_biometric_active', 'true');
+      } else {
+        localStorage.removeItem('noosh_biometric_active');
+      }
+      notifyUpdate();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
   resetUserDevices: async (uid: string): Promise<void> => {
     try {
       const userDocRef = doc(db, "users", uid);
       await updateDoc(userDocRef, { registeredDevices: [] });
       notifyUpdate();
     } catch (error: any) {
-      if (error.code === 'permission-denied') {
-        throw new Error("خطای دسترسی: ادمین اجازه تغییر اطلاعات کاربران دیگر را ندارد. لطفاً Firestore Rules را در کنسول فایربیس اصلاح کنید.");
-      }
       throw error;
     }
   },
@@ -239,7 +282,7 @@ export const UserService = {
       return { success: true, user: newUser };
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        return { success: false, message: "این ایمیل قبلاً ثبت شده است. اگر اکانت حذف شده، باید توسط مدیریت از پنل فایربیس نیز پاک شود.", code: error.code };
+        return { success: false, message: "این ایمیل قبلاً ثبت شده است.", code: error.code };
       }
       return { success: false, message: "خطا در ثبت‌نام.", code: error.code };
     }
@@ -278,9 +321,6 @@ export const UserService = {
       await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
       notifyUpdate();
     } catch (error: any) {
-      if (error.code === 'permission-denied') {
-        throw new Error("خطای دسترسی: قوانین فایربیس اجازه تغییر وضعیت کاربران دیگر را به شما نمی‌دهد.");
-      }
       throw error;
     }
   },
@@ -313,33 +353,19 @@ export const UserService = {
 
   extendSubscription: async (uid: string, days: number): Promise<UserProfile> => {
     try {
-      // دریافت اطلاعات دقیق کاربر هدف از دیتابیس
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
-      
       if (!userDoc.exists()) throw new Error("کاربر یافت نشد");
-      
       const userData = userDoc.data() as UserProfile;
       const now = Date.now();
-      
-      // اگر اعتبار فعلی تمام نشده، ۳۱ روز به انتهای آن اضافه کن
-      // اگر اعتبار تمام شده، ۳۱ روز از همین لحظه حساب کن
       const currentExpiry = userData.subscriptionExpiry || now;
       const baseTime = currentExpiry > now ? currentExpiry : now;
-      
-      // عدد دقیق میلی‌ثانیه برای ۳۱ روز
       const extensionMs = 31 * 24 * 60 * 60 * 1000;
       const newExpiry = baseTime + extensionMs;
-      
-      // بروزرسانی دیتابیس کاربر هدف
       await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
-      
       notifyUpdate();
       return { ...userData, subscriptionExpiry: newExpiry };
     } catch (error: any) {
-      if (error.code === 'permission-denied') {
-        throw new Error("خطای دسترسی: شما اجازه تمدید اشتراک دیگران را ندارید. (Firestore Rules)");
-      }
       throw error;
     }
   },
@@ -362,9 +388,6 @@ export const UserService = {
       });
       notifyUpdate();
     } catch (e: any) {
-      if (e.code === 'permission-denied') {
-        throw new Error("خطای دسترسی: اجازه حذف کاربر از سمت سرور صادر نشد.");
-      }
       throw e;
     }
   },

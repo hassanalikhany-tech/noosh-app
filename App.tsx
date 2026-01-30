@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2 } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [initStatus, setInitStatus] = useState('در حال بررسی نشست...');
   const [footerSearchTerm, setFooterSearchTerm] = useState('');
   const [recipeCount, setRecipeCount] = useState(0);
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const planResultsRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -47,7 +48,6 @@ const App: React.FC = () => {
       await UserService.updateProfile(currentUser.username, { [filter]: newVal });
     } catch (err) {
       setCurrentUser(currentUser);
-      console.error("Sync failed:", err);
     }
   };
 
@@ -107,6 +107,31 @@ const App: React.FC = () => {
     syncDatabase();
   }, [currentUser, recipeCount, isSyncing]);
 
+  // بررسی نیاز به نمایش درخواست بیومتریک پس از لاگین
+  useEffect(() => {
+    if (currentUser && !currentUser.isBiometricEnabled && !localStorage.getItem('noosh_biometric_declined') && window.PublicKeyCredential) {
+      const bioActive = localStorage.getItem('noosh_biometric_active');
+      if (!bioActive) {
+        setShowBiometricPrompt(true);
+      }
+    }
+  }, [currentUser]);
+
+  const handleEnableBiometric = async () => {
+    if (currentUser) {
+      const success = await UserService.enableBiometric(currentUser.username, true);
+      if (success) {
+        setCurrentUser({ ...currentUser, isBiometricEnabled: true });
+        setShowBiometricPrompt(false);
+      }
+    }
+  };
+
+  const handleDeclineBiometric = () => {
+    localStorage.setItem('noosh_biometric_declined', 'true');
+    setShowBiometricPrompt(false);
+  };
+
   if (isInitializing || (currentUser && recipeCount === 0)) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
@@ -128,21 +153,30 @@ const App: React.FC = () => {
 
   const activeChallengeName = currentUser.activeChallengeId ? (currentUser.activeChallengeId === 'vegan-week' ? 'هفته گیاهخواری' : currentUser.activeChallengeId === 'protein-power' ? 'پروتئین پلاس' : 'حذف قند') : null;
 
-  const activeFilterInfo = (() => {
-    if (activeChallengeName || viewMode !== 'plan') return null;
-    if (currentUser.onlyFavoritesMode) return { text: 'فیلتر محبوب‌ها فعال.', icon: Heart, color: 'text-rose-600 bg-rose-50/40 border-rose-100/50' };
-    if (currentUser.meatlessMode) return { text: 'رژیم گیاهی فعال.', icon: Leaf, color: 'text-emerald-600 bg-emerald-50/40 border-emerald-100/50' };
-    if (currentUser.quickMealsMode) return { text: 'پخت سریع فعال.', icon: Clock, color: 'text-amber-600 bg-amber-50/40 border-amber-100/50' };
-    return null;
-  })();
-
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
-      
+      {/* مدال درخواست بیومتریک */}
+      {showBiometricPrompt && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-enter">
+          <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl">
+            <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ScanFace size={64} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-800 mb-4">ورود سریع و امن</h2>
+            <p className="text-slate-500 font-bold text-sm leading-relaxed mb-8">
+              آیا مایل هستید در دفعات بعدی با استفاده از تشخیص چهره یا اثرانگشت وارد برنامه شوید؟ این کار امنیت و سرعت ورود شما را افزایش می‌دهد.
+            </p>
+            <div className="space-y-3">
+              <button onClick={handleEnableBiometric} className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95">بله، فعال کن</button>
+              <button onClick={handleDeclineBiometric} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all">خیر، فعلاً نه</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* هدر هوشمند */}
       <div className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[100] no-print">
         <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] p-3 sm:px-8 sm:h-[85px] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-all">
-          
           <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 shrink-0">
             <div className="flex items-center gap-2 sm:gap-4">
               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />
@@ -151,14 +185,12 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-black text-emerald-600 uppercase">Premium</span>
               </div>
             </div>
-
             {currentUser.isAdmin && (
               <button onClick={() => setIsAdminMode(true)} className="mx-2 px-3 py-2 bg-slate-900 text-white rounded-xl shadow-lg border border-slate-700 active:scale-95 transition-all flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-emerald-400" />
                 <span className="text-[10px] font-black">مدیریت</span>
               </button>
             )}
-
             <div className="sm:hidden flex items-center">
               <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3 bg-emerald-600 text-white rounded-xl shadow-md active:scale-95 transition-all">
                 <ShoppingCart size={20} />
@@ -170,7 +202,6 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
-
           <nav className="w-full sm:flex-1 grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-3xl p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-white/20 sm:mx-4">
             {[
               { id: 'plan', label: 'برنامه‌ریزی', icon: CalendarDays },
@@ -192,7 +223,6 @@ const App: React.FC = () => {
               </button>
             ))}
           </nav>
-
           <div className="hidden sm:flex items-center shrink-0">
              <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3.5 bg-emerald-600 text-white rounded-2xl shadow-md hover:scale-105 transition-all">
               <ShoppingCart size={22} />
@@ -261,19 +291,6 @@ const App: React.FC = () => {
                     <Clock size={14} />
                     <span className="text-[9px] sm:text-xs font-black">سریع</span>
                   </button>
-                </div>
-              ) : null}
-            </div>
-            <div className="flex-1 flex items-center justify-center px-1 overflow-hidden">
-              {activeChallengeName ? (
-                <div className="flex items-center gap-1.5 bg-indigo-50/50 text-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-100/30 animate-pulse">
-                  <Trophy size={12} />
-                  <span className="text-[8px] font-black whitespace-nowrap">{activeChallengeName}</span>
-                </div>
-              ) : activeFilterInfo ? (
-                <div className={`flex items-center gap-1.5 backdrop-blur-3xl px-3 py-1.5 rounded-xl border animate-pulse ${activeFilterInfo.color}`}>
-                  <activeFilterInfo.icon size={12} />
-                  <span className="text-[8px] font-black leading-tight line-clamp-1">{activeFilterInfo.text}</span>
                 </div>
               ) : null}
             </div>

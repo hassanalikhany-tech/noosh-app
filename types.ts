@@ -1,12 +1,10 @@
 
-
 export interface Ingredient {
   item: string;
   amount: number;
   unit: string;
 }
 
-// Fix: Corrected DishCategory syntax from type Name { ... } to type Name = ...
 export type DishCategory =
   | 'ash' 
   | 'polo' 
@@ -102,7 +100,7 @@ export interface UserProfile {
   familySize: number;
   isAdmin?: boolean;
   isApproved?: boolean; 
-  isDeleted?: boolean; // فیلد جدید برای حذف نرم
+  isDeleted?: boolean; 
   dietMode?: boolean; 
   activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
@@ -113,4 +111,5 @@ export interface UserProfile {
   weeklyPlan?: DayPlan[]; 
   currentSessionId?: string;
   registeredDevices?: string[]; 
+  isBiometricEnabled?: boolean;
 }
