@@ -36,25 +36,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     phoneNumber: '',
   });
 
-  // چک کردن ورود بیومتریک بلافاصه پس از لود صفحه
+  // چک کردن ورود بیومتریک بلافاصله پس از لود صفحه
   useEffect(() => {
     const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
     if (isBioActive && window.PublicKeyCredential) {
       const runBiometric = async () => {
         setIsFaceLoading(true);
-        // تاخیر بسیار کوتاه برای اطمینان از رندر شدن صفحه و سپس باز شدن پنجره سیستمی
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const result = await UserService.loginWithBiometric();
-        if (result.success && result.user) {
-          onLogin(result.user);
-        } else {
+        // تاخیر کوتاه برای نمایش انیمیشن و باز شدن پنجره سیستمی
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        try {
+          const result = await UserService.loginWithBiometric();
+          if (result.success && result.user) {
+            // ورود موفقیت‌آمیز: مستقیماً پروفایل را به App ارسال می‌کنیم
+            onLogin(result.user);
+          } else {
+            // در صورت لغو یا خطا توسط کاربر، به فرم ورود برمی‌گردیم
+            setIsFaceLoading(false);
+          }
+        } catch (e) {
           setIsFaceLoading(false);
-          // اگر کنسل شد یا خطا داد، پیام خطا نمایش داده نشود تا کاربر فرم را ببیند
         }
       };
       runBiometric();
     }
-  }, []);
+  }, [onLogin]);
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
@@ -129,6 +135,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       if (result.success && result.user) {
+        // ذخیره برای دفعات بعدی ورود با چهره
         localStorage.setItem('noosh_saved_email', email);
         localStorage.setItem('noosh_saved_password', password);
         
@@ -140,27 +147,32 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError(result.message || 'خطایی رخ داده است.');
       }
     } catch (err: any) {
-      setError('خطای سیستمی');
+      setError('خطای سیستمی در ورود');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // اگر در حال تشخیص چهره است، فقط انیمیشن را نشان بده
   if (isFaceLoading) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl">
-        <div className="relative mb-10">
-          <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <ScanFace size={100} className="text-teal-500 animate-float relative z-10" strokeWidth={1.5} />
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
+        <div className="relative mb-12">
+          <div className="absolute inset-0 bg-teal-500/20 rounded-full blur-[100px] animate-pulse"></div>
+          <div className="relative z-10 p-8 bg-slate-900/50 rounded-full border border-white/10 shadow-2xl backdrop-blur-xl">
+            <ScanFace size={120} className="text-teal-400 animate-float" strokeWidth={1} />
+          </div>
         </div>
-        <h2 className="text-3xl font-black mb-4 text-halo">احراز هویت بیومتریک</h2>
-        <p className="text-slate-400 text-base font-bold animate-pulse">لطفاً چهره خود را مقابل دوربین قرار دهید...</p>
+        <div className="text-center space-y-4 animate-enter">
+          <h2 className="text-3xl font-black text-white text-halo">در حال ورود هوشمند...</h2>
+          <p className="text-slate-400 text-lg font-bold">سیستم تشخیص چهره فعال شد</p>
+        </div>
         
         <button 
           onClick={() => setIsFaceLoading(false)}
-          className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-400 text-xs font-black transition-all"
+          className="mt-20 px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-slate-500 text-xs font-black transition-all active:scale-95"
         >
-          ورود با نام کاربری و رمز عبور
+          ورود دستی با رمز عبور
         </button>
       </div>
     );
