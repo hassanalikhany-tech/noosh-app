@@ -80,13 +80,13 @@ const CategoryItemsList: React.FC<{
             <button 
               key={item} 
               onClick={() => toggleItem(item)} 
-              className={`flex-grow px-2.5 py-2 rounded-xl text-[10px] font-black transition-all border-2 text-center leading-tight ${
+              className={`flex-grow px-3 py-4 rounded-xl text-xs sm:text-2xl font-black transition-all border-2 text-center leading-tight ${
                 isSel ? 'bg-teal-500 border-teal-500 text-navy-950 shadow-md scale-95' : 
                 isForbidden ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed' : 
                 'bg-slate-50 border-transparent text-slate-500 hover:border-teal-200'
               }`}
             >
-              {item} {isForbidden && <AlertCircle size={8} className="inline mr-0.5"/>}
+              {item} {isForbidden && <AlertCircle size={12} className="inline mr-1"/>}
             </button>
           )
         })}
@@ -265,7 +265,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
             <div className="relative group/search flex-grow sm:w-80">
-              <input type="text" placeholder="جستجوی ماده غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full pr-14 pl-6 py-4 sm:py-5 bg-white/5 border-2 border-white/10 focus:border-teal-500 rounded-[1.5rem] sm:rounded-[2rem] outline-none font-black text-white placeholder:text-slate-500" />
+              <input type="text" placeholder="جستجوی نام ماده غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full pr-14 pl-6 py-4 sm:py-5 bg-white/5 border-2 border-white/10 focus:border-teal-500 rounded-[1.5rem] sm:rounded-[2rem] outline-none font-black text-white placeholder:text-slate-500" />
               <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within/search:text-teal-400" size={24} />
             </div>
             <button onClick={findRecipes} disabled={selectedItems.length === 0 || isSearching} className="px-10 py-4 sm:py-5 bg-teal-500 hover:bg-teal-400 text-navy-950 rounded-[1.5rem] sm:rounded-[2rem] font-black shadow-lg transition-all flex items-center justify-center gap-3">
@@ -294,12 +294,12 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
       {/* چیدمان ۴ ستونه دسته‌بندی‌ها */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {filteredCategories.map((category) => (
-          <div key={category.id} className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col h-[400px] hover:shadow-xl transition-all overflow-hidden">
-            <div className="flex items-center gap-3 mb-4 border-b border-slate-50 pb-4 shrink-0">
-              <div className="p-2 sm:p-3 bg-slate-950 rounded-xl sm:rounded-2xl text-white">
-                {category.id === 'proteins' ? <Drumstick size={16}/> : category.id === 'grains' ? <Wheat size={16}/> : category.id === 'vegetables' ? <Carrot size={16}/> : <UtensilsCrossed size={16}/>}
+          <div key={category.id} className="bg-white rounded-[2rem] sm:rounded-[3rem] p-4 sm:p-8 shadow-sm border border-slate-100 flex flex-col h-[520px] hover:shadow-xl transition-all overflow-hidden">
+            <div className="flex items-center gap-4 mb-6 border-b border-slate-50 pb-6 shrink-0">
+              <div className="p-3 sm:p-6 bg-slate-950 rounded-2xl sm:rounded-3xl text-white shadow-lg">
+                {category.id === 'proteins' ? <Drumstick size={28}/> : category.id === 'grains' ? <Wheat size={28}/> : category.id === 'vegetables' ? <Carrot size={28}/> : <UtensilsCrossed size={28}/>}
               </div>
-              <h3 className="font-black text-slate-800 text-sm sm:text-base leading-tight">{category.title}</h3>
+              <h3 className="font-black text-slate-800 text-base sm:text-4xl leading-tight">{category.title}</h3>
             </div>
             
             <div className="flex-grow overflow-hidden relative">
@@ -313,7 +313,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
           </div>
         ))}
       </div>
-
+      {/* ... مابقی کامپوننت بدون تغییر */}
       {results && (
         <div id="pantry-results" className="space-y-10 animate-enter pt-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -376,6 +376,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
           </div>
         </div>
       )}
+      {/* Fix: Replaced undefined setCurrentUser with the onUpdateUser prop */}
       {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} onUpdateUser={onUpdateUser} />}
     </div>
   );

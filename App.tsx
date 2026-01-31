@@ -1,6 +1,6 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Info as InfoIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
 import Subscription from './components/auth/Subscription';
@@ -14,6 +14,7 @@ import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
 import { DayPlan, UserProfile } from './types';
 import { generateDailyPlan, generateWeeklyPlan } from './utils/planner';
+import { CHALLENGES } from './data/challenges';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -107,7 +108,6 @@ const App: React.FC = () => {
     syncDatabase();
   }, [currentUser, recipeCount, isSyncing]);
 
-  // بررسی نیاز به نمایش درخواست بیومتریک پس از لاگین اول
   useEffect(() => {
     if (currentUser && !currentUser.isBiometricEnabled && !localStorage.getItem('noosh_biometric_declined') && window.PublicKeyCredential) {
       const bioActive = localStorage.getItem('noosh_biometric_active');
@@ -122,8 +122,6 @@ const App: React.FC = () => {
       try {
         const challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
-        
-        // درخواست از سیستم‌عامل برای ثبت هویت
         await navigator.credentials.create({
           publicKey: {
             challenge: challenge,
@@ -138,7 +136,6 @@ const App: React.FC = () => {
             attestation: "direct"
           }
         });
-        
         const success = await UserService.enableBiometric(currentUser.uid, true);
         if (success) {
           setCurrentUser({ ...currentUser, isBiometricEnabled: true });
@@ -176,12 +173,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
-      {/* مدال درخواست بیومتریک */}
       {showBiometricPrompt && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-enter">
           <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-32 h-32 bg-teal-50 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-50"></div>
-            
             <div className="relative z-10">
               <div className="w-24 h-24 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-teal-50/50">
                 <ScanFace size={64} strokeWidth={1.5} />
@@ -191,35 +186,23 @@ const App: React.FC = () => {
                 آیا مایل هستید در دفعات بعدی با استفاده از تشخیص چهره یا اثرانگشت وارد برنامه شوید؟ این کار امنیت و سرعت ورود شما را افزایش می‌دهد.
               </p>
               <div className="space-y-3">
-                <button 
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEnableBiometric(); }} 
-                  className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95 hover:bg-teal-700"
-                >
-                  بله، فعال کن
-                </button>
-                <button 
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeclineBiometric(); }} 
-                  className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all hover:bg-slate-200"
-                >
-                  خیر، فعلاً نه
-                </button>
+                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEnableBiometric(); }} className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95 hover:bg-teal-700">بله، فعال کن</button>
+                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeclineBiometric(); }} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all hover:bg-slate-200">خیر، فعلاً نه</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* هدر هوشمند */}
+      {/* هدر هوشمند با فونت بزرگتر در دسکتاپ */}
       <div className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[100] no-print">
-        <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] p-3 sm:px-8 sm:h-[85px] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-all">
+        <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] p-3 sm:px-8 sm:h-[110px] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-all">
           <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 shrink-0">
             <div className="flex items-center gap-2 sm:gap-4">
-              <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-9 h-9 sm:w-12 sm:h-12 object-contain" />
+              <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-9 h-9 sm:w-16 sm:h-16 object-contain" />
               <div className="flex flex-col" style={{ direction: 'ltr' }}>
-                <span className="text-xl sm:text-2xl font-black italic text-slate-900 leading-none">NOOSH</span>
-                <span className="text-[10px] font-black text-emerald-600 uppercase">Premium</span>
+                <span className="text-xl sm:text-4xl font-black italic text-slate-900 leading-none">NOOSH</span>
+                <span className="text-[10px] sm:text-xs font-black text-emerald-600 uppercase">Premium</span>
               </div>
             </div>
             {currentUser.isAdmin && (
@@ -228,18 +211,8 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-black">مدیریت</span>
               </button>
             )}
-            <div className="sm:hidden flex items-center">
-              <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3 bg-emerald-600 text-white rounded-xl shadow-md active:scale-95 transition-all">
-                <ShoppingCart size={20} />
-                {currentUser.customShoppingList?.filter(i => !i.checked).length > 0 && (
-                  <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-black ring-2 ring-white">
-                    {currentUser.customShoppingList.filter(i => !i.checked).length}
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
-          <nav className="w-full sm:flex-1 grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 bg-white/20 backdrop-blur-3xl p-1 sm:p-1.5 rounded-2xl sm:rounded-full border border-white/20 sm:mx-4">
+          <nav className="w-full sm:flex-1 grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-6 bg-white/20 backdrop-blur-3xl p-1 sm:p-2 rounded-2xl sm:rounded-full border border-white/20 sm:mx-6">
             {[
               { id: 'plan', label: 'برنامه‌ریزی', icon: CalendarDays },
               { id: 'pantry', label: 'آشپز برتر', icon: ChefHat },
@@ -249,22 +222,24 @@ const App: React.FC = () => {
               <button 
                 key={nav.id} 
                 onClick={() => setViewMode(nav.id as ViewMode)}
-                className={`px-3 py-2.5 sm:px-6 sm:py-3 rounded-xl sm:rounded-full flex items-center justify-center sm:justify-start gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap ${
+                className={`px-3 py-2.5 sm:px-10 sm:py-5 rounded-xl sm:rounded-full flex items-center justify-center sm:justify-start gap-2 sm:gap-4 transition-all duration-300 whitespace-nowrap ${
                   viewMode === nav.id 
-                  ? 'bg-emerald-900 text-amber-400 shadow-md scale-[1.02]' 
+                  ? 'bg-emerald-900 text-amber-400 shadow-xl scale-[1.05]' 
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/30'
                 }`}
               >
-                <nav.icon size={16} className={viewMode === nav.id ? 'text-amber-400' : ''} />
-                <span className="text-[11px] sm:text-base font-black">{nav.label}</span>
+                <nav.icon size={18} className={`${viewMode === nav.id ? 'text-amber-400' : ''} sm:w-7 sm:h-7`} />
+                <span className={`font-black tracking-tight ${viewMode === nav.id ? 'text-[11px] sm:text-3xl' : 'text-[11px] sm:text-3xl opacity-75'}`}>
+                  {nav.label}
+                </span>
               </button>
             ))}
           </nav>
           <div className="hidden sm:flex items-center shrink-0">
-             <button onClick={() => setIsShoppingListOpen(true)} className="relative p-3.5 bg-emerald-600 text-white rounded-2xl shadow-md hover:scale-105 transition-all">
-              <ShoppingCart size={22} />
+             <button onClick={() => setIsShoppingListOpen(true)} className="relative p-5 bg-emerald-600 text-white rounded-[2rem] shadow-md hover:scale-105 transition-all">
+              <ShoppingCart size={32} />
               {currentUser.customShoppingList?.filter(i => !i.checked).length > 0 && (
-                <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-black ring-2 ring-white">
+                <span className="absolute -top-1 -left-1 bg-rose-500 text-white text-[10px] w-7 h-7 flex items-center justify-center rounded-full font-black ring-2 ring-white">
                   {currentUser.customShoppingList.filter(i => !i.checked).length}
                 </span>
               )}
@@ -273,7 +248,7 @@ const App: React.FC = () => {
         </header>
       </div>
 
-      <main className="pt-48 sm:pt-36 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto no-print">
+      <main className="pt-48 sm:pt-48 pb-36 sm:pb-48 px-4 sm:px-6 container mx-auto no-print">
         {viewMode === 'plan' && (
           <div className="space-y-6 sm:space-y-10 animate-enter">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 max-w-4xl mx-auto">
@@ -306,7 +281,7 @@ const App: React.FC = () => {
       </main>
 
       <div className="fixed bottom-2 sm:bottom-6 left-2 sm:left-6 right-2 sm:right-6 z-[110] no-print">
-        <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] h-[75px] sm:h-[85px] px-3 sm:px-8 flex items-center">
+        <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] h-[75px] sm:h-[95px] px-3 sm:px-8 flex items-center">
           <div className="flex w-full items-center justify-between gap-1">
             <div className="flex items-center shrink-0">
               {viewMode === 'search' ? (
@@ -315,26 +290,72 @@ const App: React.FC = () => {
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                 </div>
               ) : viewMode === 'plan' ? (
-                <div className="flex items-center gap-1 sm:gap-2.5">
-                  <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all ${currentUser.onlyFavoritesMode ? 'bg-rose-500 text-white border-rose-500' : 'bg-white/40 border-white/20 text-slate-700'}`}>
-                    <Heart size={14} fill={currentUser.onlyFavoritesMode ? "white" : "none"} />
-                    <span className="text-[9px] sm:text-xs font-black">محبوب</span>
+                <div className="flex items-center gap-2 sm:gap-6">
+                  <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`flex items-center gap-2 transition-all ${currentUser.onlyFavoritesMode ? 'text-rose-500 scale-110' : 'text-slate-400'}`}>
+                    <Heart size={20} fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
+                    <span className="text-[10px] sm:text-base font-black">محبوب</span>
                   </button>
-                  <button onClick={() => handleToggleFilter('meatlessMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all ${currentUser.meatlessMode ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white/40 border-white/20 text-slate-700'}`}>
-                    <Leaf size={14} />
-                    <span className="text-[9px] sm:text-xs font-black">گیاهی</span>
+                  <button onClick={() => handleToggleFilter('meatlessMode')} className={`flex items-center gap-2 transition-all ${currentUser.meatlessMode ? 'text-emerald-500 scale-110' : 'text-slate-400'}`}>
+                    <Leaf size={20} />
+                    <span className="text-[10px] sm:text-base font-black">گیاهی</span>
                   </button>
-                  <button onClick={() => handleToggleFilter('quickMealsMode')} className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl border transition-all ${currentUser.quickMealsMode ? 'bg-amber-500 text-white border-amber-500' : 'bg-white/40 border-white/20 text-slate-700'}`}>
-                    <Clock size={14} />
-                    <span className="text-[9px] sm:text-xs font-black">سریع</span>
+                  <button onClick={() => handleToggleFilter('quickMealsMode')} className={`flex items-center gap-2 transition-all ${currentUser.quickMealsMode ? 'text-amber-500 scale-110' : 'text-slate-400'}`}>
+                    <Clock size={20} />
+                    <span className="text-[10px] sm:text-base font-black">سریع</span>
                   </button>
                 </div>
               ) : null}
             </div>
+
+            {/* نوار وضعیت داشبورد فوتر (شیشه‌ای براق و بزرگتر) */}
+            <div className="hidden md:grid grid-cols-4 flex-1 gap-6 px-12 animate-enter items-center h-full">
+              {/* بخش اول: محبوب */}
+              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
+                {currentUser.onlyFavoritesMode && (
+                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(244,63,94,0.15)] animate-enter min-w-[160px] justify-center">
+                    <Heart size={16} className="text-rose-600" fill="currentColor" />
+                    <span className="text-xs font-black text-rose-900 whitespace-nowrap">فقط لیست محبوب</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* بخش دوم: گیاهی */}
+              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
+                {currentUser.meatlessMode && (
+                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(16,185,129,0.15)] animate-enter min-w-[160px] justify-center">
+                    <Leaf size={16} className="text-emerald-600" />
+                    <span className="text-xs font-black text-emerald-900 whitespace-nowrap">غذاهای بدون گوشت</span>
+                  </div>
+                )}
+              </div>
+
+              {/* بخش سوم: سریع */}
+              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
+                {currentUser.quickMealsMode && (
+                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(245,158,11,0.15)] animate-enter min-w-[180px] justify-center">
+                    <Clock size={16} className="text-amber-600" />
+                    <span className="text-xs font-black text-amber-900 whitespace-nowrap">پخت سریع (زیر ۴۵ دقیقه)</span>
+                  </div>
+                )}
+              </div>
+
+              {/* بخش چهارم: چالش‌ها */}
+              <div className="flex justify-center items-center h-full">
+                {currentUser.activeChallengeId && (
+                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(168,85,247,0.15)] animate-enter min-w-[180px] justify-center">
+                    <Trophy size={16} className="text-purple-600" />
+                    <span className="text-xs font-black text-purple-900 truncate max-w-[140px] whitespace-nowrap">
+                      چالش: {CHALLENGES.find(c => c.id === currentUser.activeChallengeId)?.title}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center shrink-0">
               <button onClick={() => setViewMode('settings')} className={`flex items-center gap-1.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/40 border border-white/20 text-slate-700 hover:bg-white/60'}`}>
                 <span className="text-[10px] sm:text-base font-black">تنظیمات</span>
-                <Settings size={18} className={viewMode === 'settings' ? 'animate-spin-slow' : ''} />
+                <Settings size={22} className={viewMode === 'settings' ? 'animate-spin-slow' : ''} />
               </button>
             </div>
           </div>

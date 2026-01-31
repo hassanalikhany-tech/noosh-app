@@ -1,11 +1,9 @@
 
-import { Search, Heart, ThumbsDown, Database, RefreshCw, Globe, ChevronRight, ChevronLeft, LayoutList, Lock, CloudDownload, AlertCircle } from 'lucide-react';
+import { Search, Database, RefreshCw, ChevronRight, ChevronLeft, LayoutList, MapPin } from 'lucide-react';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dish, DishCategory, CATEGORY_LABELS, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
-import { UserService } from '../services/userService';
-import RecipeModal from './RecipeModal';
-import DishVisual from './DishVisual';
+import MealCard from './MealCard';
 
 interface RecipeSearchProps {
   user: UserProfile;
@@ -15,20 +13,24 @@ interface RecipeSearchProps {
 
 const ITEMS_PER_PAGE = 24;
 
-const REGIONS = [
-  { id: 'mediterranean', label: 'مدیترانه و ملل عرب', countries: ['لبنان', 'مدیترانه', 'یونان', 'اردن', 'شام', 'ترکیه', 'اسپانیا'] },
-  { id: 'europe', label: 'اروپای کلاسیک', countries: ['ایتالیا', 'فرانسه', 'روسیه', 'آلمان', 'انگلستان', 'Europe'] },
-  { id: 'central_asia', label: 'آسیای مرکزی و همسایگان', countries: ['افغانستان', 'ازبکستان', 'پاکستان', 'تاجیکستان', 'آذربایجان'] },
-  { id: 'far_east', label: 'خاور دور', countries: ['چین', 'ژاپن', 'تایلند', 'ویتنام'] },
-  { id: 'americas', label: 'قاره آمریکا', countries: ['برزیل', 'مکزیک', 'آمریکا', 'USA'] },
+// لیست ساده و مستقیم کشورها برای فیلتر ملل
+const COUNTRY_FILTERS = [
+  { id: 'tr', label: 'ترکیه', matches: ['ترکیه', 'Turkey'] },
+  { id: 'it', label: 'ایتالیا', matches: ['ایتالیا', 'Italy'] },
+  { id: 'lb', label: 'لبنان و شام', matches: ['لبنان', 'Lebanon', 'شام', 'Syria', 'Jordan'] },
+  { id: 'in', label: 'هند و پاکستان', matches: ['هند', 'India', 'پاکستان', 'Pakistan'] },
+  { id: 'cn', label: 'چین و شرق آسیا', matches: ['چین', 'China', 'ژاپن', 'Japan', 'تایلند', 'Thailand'] },
+  { id: 'mx', label: 'مکزیک و آمریکا', matches: ['مکزیک', 'Mexico', 'آمریکا', 'USA'] },
+  { id: 'fr', label: 'فرانسه', matches: ['فرانسه', 'France'] },
+  { id: 'ru', label: 'روسیه و قفقاز', matches: ['روسیه', 'Russia', 'آذربایجان', 'Azerbaijan', 'قفقاز'] },
+  { id: 'af', label: 'افغانستان', matches: ['افغانستان', 'Afghanistan'] },
 ];
 
 const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externalSearchTerm = '' }) => {
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | 'all'>('all');
-  const [selectedRegion, setSelectedRegion] = useState<string | 'all'>('all');
-  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCountryId, setSelectedCountryId] = useState<string | 'all'>('all');
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const refreshList = () => {
@@ -55,16 +57,23 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       const name = dish.name || "";
       const desc = dish.description || "";
       const nationality = dish.nationality || "";
+      
+      // ۱. فیلتر جستجوی متنی (از فوتر یا نوار جستجو)
       const matchesSearch = name.includes(externalSearchTerm) || desc.includes(externalSearchTerm);
       if (!matchesSearch) return false;
+      
+      // ۲. فیلتر دسته‌بندی اصلی (پلو، خورش، کباب و ...)
       if (selectedCategory !== 'all' && dish.category !== selectedCategory) return false;
-      if (selectedCategory === 'international' && selectedRegion !== 'all') {
-        const region = REGIONS.find(r => r.id === selectedRegion);
-        if (region && !region.countries.includes(nationality)) return false;
+      
+      // ۳. فیلتر اختصاصی کشورها (فقط برای ملل)
+      if (selectedCategory === 'international' && selectedCountryId !== 'all') {
+        const countryFilter = COUNTRY_FILTERS.find(c => c.id === selectedCountryId);
+        if (countryFilter && !countryFilter.matches.some(m => nationality.includes(m))) return false;
       }
+      
       return true;
     });
-  }, [externalSearchTerm, selectedCategory, selectedRegion, allDishes]);
+  }, [externalSearchTerm, selectedCategory, selectedCountryId, allDishes]);
 
   const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
   const paginatedDishes = useMemo(() => {
@@ -77,89 +86,106 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDishClick = (dish: Dish) => {
-    const isAccessible = RecipeService.isDishAccessible(dish.id, user);
-    if (!isAccessible) {
-      alert("مشترک گرامی، دسترسی به این دستور پخت محدود به اعضای ویژه می‌باشد. با پرداخت حق اشتراک و تایید نهایی حساب توسط مدیریت، می‌توانید از تمام امکانات و محتوای این اپلیکیشن استفاده کامل را بنمایید.");
-      return;
-    }
-    setSelectedDish(dish);
-  };
-
   const toPersian = (num: number) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
   return (
     <div className="space-y-8 animate-enter">
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        <div className="flex flex-wrap gap-2 items-center justify-start overflow-x-auto no-scrollbar pb-2 flex-grow">
-          <button onClick={() => { setSelectedCategory('all'); setCurrentPage(1); }} className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all border shadow-sm flex items-center gap-2 ${selectedCategory === 'all' ? 'bg-teal-600 text-white' : 'bg-white text-slate-500'}`}>
-            <LayoutList size={16} /> همه
-          </button>
-          {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map((cat) => (
-            <button key={cat} onClick={() => { setSelectedCategory(cat); setCurrentPage(1); }} className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all border shadow-sm flex items-center gap-2 ${selectedCategory === cat ? 'bg-teal-600 text-white' : 'bg-white text-slate-500'}`}>
-              {CATEGORY_LABELS[cat]}
+      {/* بخش انتخاب دسته‌بندی و ابزارهای دیتابیس */}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="flex flex-wrap gap-2 items-center justify-start overflow-x-auto no-scrollbar pb-2 flex-grow">
+            <button 
+              onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} 
+              className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all border shadow-sm flex items-center gap-2 ${selectedCategory === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 hover:border-slate-200'}`}
+            >
+              <LayoutList size={16} /> همه غذاها
             </button>
-          ))}
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <button onClick={handleSyncDb} className={`p-3 bg-white border border-slate-100 rounded-xl text-teal-600 shadow-sm ${isSyncing ? 'animate-spin' : ''}`}>
-            <RefreshCw size={18} />
-          </button>
-          <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center gap-2">
-            <Database size={14} className="text-teal-400" />
-            {toPersian(filteredDishes.length)} مورد
+            {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map((cat) => (
+              <button 
+                key={cat} 
+                onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} 
+                className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all border shadow-sm flex items-center gap-2 ${selectedCategory === cat ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 hover:border-teal-200'}`}
+              >
+                {CATEGORY_LABELS[cat]}
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button onClick={handleSyncDb} className={`p-3 bg-white border border-slate-100 rounded-xl text-teal-600 shadow-sm hover:bg-teal-50 transition-all ${isSyncing ? 'animate-spin' : ''}`} title="به‌روزرسانی دیتابیس">
+              <RefreshCw size={18} />
+            </button>
+            <div className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black flex items-center gap-2 shadow-lg">
+              <Database size={14} className="text-teal-400" />
+              {toPersian(filteredDishes.length)} مورد یافت شد
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
-        {paginatedDishes.map((dish) => {
-          const isAccessible = RecipeService.isDishAccessible(dish.id, user);
-          return (
-            <div 
-              key={dish.id} 
-              className={`group bg-white rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] hover:scale-[1.08] hover:z-50 transition-all duration-500 border border-slate-100 flex flex-col cursor-pointer ${!isAccessible ? 'grayscale opacity-70' : ''}`} 
-              onClick={() => handleDishClick(dish)}
-            >
-               <div className="h-56 relative overflow-hidden">
-                  <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} className="w-full h-full group-hover:scale-125 transition-transform duration-1000 group-hover:brightness-110" />
-                  {!isAccessible && (
-                    <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px] flex items-center justify-center z-20">
-                      <div className="bg-white/95 p-3.5 rounded-[1.5rem] shadow-xl transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                        <Lock size={24} className="text-rose-600" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-3 py-1 bg-white/95 backdrop-blur-md rounded-xl text-[10px] font-black text-slate-800 shadow-md">{CATEGORY_LABELS[dish.category]}</span>
-                  </div>
-               </div>
-               <div className="p-6 bg-gradient-to-b from-white to-slate-50/10 flex-grow">
-                  <h4 className="font-black text-xl text-slate-800 mb-3 group-hover:text-teal-600 transition-colors flex items-center justify-between">
-                    {dish.name}
-                    {!isAccessible && <Lock size={16} className="text-slate-400" />}
-                  </h4>
-                  <div className="relative overflow-hidden">
-                    <p className={`text-xs text-slate-400 font-bold leading-relaxed transition-all duration-700 ${!isAccessible ? 'line-clamp-2' : 'line-clamp-2 group-hover:line-clamp-none'}`}>
-                      {dish.description}
-                    </p>
-                  </div>
-               </div>
+        {/* بخش انتخاب کشور (فقط زمانی که بین‌المللی انتخاب شده باشد) */}
+        {selectedCategory === 'international' && (
+          <div className="p-5 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-enter">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <MapPin size={14} className="text-teal-600" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">انتخاب مستقیم بر اساس نام کشور:</span>
             </div>
-          );
-        })}
+            <div className="flex flex-wrap gap-2">
+              <button 
+                onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} 
+                className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border ${selectedCountryId === 'all' ? 'bg-teal-600 text-white border-teal-600' : 'bg-slate-50 text-slate-500 border-slate-100 hover:border-teal-200'}`}
+              >
+                همه ملل
+              </button>
+              {COUNTRY_FILTERS.map((country) => (
+                <button 
+                  key={country.id} 
+                  onClick={() => { setSelectedCountryId(country.id); setCurrentPage(1); }} 
+                  className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border ${selectedCountryId === country.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200'}`}
+                >
+                  {country.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 py-10">
-          <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-teal-600 disabled:opacity-30"><ChevronRight size={20} /></button>
-          <span className="font-black text-sm text-slate-600">{toPersian(currentPage)} از {toPersian(totalPages)}</span>
-          <button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-teal-600 disabled:opacity-30"><ChevronLeft size={20} /></button>
+      {/* نمایش نتایج در قالب کارت‌های استاندارد MealCard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {paginatedDishes.map((dish) => (
+          <div key={dish.id} className="animate-enter">
+            <MealCard 
+              plan={{ dayName: CATEGORY_LABELS[dish.category], dish: dish }} 
+              user={user} 
+              onUpdateUser={onUpdateUser} 
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* وضعیت عدم وجود نتیجه */}
+      {filteredDishes.length === 0 && (
+        <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4">
+          <div className="p-6 bg-slate-50 rounded-full text-slate-200">
+            <Search size={48} />
+          </div>
+          <p className="text-slate-400 font-black">غذایی با این مشخصات در دیتابیس یافت نشد.</p>
+          <button onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); }} className="text-teal-600 font-black text-xs underline">نمایش همه غذاها</button>
         </div>
       )}
 
-      {selectedDish && <RecipeModal dish={selectedDish} isOpen={!!selectedDish} onClose={() => setSelectedDish(null)} user={user} onUpdateUser={onUpdateUser} />}
+      {/* صفحه‌بندی (Pagination) */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3 py-10">
+          <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-teal-600 disabled:opacity-30 transition-all shadow-sm"><ChevronRight size={20} /></button>
+          <div className="flex items-center gap-1 bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+            <span className="font-black text-sm text-slate-800">{toPersian(currentPage)}</span>
+            <span className="text-[10px] font-black text-slate-300 mx-1">از</span>
+            <span className="font-black text-sm text-slate-400">{toPersian(totalPages)}</span>
+          </div>
+          <button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-teal-600 disabled:opacity-30 transition-all shadow-sm"><ChevronLeft size={20} /></button>
+        </div>
+      )}
     </div>
   );
 };
