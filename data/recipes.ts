@@ -28,12 +28,14 @@ import { UZBEK_DISHES } from './dishes_uzbek';
 import { CAUCASUS_DISHES } from './dishes_caucasus';
 import { CENTRAL_ASIA_DISHES } from './dishes_central_asia';
 import { FAR_EAST_DISHES } from './dishes_chinese_thai';
+import { SE_ASIA_DISHES } from './dishes_se_asia';
 import { VARIED_DISHES } from './dishes_varied';
 import { IRANIAN_DESSERTS } from './dishes_desserts';
 import { INTERNATIONAL_DESSERTS } from './dishes_international_desserts';
+import { APPETIZERS } from './dishes_appetizers';
 
 /**
- * دیتابیس جامع محلی (اکنون کاملاً تخلیه شده اما پیوندهای ساختاری برای حفظ فیلترها برقرار است)
+ * دیتابیس جامع محلی
  */
 export const DEFAULT_DISHES: Dish[] = [
   ...ASHES,
@@ -64,7 +66,9 @@ export const DEFAULT_DISHES: Dish[] = [
   ...CAUCASUS_DISHES,
   ...CENTRAL_ASIA_DISHES,
   ...FAR_EAST_DISHES,
+  ...SE_ASIA_DISHES,
   ...VARIED_DISHES,
   ...IRANIAN_DESSERTS,
-  ...INTERNATIONAL_DESSERTS
+  ...INTERNATIONAL_DESSERTS,
+  ...APPETIZERS
 ];

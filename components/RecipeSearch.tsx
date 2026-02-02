@@ -13,18 +13,40 @@ interface RecipeSearchProps {
 
 const ITEMS_PER_PAGE = 24;
 
-// لیست ساده و مستقیم کشورها برای فیلتر ملل
+// لیست کشورها مرتب شده بر اساس قاره (آسیا، اروپا، آمریکا)
 const COUNTRY_FILTERS = [
+  // قاره آسیا
   { id: 'tr', label: 'ترکیه', matches: ['ترکیه', 'Turkey'] },
-  { id: 'it', label: 'ایتالیا', matches: ['ایتالیا', 'Italy'] },
-  { id: 'lb', label: 'لبنان و شام', matches: ['لبنان', 'Lebanon', 'شام', 'Syria', 'Jordan'] },
-  { id: 'in', label: 'هند و پاکستان', matches: ['هند', 'India', 'پاکستان', 'Pakistan'] },
-  { id: 'cn', label: 'چین و شرق آسیا', matches: ['چین', 'China', 'ژاپن', 'Japan', 'تایلند', 'Thailand'] },
-  { id: 'mx', label: 'مکزیک و آمریکا', matches: ['مکزیک', 'Mexico', 'آمریکا', 'USA'] },
-  { id: 'fr', label: 'فرانسه', matches: ['فرانسه', 'France'] },
-  { id: 'ru', label: 'روسیه و قفقاز', matches: ['روسیه', 'Russia', 'آذربایجان', 'Azerbaijan', 'قفقاز'] },
+  { id: 'lb', label: 'لبنان', matches: ['لبنان', 'Lebanon'] },
   { id: 'af', label: 'افغانستان', matches: ['افغانستان', 'Afghanistan'] },
+  { id: 'in', label: 'هند', matches: ['هند', 'India'] },
+  { id: 'pk', label: 'پاکستان', matches: ['پاکستان', 'Pakistan'] },
+  { id: 'id', label: 'اندونزی', matches: ['اندونزی', 'Indonesia'] },
+  { id: 'cn', label: 'چین', matches: ['چین', 'China'] },
+  { id: 'jp', label: 'ژاپن', matches: ['ژاپن', 'Japan'] },
+  
+  // قاره اروپا
+  { id: 'it', label: 'ایتالیا', matches: ['ایتالیا', 'Italy'] },
+  { id: 'fr', label: 'فرانسه', matches: ['فرانسه', 'France'] },
+  { id: 'uk', label: 'انگلستان', matches: ['انگلستان', 'UK', 'England'] },
+  { id: 'ru', label: 'روسیه', matches: ['روسیه', 'Russia'] },
+  
+  // قاره آمریکا
+  { id: 'mx', label: 'مکزیک', matches: ['مکزیک', 'Mexico'] },
+  { id: 'us', label: 'ایالات متحده', matches: ['آمریکا', 'USA', 'United States'] },
 ];
+
+// تابع نرمال‌سازی برای حل مشکل ی و ک
+const normalize = (text: string) => {
+  if (!text) return '';
+  return text
+    .replace(/ی/g, 'ی')
+    .replace(/ی/g, 'ی')
+    .replace(/ک/g, 'ک')
+    .replace(/ک/g, 'ک')
+    .toLowerCase()
+    .trim();
+};
 
 const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externalSearchTerm = '' }) => {
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | 'all'>('all');
@@ -54,21 +76,25 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
 
   const filteredDishes = useMemo(() => {
     return allDishes.filter(dish => {
-      const name = dish.name || "";
-      const desc = dish.description || "";
-      const nationality = dish.nationality || "";
+      const name = normalize(dish.name || "");
+      const desc = normalize(dish.description || "");
+      const nationality = normalize(dish.nationality || "");
+      const searchTerm = normalize(externalSearchTerm);
       
-      // ۱. فیلتر جستجوی متنی (از فوتر یا نوار جستجو)
-      const matchesSearch = name.includes(externalSearchTerm) || desc.includes(externalSearchTerm);
+      // ۱. فیلتر جستجوی متنی
+      const matchesSearch = name.includes(searchTerm) || desc.includes(searchTerm);
       if (!matchesSearch) return false;
       
-      // ۲. فیلتر دسته‌بندی اصلی (پلو، خورش، کباب و ...)
+      // ۲. فیلتر دسته‌بندی اصلی
       if (selectedCategory !== 'all' && dish.category !== selectedCategory) return false;
       
-      // ۳. فیلتر اختصاصی کشورها (فقط برای ملل)
+      // ۳. فیلتر اختصاصی کشورها (فقط برای بخش بین‌المللی فعال می‌شود)
       if (selectedCategory === 'international' && selectedCountryId !== 'all') {
         const countryFilter = COUNTRY_FILTERS.find(c => c.id === selectedCountryId);
-        if (countryFilter && !countryFilter.matches.some(m => nationality.includes(m))) return false;
+        if (countryFilter) {
+          const matchesAny = countryFilter.matches.some(m => nationality.includes(normalize(m)));
+          if (!matchesAny) return false;
+        }
       }
       
       return true;
@@ -88,9 +114,11 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
 
   const toPersian = (num: number) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
+  // فقط وقتی «بین‌المللی» انتخاب شده، فیلتر کشور نمایش داده شود
+  const showCountryFilter = selectedCategory === 'international';
+
   return (
     <div className="space-y-8 animate-enter">
-      {/* بخش انتخاب دسته‌بندی و ابزارهای دیتابیس */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
           <div className="flex flex-wrap gap-2 items-center justify-start overflow-x-auto no-scrollbar pb-2 flex-grow">
@@ -122,12 +150,11 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
           </div>
         </div>
 
-        {/* بخش انتخاب کشور (فقط زمانی که بین‌المللی انتخاب شده باشد) */}
-        {selectedCategory === 'international' && (
+        {showCountryFilter && (
           <div className="p-5 bg-white rounded-[2rem] border border-slate-100 shadow-sm animate-enter">
             <div className="flex items-center gap-2 mb-4 px-1">
               <MapPin size={14} className="text-teal-600" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">انتخاب مستقیم بر اساس نام کشور:</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">فیلتر بر اساس کشور (ملل):</span>
             </div>
             <div className="flex flex-wrap gap-2">
               <button 
@@ -150,7 +177,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
         )}
       </div>
 
-      {/* نمایش نتایج در قالب کارت‌های استاندارد MealCard */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {paginatedDishes.map((dish) => (
           <div key={dish.id} className="animate-enter">
@@ -163,18 +189,16 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
         ))}
       </div>
 
-      {/* وضعیت عدم وجود نتیجه */}
       {filteredDishes.length === 0 && (
         <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4">
           <div className="p-6 bg-slate-50 rounded-full text-slate-200">
             <Search size={48} />
           </div>
-          <p className="text-slate-400 font-black">غذایی با این مشخصات در دیتابیس یافت نشد.</p>
+          <p className="text-slate-400 font-black">غذایی با این مشخصات یافت نشد.</p>
           <button onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); }} className="text-teal-600 font-black text-xs underline">نمایش همه غذاها</button>
         </div>
       )}
 
-      {/* صفحه‌بندی (Pagination) */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 py-10">
           <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-teal-600 disabled:opacity-30 transition-all shadow-sm"><ChevronRight size={20} /></button>
