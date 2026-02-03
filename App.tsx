@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Info as InfoIcon } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Info as InfoIcon, AlertTriangle, ShieldAlert } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
@@ -18,6 +18,14 @@ import { CHALLENGES } from './data/challenges';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
+interface SmartNotice {
+  title: string;
+  description: string;
+  icon: any;
+  color: string;
+  list?: string[];
+}
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -31,7 +39,34 @@ const App: React.FC = () => {
   const [footerSearchTerm, setFooterSearchTerm] = useState('');
   const [recipeCount, setRecipeCount] = useState(0);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  
+  // وضعیت کادر اعلان هوشمند
+  const [activeNotice, setActiveNotice] = useState<SmartNotice | null>(null);
+  const [noticeClosing, setNoticeClosing] = useState(false);
+  // Fix: Use ReturnType<typeof setTimeout> to avoid NodeJS namespace dependency in browser environments
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   const planResultsRef = useRef<HTMLDivElement>(null);
+
+  const triggerSmartNotice = (notice: SmartNotice) => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    
+    setNoticeClosing(false);
+    setActiveNotice(notice);
+    
+    // فاز خروج بعد از ۱۴.۲ ثانیه
+    const closingTimer = setTimeout(() => {
+      setNoticeClosing(true);
+    }, 14200);
+
+    // حذف کامل بعد از ۱۵ ثانیه
+    const finalTimer = setTimeout(() => {
+      setActiveNotice(null);
+      setNoticeClosing(false);
+    }, 15000);
+
+    noticeTimerRef.current = finalTimer;
+  };
 
   const handleLogout = async () => {
     await UserService.logout();
@@ -45,6 +80,35 @@ const App: React.FC = () => {
     const newVal = !currentUser[filter];
     const optimisticUser = { ...currentUser, [filter]: newVal };
     setCurrentUser(optimisticUser);
+    
+    // نمایش اعلان هوشمند بر اساس فیلتر فعال شده
+    if (newVal) {
+      let notice: SmartNotice;
+      if (filter === 'onlyFavoritesMode') {
+        notice = {
+          title: 'فقط غذاهای محبوب شما',
+          description: 'شما فیلتر محبوب‌ها را فعال کردید. از این پس در پیشنهادات روزانه و هفتگی، فقط غذاهایی که قبلاً با قلب قرمز مشخص کرده‌اید نمایش داده می‌شوند تا همیشه از طعم‌های دلخواه خود لذت ببرید.',
+          icon: Heart,
+          color: 'bg-rose-500'
+        };
+      } else if (filter === 'meatlessMode') {
+        notice = {
+          title: 'رژیم گیاه‌خواری فعال شد',
+          description: 'حالت بدون گوشت فعال است. سیستم به طور خودکار تمامی غذاهای حاوی گوشت قرمز، مرغ و ماهی را از پیشنهادات شما حذف کرده تا یک برنامه کاملاً گیاهی و سلامت‌محور داشته باشید.',
+          icon: Leaf,
+          color: 'bg-emerald-500'
+        };
+      } else {
+        notice = {
+          title: 'آشپزی سریع و فوری',
+          description: 'حالت پخت سریع فعال شد. از این پس فقط غذاهایی به شما پیشنهاد داده می‌شوند که کل زمان آماده‌سازی و پخت آن‌ها کمتر از ۴۵ دقیقه باشد؛ مناسب برای روزهای پرمشغله شما.',
+          icon: Clock,
+          color: 'bg-amber-500'
+        };
+      }
+      triggerSmartNotice(notice);
+    }
+
     try {
       await UserService.updateProfile(currentUser.username, { [filter]: newVal });
     } catch (err) {
@@ -59,6 +123,18 @@ const App: React.FC = () => {
       const { plan, updatedUser } = await generateDailyPlan(currentUser);
       setDisplayPlan(plan);
       setCurrentUser(updatedUser);
+      
+      // اگر مواد ممنوعه داشت، یادآوری کن
+      if (currentUser.dislikedIngredients?.length > 0) {
+        triggerSmartNotice({
+          title: 'یادآوری محدودیت پخت',
+          description: 'برنامه پیشنهادی شما با موفقیت تولید شد. طبق تنظیمات قبلی شما، هیچ‌کدام از غذاهای پیشنهادی شامل مواد ممنوعه زیر نیستند:',
+          icon: AlertTriangle,
+          color: 'bg-rose-600',
+          list: currentUser.dislikedIngredients
+        });
+      }
+
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) { console.error(err); } finally { setLoadingType(null); }
   };
@@ -70,8 +146,49 @@ const App: React.FC = () => {
       const { plan, updatedUser } = await generateWeeklyPlan(currentUser);
       setDisplayPlan(plan);
       setCurrentUser(updatedUser);
+
+      // اگر مواد ممنوعه داشت، یادآوری کن
+      if (currentUser.dislikedIngredients?.length > 0) {
+        triggerSmartNotice({
+          title: 'یادآوری محدودیت پخت',
+          description: 'برنامه هفتگی شما فیلتر شد. طبق لیست سیاه مواد غذایی شما، موارد زیر در هیچ‌یک از وعده‌های این هفته استفاده نشده‌اند:',
+          icon: AlertTriangle,
+          color: 'bg-rose-600',
+          list: currentUser.dislikedIngredients
+        });
+      }
+
       setTimeout(() => planResultsRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) { console.error(err); } finally { setLoadingType(null); }
+  };
+
+  // تابع کمکی برای چالش‌ها
+  const handleChallengeNotice = (challengeId: string | null) => {
+    if (!challengeId) return;
+    const challenge = CHALLENGES.find(c => c.id === challengeId);
+    if (challenge) {
+      triggerSmartNotice({
+        title: `چالش ${challenge.title} آغاز شد`,
+        description: `شما وارد یک چالش جدید شدید! ${challenge.description}. از این پس پیشنهادات غذایی سیستم طبق قوانین این چالش تنظیم خواهد شد تا به هدف سلامتی خود برسید.`,
+        icon: Trophy,
+        color: 'bg-purple-600'
+      });
+    }
+  };
+
+  // Fix: Added missing handleEnableBiometric handler
+  const handleEnableBiometric = async () => {
+    if (!currentUser) return;
+    const success = await UserService.enableBiometric(currentUser.uid, true);
+    if (success) {
+      setCurrentUser(prev => prev ? { ...prev, isBiometricEnabled: true } : null);
+    }
+    setShowBiometricPrompt(false);
+  };
+
+  // Fix: Added missing handleDeclineBiometric handler
+  const handleDeclineBiometric = () => {
+    setShowBiometricPrompt(false);
   };
 
   useEffect(() => {
@@ -108,50 +225,6 @@ const App: React.FC = () => {
     syncDatabase();
   }, [currentUser, recipeCount, isSyncing]);
 
-  useEffect(() => {
-    if (currentUser && !currentUser.isBiometricEnabled && !localStorage.getItem('noosh_biometric_declined') && window.PublicKeyCredential) {
-      const bioActive = localStorage.getItem('noosh_biometric_active');
-      if (!bioActive) {
-        setShowBiometricPrompt(true);
-      }
-    }
-  }, [currentUser]);
-
-  const handleEnableBiometric = async () => {
-    if (currentUser) {
-      try {
-        const challenge = new Uint8Array(32);
-        window.crypto.getRandomValues(challenge);
-        await navigator.credentials.create({
-          publicKey: {
-            challenge: challenge,
-            rp: { name: "Noosh App" },
-            user: {
-              id: new TextEncoder().encode(currentUser.uid.slice(0, 16)),
-              name: currentUser.email || currentUser.username,
-              displayName: currentUser.fullName
-            },
-            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-            timeout: 60000,
-            attestation: "direct"
-          }
-        });
-        const success = await UserService.enableBiometric(currentUser.uid, true);
-        if (success) {
-          setCurrentUser({ ...currentUser, isBiometricEnabled: true });
-        }
-      } catch (e) {
-        console.error("Biometric registration failed", e);
-      }
-    }
-    setShowBiometricPrompt(false);
-  };
-
-  const handleDeclineBiometric = () => {
-    localStorage.setItem('noosh_biometric_declined', 'true');
-    setShowBiometricPrompt(false);
-  };
-
   if (isInitializing || (currentUser && recipeCount === 0)) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
@@ -173,6 +246,41 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
+      
+      {/* کادر اعلان هوشمند شیشه‌ای و متحرک (Generic Notice) */}
+      {activeNotice && (
+        <div 
+          className={`fixed left-1/2 -translate-x-1/2 top-[10%] z-[2000] w-[95%] max-w-xl p-8 rounded-[3rem] backdrop-blur-3xl bg-white/40 border border-white/60 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col items-center text-center gap-5 ${noticeClosing ? 'notice-slide-out' : 'notice-slide-in'}`}
+        >
+          <div className={`p-6 ${activeNotice.color} text-white rounded-[2.5rem] shadow-2xl animate-pulse`}>
+            <activeNotice.icon size={56} />
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{activeNotice.title}</h3>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed px-4">
+              {activeNotice.description}
+            </p>
+          </div>
+          
+          {activeNotice.list && activeNotice.list.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mt-2">
+              {activeNotice.list.map(item => (
+                <span key={item} className="px-4 py-2 bg-white/80 border border-slate-200 text-slate-700 rounded-xl text-xs font-black shadow-sm">
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="w-full bg-slate-200/50 h-1.5 rounded-full overflow-hidden mt-6">
+            <div className={`h-full ${activeNotice.color} animate-[progress_15s_linear_forwards]`}></div>
+          </div>
+          <style>{`
+            @keyframes progress { from { width: 100%; } to { width: 0%; } }
+          `}</style>
+        </div>
+      )}
+
       {showBiometricPrompt && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-enter">
           <div className="bg-white rounded-[2.5rem] p-10 max-w-md w-full text-center shadow-2xl relative overflow-hidden">
@@ -186,15 +294,14 @@ const App: React.FC = () => {
                 آیا مایل هستید در دفعات بعدی با استفاده از تشخیص چهره یا اثرانگشت وارد برنامه شوید؟ این کار امنیت و سرعت ورود شما را افزایش می‌دهد.
               </p>
               <div className="space-y-3">
-                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEnableBiometric(); }} className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95 hover:bg-teal-700">بله، فعال کن</button>
-                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeclineBiometric(); }} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all hover:bg-slate-200">خیر، فعلاً نه</button>
+                <button type="button" onClick={() => handleEnableBiometric()} className="w-full py-4 bg-teal-600 text-white rounded-2xl font-black shadow-xl shadow-teal-100 transition-all active:scale-95">بله، فعال کن</button>
+                <button type="button" onClick={() => handleDeclineBiometric()} className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black transition-all">خیر، فعلاً نه</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* هدر هوشمند با فونت بزرگتر در دسکتاپ */}
       <div className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-[100] no-print">
         <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.05)] p-3 sm:px-8 sm:h-[110px] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 transition-all">
           <div className="flex w-full sm:w-auto items-center justify-between sm:justify-start gap-4 shrink-0">
@@ -206,7 +313,7 @@ const App: React.FC = () => {
               </div>
             </div>
             {currentUser.isAdmin && (
-              <button onClick={() => setIsAdminMode(true)} className="mx-2 px-3 py-2 bg-slate-900 text-white rounded-xl shadow-lg border border-slate-700 active:scale-95 transition-all flex items-center gap-1.5">
+              <button onClick={() => setIsAdminMode(true)} className="mx-2 px-3 py-2 bg-slate-900 text-white rounded-xl shadow-lg border border-slate-700 active:scale-95 flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-emerald-400" />
                 <span className="text-[10px] font-black">مدیریت</span>
               </button>
@@ -276,7 +383,7 @@ const App: React.FC = () => {
         )}
         {viewMode === 'pantry' && <PantryChef user={currentUser} onUpdateUser={setCurrentUser} />}
         {viewMode === 'search' && <RecipeSearch user={currentUser} onUpdateUser={setCurrentUser} externalSearchTerm={footerSearchTerm} />}
-        {viewMode === 'challenges' && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={() => {}} />}
+        {viewMode === 'challenges' && <Challenges user={currentUser} onUpdateUser={setCurrentUser} onNotify={(t, d, c, i) => triggerSmartNotice({title: t, description: d, color: c, icon: i})} />}
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
@@ -307,50 +414,8 @@ const App: React.FC = () => {
               ) : null}
             </div>
 
-            {/* نوار وضعیت داشبورد فوتر (شیشه‌ای براق و بزرگتر) */}
-            <div className="hidden md:grid grid-cols-4 flex-1 gap-6 px-12 animate-enter items-center h-full">
-              {/* بخش اول: محبوب */}
-              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
-                {currentUser.onlyFavoritesMode && (
-                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(244,63,94,0.15)] animate-enter min-w-[160px] justify-center">
-                    <Heart size={16} className="text-rose-600" fill="currentColor" />
-                    <span className="text-xs font-black text-rose-900 whitespace-nowrap">فقط لیست محبوب</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* بخش دوم: گیاهی */}
-              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
-                {currentUser.meatlessMode && (
-                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(16,185,129,0.15)] animate-enter min-w-[160px] justify-center">
-                    <Leaf size={16} className="text-emerald-600" />
-                    <span className="text-xs font-black text-emerald-900 whitespace-nowrap">غذاهای بدون گوشت</span>
-                  </div>
-                )}
-              </div>
-
-              {/* بخش سوم: سریع */}
-              <div className="flex justify-center items-center h-full border-l border-white/20 last:border-l-0">
-                {currentUser.quickMealsMode && (
-                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(245,158,11,0.15)] animate-enter min-w-[180px] justify-center">
-                    <Clock size={16} className="text-amber-600" />
-                    <span className="text-xs font-black text-amber-900 whitespace-nowrap">پخت سریع (زیر ۴۵ دقیقه)</span>
-                  </div>
-                )}
-              </div>
-
-              {/* بخش چهارم: چالش‌ها */}
-              <div className="flex justify-center items-center h-full">
-                {currentUser.activeChallengeId && (
-                  <div className="bg-white/40 backdrop-blur-3xl border border-white/60 px-6 py-3.5 rounded-[1.5rem] flex items-center gap-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_8px_20px_rgba(168,85,247,0.15)] animate-enter min-w-[180px] justify-center">
-                    <Trophy size={16} className="text-purple-600" />
-                    <span className="text-xs font-black text-purple-900 truncate max-w-[140px] whitespace-nowrap">
-                      چالش: {CHALLENGES.find(c => c.id === currentUser.activeChallengeId)?.title}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* داشبورد میانی فوتر حذف شد تا برنامه خلوت‌تر شود (طبق درخواست کاربر) */}
+            <div className="hidden md:flex flex-1"></div>
 
             <div className="flex items-center shrink-0">
               <button onClick={() => setViewMode('settings')} className={`flex items-center gap-1.5 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/40 border border-white/20 text-slate-700 hover:bg-white/60'}`}>

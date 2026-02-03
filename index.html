@@ -59,6 +59,23 @@
         50% { transform: translateY(-15px); }
       }
 
+      /* انیمیشن اختصاصی کادر اعلان هوشمند */
+      .notice-slide-in {
+        animation: noticeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+      .notice-slide-out {
+        animation: noticeOut 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      @keyframes noticeIn {
+        from { transform: translate(-50%, -200%); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+      }
+      @keyframes noticeOut {
+        from { transform: translate(-50%, 0); opacity: 1; }
+        to { transform: translate(-50%, -200%); opacity: 0; }
+      }
+
       .bg-noosh-pattern {
         background-image: url('https://i.ibb.co/gMDKtj4p/3.png');
         background-repeat: repeat;
@@ -82,63 +99,32 @@
         color: white !important;
       }
 
-      /* تنظیمات پیشرفته چاپ برای جلوگیری از بریده شدن صفحات */
       @media print {
-        /* مخفی کردن المان‌های اضافی */
-        .no-print {
-          display: none !important;
-        }
-        
-        /* نمایش بخش چاپ */
+        .no-print { display: none !important; }
         .print-only {
           display: block !important;
           position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
+          left: 0 !important; top: 0 !important;
           width: 100% !important;
         }
-
-        /* خنثی کردن تمام محدودیت‌های ارتفاعی و اسکرول در کل سلسله مراتب */
         body, html, #root, div, section, main {
           height: auto !important;
           overflow: visible !important;
           position: static !important;
-          margin: 0 !important;
-          padding: 0 !important;
+          margin: 0 !important; padding: 0 !important;
         }
-
         .print-page {
           page-break-after: always !important;
           page-break-inside: avoid !important;
           display: block !important;
           padding: 1.5cm !important;
           background: white !important;
-          min-height: 25cm; /* تخمین ارتفاع صفحه A4 */
+          min-height: 25cm;
         }
-
-        .print-page:last-child {
-          page-break-after: auto !important;
-        }
-
-        table {
-          page-break-inside: auto !important;
-        }
-
-        tr {
-          page-break-inside: avoid !important;
-          page-break-after: auto !important;
-        }
-
-        @page {
-          size: A4;
-          margin: 0;
-        }
+        @page { size: A4; margin: 0; }
       }
       
-      .print-only {
-        display: none;
-      }
-
+      .print-only { display: none; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
