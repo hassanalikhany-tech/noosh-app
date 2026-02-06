@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Login from './components/auth/Login';
@@ -14,6 +14,7 @@ import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
 import { DayPlan, UserProfile, CATEGORY_LABELS } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan } from './utils/planner';
+import { estimateCalories } from './utils/recipeHelpers';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -29,7 +30,6 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [displayPlan, setDisplayPlan] = useState<DayPlan[]>([]);
-  const [loadingType, setLoadingType] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -38,7 +38,6 @@ const App: React.FC = () => {
   const [statusAlert, setStatusAlert] = useState<StatusAlert>({ show: false, title: '', description: '', icon: Info, color: 'emerald' });
   const planResultsRef = useRef<HTMLDivElement>(null);
 
-  // لود اولیه دیتابیس و وضعیت کاربر
   useEffect(() => {
     const initApp = async () => {
       await RecipeService.initialize();
@@ -52,7 +51,6 @@ const App: React.FC = () => {
     initApp();
   }, []);
 
-  // همگام‌سازی خودکار در پس‌زمینه
   useEffect(() => {
     if (currentUser && !isAutoSyncing) {
       const sync = async () => {
@@ -75,16 +73,13 @@ const App: React.FC = () => {
     setIsAdminMode(false);
   };
 
-  // تابع نمایش اطلاع‌رسانی شیشه‌ای در مرکز صفحه (طبق درخواست شما)
   const triggerStatusAlert = (title: string, description: string, icon: any, color: string) => {
     setStatusAlert({ show: true, title, description, icon, color });
-    // پیام به مدت 15 ثانیه باقی می‌ماند
     setTimeout(() => {
       setStatusAlert(prev => ({ ...prev, show: false }));
     }, 15000);
   };
 
-  // مدیریت فیلترهای فوتر
   const handleToggleFilter = async (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
     if (!currentUser) return;
     const newVal = !currentUser[filter];
@@ -106,6 +101,24 @@ const App: React.FC = () => {
     }
   };
 
+  const toPersianDigits = (num: number | string) => {
+    return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+  };
+
+  const persianDate = useMemo(() => {
+    return new Intl.DateTimeFormat('fa-IR').format(new Date());
+  }, []);
+
+  // بخش‌بندی برنامه برای چاپ (هر ۱۰ مورد در یک صفحه جهت زیبایی و جا شدن در A4)
+  const chunkedPlanForPrint = useMemo(() => {
+    const chunks: DayPlan[][] = [];
+    const ITEMS_PER_PAGE = 10;
+    for (let i = 0; i < displayPlan.length; i += ITEMS_PER_PAGE) {
+      chunks.push(displayPlan.slice(i, i + ITEMS_PER_PAGE));
+    }
+    return chunks;
+  }, [displayPlan]);
+
   if (isInitializing) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
@@ -124,7 +137,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
       
-      {/* نشانگر همگام‌سازی نامحسوس */}
+      {/* نشانگر همگام‌سازی */}
       {isAutoSyncing && (
         <div className="fixed top-28 left-6 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-teal-100 shadow-xl flex items-center gap-3 animate-enter">
           <div className="w-2 h-2 bg-teal-500 rounded-full animate-ping"></div>
@@ -132,7 +145,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* پنجره اطلاع‌رسانی شیشه‌ای متحرک (از بالا به مرکز) */}
+      {/* پنجره اطلاع‌رسانی شیشه‌ای متحرک */}
       <div className={`fixed inset-0 z-[2000] flex items-center justify-center p-6 pointer-events-none transition-all duration-1000 ease-out ${statusAlert.show ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
          <div className="bg-white/40 backdrop-blur-3xl border border-white/60 p-10 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.15)] max-w-lg w-full flex flex-col items-center text-center gap-6 relative overflow-hidden pointer-events-auto">
             <div className={`absolute top-0 inset-x-0 h-2 bg-${statusAlert.color}-500`}></div>
@@ -147,7 +160,99 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* هدر */}
+      {/* بخش گزارش چاپی برنامه ریزی (عیناً مشابه سبد خرید) */}
+      <div className="print-only dir-rtl text-right w-full bg-white">
+        {displayPlan.length === 0 ? (
+          <div className="p-20 text-center font-black">هنوز برنامه‌ای برای چاپ وجود ندارد.</div>
+        ) : (
+          chunkedPlanForPrint.map((chunk, pageIdx) => (
+            <div key={pageIdx} className="print-page flex flex-col bg-white p-12">
+              {/* هدر گزارش چاپی */}
+              <div className="flex justify-between items-center border-b-4 border-slate-900 pb-6 mb-8">
+                <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black italic uppercase text-slate-900">NOOSH</span>
+                    <span className="text-2xl font-black text-teal-600 italic uppercase">APP</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Intelligent Meal Planning Report</span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain mb-2" />
+                  <h1 className="text-xl font-black text-slate-900">گزارش برنامه غذایی اختصاصی</h1>
+                </div>
+                
+                <div className="text-left font-black text-slate-800">
+                  <div className="text-[10px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
+                  <div className="text-xl">{toPersianDigits(persianDate)}</div>
+                  <div className="text-[9px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedPlanForPrint.length)}</div>
+                </div>
+              </div>
+
+              {/* بدنه گزارش با جدول شکیل */}
+              <div className="flex-grow">
+                <div className="mb-6 p-6 bg-slate-50 border-r-8 border-emerald-500 rounded-l-3xl">
+                  <p className="text-lg font-black text-slate-800 leading-relaxed">
+                    لیست پیشنهادات غذایی برای جناب/سرکار: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
+                  </p>
+                  <p className="text-sm font-bold text-slate-500 mt-2">
+                    این برنامه هوشمند شامل مواد مغذی و کالری‌سنجی تقریبی است که بر اساس پروفایل شما تنظیم شده است.
+                  </p>
+                </div>
+
+                <table className="w-full border-collapse" style={{ border: '3px solid black' }}>
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '60px' }}>ردیف</th>
+                      <th className="p-4 text-right font-black text-base" style={{ border: '1.5px solid black', width: '150px' }}>زمان / عنوان</th>
+                      <th className="p-4 text-right font-black text-base" style={{ border: '1.5px solid black' }}>نام پخت پیشنهادی</th>
+                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '130px' }}>دسته‌بندی</th>
+                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '110px' }}>کالری تقریبی</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chunk.map((plan, idx) => {
+                      const calories = plan.dish.calories || estimateCalories(plan.dish);
+                      return (
+                        <tr key={idx}>
+                          <td className="p-4 text-center font-bold text-base" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
+                          <td className="p-4 text-right font-black text-base" style={{ border: '1px solid black' }}>{plan.dayName}</td>
+                          <td className="p-4 text-right font-black text-lg text-emerald-900" style={{ border: '1px solid black' }}>{plan.dish.name}</td>
+                          <td className="p-4 text-center font-bold text-sm text-slate-600" style={{ border: '1px solid black' }}>{CATEGORY_LABELS[plan.dish.category] || '-'}</td>
+                          <td className="p-4 text-center font-black text-sm" style={{ border: '1px solid black' }}>{toPersianDigits(calories)}</td>
+                        </tr>
+                      );
+                    })}
+                    {/* ردیف‌های خالی برای حفظ ثبات بصری صفحه */}
+                    {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
+                      <tr key={`empty-${eIdx}`}>
+                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
+                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
+                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
+                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
+                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* فوتر گزارش چاپی */}
+              <div className="mt-12 pt-8 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
+                <div className="flex flex-col gap-1">
+                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Generated by Noosh AI Engine</div>
+                   <div className="text-sm font-black text-slate-800 tracking-tight">www.nooshapp.ir</div>
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 italic">
+                  نوش؛ دستیار تخصصی آشپزی، تغذیه و سلامت خانواده
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* هدر اپلیکیشن */}
       <div className="fixed top-4 left-4 right-4 z-[100] no-print">
         <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[2.5rem] shadow-sm p-4 sm:px-8 h-[110px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -203,7 +308,17 @@ const App: React.FC = () => {
                      <CalendarDays size={24} /> برنامه ماهانه
                   </button>
                </div>
-               <button onClick={() => window.print()} className="p-5 bg-white text-slate-600 rounded-[2rem] shadow-sm border border-white/50"><Printer size={32} /></button>
+               
+               {/* دکمه پرینت هوشمند: فقط زمانی که برنامه‌ای تولید شده باشد نمایان می‌شود */}
+               {displayPlan.length > 0 && (
+                 <button 
+                  onClick={() => window.print()} 
+                  className="p-5 bg-white text-slate-800 rounded-[2rem] shadow-sm border border-white/50 hover:bg-emerald-50 transition-all active:scale-90 animate-enter"
+                  title="چاپ برنامه"
+                 >
+                   <Printer size={32} />
+                 </button>
+               )}
             </div>
             
             {displayPlan.length > 0 ? (
@@ -226,7 +341,7 @@ const App: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {/* فوتر با فیلترهای درخواستی شما */}
+      {/* فوتر با فیلترها */}
       <div className="fixed bottom-6 left-6 right-6 z-[110] no-print">
         <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[2.5rem] h-[105px] px-10 flex items-center justify-between">
             <div className="flex items-center gap-12">
