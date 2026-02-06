@@ -89,7 +89,7 @@ const App: React.FC = () => {
     const meta = {
       onlyFavoritesMode: { title: 'فهرست محبوب‌ها', desc: newVal ? 'برنامه شما محدود به غذاهای لایک شده شد.' : 'فیلتر محبوب‌ها غیرفعال شد.', icon: Heart, color: 'rose' },
       quickMealsMode: { title: 'پخت سریع', desc: newVal ? 'فقط غذاهای زیر ۴۵ دقیقه پیشنهاد می‌شود.' : 'فیلتر پخت سریع غیرفعال شد.', icon: Clock, color: 'amber' },
-      meatlessMode: { title: 'رژیم گیاهی', desc: newVal ? 'تمامی پخت‌های گوشتی حذف شدند.' : 'رژیم گیاهی غیرفعال شد.', icon: Leaf, color: 'emerald' }
+      meatlessMode: { title: 'رژیم گیاهی', desc: newVal ? 'تمامی غذاهای گوشتی حذف شدند.' : 'رژیم گیاهی غیرفعال شد.', icon: Leaf, color: 'emerald' }
     };
     
     triggerStatusAlert(meta[filter].title, meta[filter].desc, meta[filter].icon, meta[filter].color);
