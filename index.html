@@ -59,7 +59,6 @@
         50% { transform: translateY(-15px); }
       }
 
-      /* استایل سرمه‌ای متالیک اختصاصی نوش */
       .metallic-navy {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #020617 100%);
         position: relative;
@@ -81,11 +80,11 @@
         filter: grayscale(1);
       }
 
-      /* تنظیمات فوق پیشرفته چاپ برای خروجی بدون نقص */
+      /* تنظیمات فوق پیشرفته چاپ - نسخه نهایی بدون لبه گرد و سایه */
       @media print {
         @page {
           size: A4;
-          margin: 0; 
+          margin: 15mm; /* حاشیه استاندارد از هر چهار طرف */
         }
         
         .no-print {
@@ -94,28 +93,29 @@
         
         .print-only {
           display: block !important;
-          width: 210mm;
-          margin: 0 auto;
+          width: 100% !important;
+          background: white !important;
         }
 
         body {
           background: white !important;
           padding: 0 !important;
           margin: 0 !important;
-          width: 210mm;
         }
 
         .print-page {
-          width: 210mm;
-          height: 297mm;
-          padding: 15mm !important;
+          width: 100% !important;
+          height: auto !important;
+          min-height: 260mm !important;
+          padding: 0 !important;
           box-sizing: border-box;
           page-break-after: always !important;
-          page-break-inside: avoid !important;
           display: flex !important;
           flex-direction: column !important;
           background: white !important;
           position: relative !important;
+          border-radius: 0 !important; /* حذف لبه گرد در چاپ */
+          box-shadow: none !important;   /* حذف سایه در چاپ */
         }
 
         .print-page:last-child {
@@ -126,9 +126,11 @@
           width: 100% !important;
           border-collapse: collapse !important;
           table-layout: fixed !important;
+          border: 2px solid black !important;
         }
 
         th, td {
+          border: 1px solid black !important;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;

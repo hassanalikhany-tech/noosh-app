@@ -12,11 +12,12 @@ import RecipeSearch from './components/RecipeSearch';
 import ShoppingList from './components/ShoppingList';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
-import { DayPlan, UserProfile, CATEGORY_LABELS } from './types';
+import { DayPlan, UserProfile, CATEGORY_LABELS, ShoppingItem } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan } from './utils/planner';
 import { estimateCalories } from './utils/recipeHelpers';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
+type PrintType = 'plan' | 'shopping';
 
 interface StatusAlert {
   show: boolean;
@@ -36,6 +37,7 @@ const App: React.FC = () => {
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [footerSearchTerm, setFooterSearchTerm] = useState('');
   const [statusAlert, setStatusAlert] = useState<StatusAlert>({ show: false, title: '', description: '', icon: Info, color: 'emerald' });
+  const [printType, setPrintType] = useState<PrintType>('plan');
   const planResultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,6 +120,29 @@ const App: React.FC = () => {
     return chunks;
   }, [displayPlan]);
 
+  const activeShoppingItems = useMemo(() => {
+    return (currentUser?.customShoppingList || []).filter(i => !i.checked);
+  }, [currentUser?.customShoppingList]);
+
+  const chunkedShoppingForPrint = useMemo(() => {
+    const chunks: ShoppingItem[][] = [];
+    const ITEMS_PER_PAGE = 10;
+    for (let i = 0; i < activeShoppingItems.length; i += ITEMS_PER_PAGE) {
+      chunks.push(activeShoppingItems.slice(i, i + ITEMS_PER_PAGE));
+    }
+    return chunks;
+  }, [activeShoppingItems]);
+
+  const handlePrintPlan = () => {
+    setPrintType('plan');
+    setTimeout(() => window.print(), 100);
+  };
+
+  const handlePrintShopping = () => {
+    setPrintType('shopping');
+    setTimeout(() => window.print(), 100);
+  };
+
   if (isInitializing) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl no-print">
@@ -143,6 +168,7 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {/* بخش آلارم‌ها */}
       <div className={`fixed inset-0 z-[2000] flex items-center justify-center p-6 pointer-events-none transition-all duration-1000 ease-out ${statusAlert.show ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
          <div className="bg-white/40 backdrop-blur-3xl border border-white/60 p-10 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.15)] max-w-lg w-full flex flex-col items-center text-center gap-6 relative overflow-hidden pointer-events-auto">
             <div className={`absolute top-0 inset-x-0 h-2 bg-${statusAlert.color}-500`}></div>
@@ -157,76 +183,139 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      <div className="print-only dir-rtl text-right w-full">
-        {displayPlan.length > 0 && chunkedPlanForPrint.map((chunk, pageIdx) => (
-          <div key={pageIdx} className="print-page">
-            <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
-              <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
-                  <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+      {/* بخش مخصوص چاپ - متمرکز در ریشه برای جلوگیری از تداخل استایل‌ها */}
+      <div className="print-only dir-rtl text-right w-full bg-white">
+        {printType === 'plan' ? (
+          // خروجی چاپی برنامه پخت
+          displayPlan.length > 0 && chunkedPlanForPrint.map((chunk, pageIdx) => (
+            <div key={pageIdx} className="print-page">
+              <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
+                <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
+                    <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+                  </div>
+                  <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Intelligent Meal Plan Report</span>
                 </div>
-                <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Intelligent Meal Plan Report</span>
+                <div className="flex flex-col items-center">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-12 h-12 object-contain mb-1" />
+                  <h1 className="text-lg font-black text-slate-900">برنامه غذایی اختصاصی</h1>
+                </div>
+                <div className="text-left font-black text-slate-800">
+                  <div className="text-[8px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
+                  <div className="text-lg">{toPersianDigits(persianDate)}</div>
+                  <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedPlanForPrint.length)}</div>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-12 h-12 object-contain mb-1" />
-                <h1 className="text-lg font-black text-slate-900">برنامه غذایی اختصاصی</h1>
-              </div>
-              <div className="text-left font-black text-slate-800">
-                <div className="text-[8px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
-                <div className="text-lg">{toPersianDigits(persianDate)}</div>
-                <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedPlanForPrint.length)}</div>
-              </div>
-            </div>
-            <div className="flex-grow">
-              <div className="mb-4 p-4 bg-slate-50 border-r-4 border-emerald-500 rounded-l-2xl">
-                <p className="text-base font-black text-slate-800">
-                  پیشنهادات غذایی برای: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
-                </p>
-              </div>
-              <table className="w-full border-collapse" style={{ border: '2px solid black' }}>
-                <thead className="bg-slate-100">
-                  <tr>
-                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '50px' }}>ردیف</th>
-                    <th className="p-3 text-right font-black text-xs" style={{ border: '1px solid black', width: '120px' }}>زمان / روز</th>
-                    <th className="p-3 text-right font-black text-xs" style={{ border: '1px solid black' }}>نام پخت پیشنهادی</th>
-                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '100px' }}>دسته</th>
-                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '80px' }}>کالری</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chunk.map((plan, idx) => (
-                    <tr key={idx} style={{ height: '55px' }}>
-                      <td className="p-2 text-center font-bold text-xs" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
-                      <td className="p-2 text-right font-black text-xs" style={{ border: '1px solid black' }}>{plan.dayName}</td>
-                      <td className="p-2 text-right font-black text-sm text-emerald-900" style={{ border: '1px solid black' }}>{plan.dish.name}</td>
-                      <td className="p-2 text-center font-bold text-[10px] text-slate-600" style={{ border: '1px solid black' }}>{CATEGORY_LABELS[plan.dish.category] || '-'}</td>
-                      <td className="p-2 text-center font-black text-xs" style={{ border: '1px solid black' }}>{toPersianDigits(plan.dish.calories || estimateCalories(plan.dish))}</td>
+              <div className="flex-grow">
+                <div className="mb-4 p-4 bg-slate-50 border-r-4 border-emerald-500 rounded-l-2xl">
+                  <p className="text-base font-black text-slate-800">
+                    پیشنهادات غذایی برای: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
+                  </p>
+                </div>
+                <table className="w-full border-collapse">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '50px' }}>ردیف</th>
+                      <th className="p-3 text-right font-black text-xs" style={{ width: '120px' }}>زمان / روز</th>
+                      <th className="p-3 text-right font-black text-xs">نام پخت پیشنهادی</th>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '100px' }}>دسته</th>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '80px' }}>کالری</th>
                     </tr>
-                  ))}
-                  {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
-                    <tr key={`empty-${eIdx}`} style={{ height: '55px' }}>
-                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
-                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
-                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
-                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
-                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                  </thead>
+                  <tbody>
+                    {chunk.map((plan, idx) => (
+                      <tr key={idx} style={{ height: '55px' }}>
+                        <td className="p-2 text-center font-bold text-xs">{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
+                        <td className="p-2 text-right font-black text-xs">{plan.dayName}</td>
+                        <td className="p-2 text-right font-black text-sm text-emerald-900">{plan.dish.name}</td>
+                        <td className="p-2 text-center font-bold text-[10px] text-slate-600">{CATEGORY_LABELS[plan.dish.category] || '-'}</td>
+                        <td className="p-2 text-center font-black text-xs">{toPersianDigits(plan.dish.calories || estimateCalories(plan.dish))}</td>
+                      </tr>
+                    ))}
+                    {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
+                      <tr key={`empty-${eIdx}`} style={{ height: '55px' }}>
+                        <td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-6 pt-4 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
+                <div className="flex flex-col gap-1">
+                   <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Powered by Noosh AI Engine</div>
+                   <div className="text-xs font-black text-slate-800">www.nooshapp.ir</div>
+                </div>
+                <div className="text-[8px] font-bold text-slate-500 italic">نوش؛ دستیار هوشمند آشپزی و سلامت خانواده</div>
+              </div>
+            </div>
+          ))
+        ) : (
+          // خروجی چاپی سبد خرید - دقیقاً مشابه استایل برنامه‌ریزی
+          activeShoppingItems.length > 0 && chunkedShoppingForPrint.map((chunk, pageIdx) => (
+            <div key={pageIdx} className="print-page">
+              <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
+                <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
+                    <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
+                  </div>
+                  <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Shopping List Report</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-12 h-12 object-contain mb-1" />
+                  <h1 className="text-lg font-black text-slate-900">لیست خرید مواد اولیه</h1>
+                </div>
+                <div className="text-left font-black text-slate-800">
+                  <div className="text-[8px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
+                  <div className="text-lg">{toPersianDigits(persianDate)}</div>
+                  <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedShoppingForPrint.length)}</div>
+                </div>
+              </div>
+              <div className="flex-grow">
+                <div className="mb-4 p-4 bg-slate-50 border-r-4 border-emerald-500 rounded-l-2xl">
+                  <p className="text-base font-black text-slate-800">
+                    لیست خرید برای: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
+                  </p>
+                </div>
+                <table className="w-full border-collapse">
+                  <thead className="bg-slate-100">
+                    <tr>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '50px' }}>ردیف</th>
+                      <th className="p-3 text-right font-black text-xs">نام کالا / شرح</th>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '120px' }}>مقدار</th>
+                      <th className="p-3 text-center font-black text-xs" style={{ width: '100px' }}>واحد</th>
+                      <th className="p-3 text-right font-black text-xs" style={{ width: '150px' }}>بابت پخت</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-6 pt-4 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
-              <div className="flex flex-col gap-1">
-                 <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Powered by Noosh AI Engine</div>
-                 <div className="text-xs font-black text-slate-800">www.nooshapp.ir</div>
+                  </thead>
+                  <tbody>
+                    {chunk.map((item, idx) => (
+                      <tr key={item.id} style={{ height: '55px' }}>
+                        <td className="p-2 text-center font-bold text-xs">{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
+                        <td className="p-2 text-right font-black text-sm text-emerald-900">{item.name}</td>
+                        <td className="p-2 text-center font-bold text-xs">{toPersianDigits(item.amount) || '-'}</td>
+                        <td className="p-2 text-center font-bold text-[10px] text-slate-600">{item.unit || '-'}</td>
+                        <td className="p-2 text-right font-black text-[10px] text-slate-400">{item.fromRecipe || '-'}</td>
+                      </tr>
+                    ))}
+                    {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
+                      <tr key={`empty-${eIdx}`} style={{ height: '55px' }}>
+                        <td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td><td className="p-2">&nbsp;</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="text-[8px] font-bold text-slate-500 italic">
-                نوش؛ دستیار هوشمند آشپزی و سلامت خانواده
+              <div className="mt-6 pt-4 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
+                <div className="flex flex-col gap-1">
+                   <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Powered by Noosh AI Engine</div>
+                   <div className="text-xs font-black text-slate-800">www.nooshapp.ir</div>
+                </div>
+                <div className="text-[8px] font-bold text-slate-500 italic">نوش؛ دستیار هوشمند آشپزی و سلامت خانواده</div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="fixed top-4 left-4 right-4 z-[100] no-print">
@@ -284,7 +373,7 @@ const App: React.FC = () => {
                </div>
                {displayPlan.length > 0 && (
                  <button 
-                   onClick={() => window.print()} 
+                   onClick={handlePrintPlan} 
                    className="p-5 bg-white text-slate-800 rounded-[2rem] shadow-sm border border-white/50 hover:bg-emerald-50 transition-all active:scale-90 animate-enter"
                    title="چاپ برنامه"
                  >
@@ -350,11 +439,11 @@ const App: React.FC = () => {
       </div>
 
       {isShoppingListOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md" onClick={() => setIsShoppingListOpen(false)}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md no-print" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-enter h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-4 left-4 p-2 bg-slate-100 rounded-full text-slate-500 z-[210]"><X size={18} /></button>
               <div className="flex-grow overflow-y-auto">
-                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} />
+                <ShoppingList user={currentUser} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} onPrintInternal={handlePrintShopping} />
               </div>
            </div>
         </div>
