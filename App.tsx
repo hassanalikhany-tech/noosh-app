@@ -109,7 +109,7 @@ const App: React.FC = () => {
     return new Intl.DateTimeFormat('fa-IR').format(new Date());
   }, []);
 
-  // بخش‌بندی برنامه برای چاپ (هر ۱۰ مورد در یک صفحه جهت زیبایی و جا شدن در A4)
+  // بخش‌بندی برنامه برای چاپ (دقیقاً ۱۰ مورد در هر صفحه برای ثبات بصری)
   const chunkedPlanForPrint = useMemo(() => {
     const chunks: DayPlan[][] = [];
     const ITEMS_PER_PAGE = 10;
@@ -145,7 +145,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* پنجره اطلاع‌رسانی شیشه‌ای متحرک */}
+      {/* پنجره اطلاع‌رسانی شیشه‌ای */}
       <div className={`fixed inset-0 z-[2000] flex items-center justify-center p-6 pointer-events-none transition-all duration-1000 ease-out ${statusAlert.show ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
          <div className="bg-white/40 backdrop-blur-3xl border border-white/60 p-10 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.15)] max-w-lg w-full flex flex-col items-center text-center gap-6 relative overflow-hidden pointer-events-auto">
             <div className={`absolute top-0 inset-x-0 h-2 bg-${statusAlert.color}-500`}></div>
@@ -160,96 +160,86 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* بخش گزارش چاپی برنامه ریزی (عیناً مشابه سبد خرید) */}
-      <div className="print-only dir-rtl text-right w-full bg-white">
-        {displayPlan.length === 0 ? (
-          <div className="p-20 text-center font-black">هنوز برنامه‌ای برای چاپ وجود ندارد.</div>
-        ) : (
-          chunkedPlanForPrint.map((chunk, pageIdx) => (
-            <div key={pageIdx} className="print-page flex flex-col bg-white p-12">
-              {/* هدر گزارش چاپی */}
-              <div className="flex justify-between items-center border-b-4 border-slate-900 pb-6 mb-8">
-                <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black italic uppercase text-slate-900">NOOSH</span>
-                    <span className="text-2xl font-black text-teal-600 italic uppercase">APP</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Intelligent Meal Planning Report</span>
+      {/* بخش گزارش چاپی برنامه ریزی - کاملاً بهینه شده برای A4 */}
+      <div className="print-only dir-rtl text-right w-full">
+        {displayPlan.length > 0 && chunkedPlanForPrint.map((chunk, pageIdx) => (
+          <div key={pageIdx} className="print-page">
+            {/* هدر چاپی */}
+            <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
+              <div className="flex flex-col items-start" style={{ direction: 'ltr' }}>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black italic uppercase text-slate-900">NOOSH</span>
+                  <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
                 </div>
-
-                <div className="flex flex-col items-center">
-                  <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-16 h-16 object-contain mb-2" />
-                  <h1 className="text-xl font-black text-slate-900">گزارش برنامه غذایی اختصاصی</h1>
-                </div>
-                
-                <div className="text-left font-black text-slate-800">
-                  <div className="text-[10px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
-                  <div className="text-xl">{toPersianDigits(persianDate)}</div>
-                  <div className="text-[9px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedPlanForPrint.length)}</div>
-                </div>
+                <span className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-[0.3em]">Intelligent Meal Plan Report</span>
               </div>
 
-              {/* بدنه گزارش با جدول شکیل */}
-              <div className="flex-grow">
-                <div className="mb-6 p-6 bg-slate-50 border-r-8 border-emerald-500 rounded-l-3xl">
-                  <p className="text-lg font-black text-slate-800 leading-relaxed">
-                    لیست پیشنهادات غذایی برای جناب/سرکار: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
-                  </p>
-                  <p className="text-sm font-bold text-slate-500 mt-2">
-                    این برنامه هوشمند شامل مواد مغذی و کالری‌سنجی تقریبی است که بر اساس پروفایل شما تنظیم شده است.
-                  </p>
-                </div>
-
-                <table className="w-full border-collapse" style={{ border: '3px solid black' }}>
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '60px' }}>ردیف</th>
-                      <th className="p-4 text-right font-black text-base" style={{ border: '1.5px solid black', width: '150px' }}>زمان / عنوان</th>
-                      <th className="p-4 text-right font-black text-base" style={{ border: '1.5px solid black' }}>نام پخت پیشنهادی</th>
-                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '130px' }}>دسته‌بندی</th>
-                      <th className="p-4 text-center font-black text-base" style={{ border: '1.5px solid black', width: '110px' }}>کالری تقریبی</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chunk.map((plan, idx) => {
-                      const calories = plan.dish.calories || estimateCalories(plan.dish);
-                      return (
-                        <tr key={idx}>
-                          <td className="p-4 text-center font-bold text-base" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
-                          <td className="p-4 text-right font-black text-base" style={{ border: '1px solid black' }}>{plan.dayName}</td>
-                          <td className="p-4 text-right font-black text-lg text-emerald-900" style={{ border: '1px solid black' }}>{plan.dish.name}</td>
-                          <td className="p-4 text-center font-bold text-sm text-slate-600" style={{ border: '1px solid black' }}>{CATEGORY_LABELS[plan.dish.category] || '-'}</td>
-                          <td className="p-4 text-center font-black text-sm" style={{ border: '1px solid black' }}>{toPersianDigits(calories)}</td>
-                        </tr>
-                      );
-                    })}
-                    {/* ردیف‌های خالی برای حفظ ثبات بصری صفحه */}
-                    {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
-                      <tr key={`empty-${eIdx}`}>
-                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
-                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
-                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
-                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
-                        <td className="p-8" style={{ border: '1px solid black' }}>&nbsp;</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex flex-col items-center">
+                <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-12 h-12 object-contain mb-1" />
+                <h1 className="text-lg font-black text-slate-900">برنامه غذایی اختصاصی</h1>
               </div>
-
-              {/* فوتر گزارش چاپی */}
-              <div className="mt-12 pt-8 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
-                <div className="flex flex-col gap-1">
-                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Generated by Noosh AI Engine</div>
-                   <div className="text-sm font-black text-slate-800 tracking-tight">www.nooshapp.ir</div>
-                </div>
-                <div className="text-[10px] font-bold text-slate-500 italic">
-                  نوش؛ دستیار تخصصی آشپزی، تغذیه و سلامت خانواده
-                </div>
+              
+              <div className="text-left font-black text-slate-800">
+                <div className="text-[8px] opacity-50 mb-1 text-right">تاریخ گزارش</div>
+                <div className="text-lg">{toPersianDigits(persianDate)}</div>
+                <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedPlanForPrint.length)}</div>
               </div>
             </div>
-          ))
-        )}
+
+            {/* بدنه گزارش */}
+            <div className="flex-grow">
+              <div className="mb-4 p-4 bg-slate-50 border-r-4 border-emerald-500 rounded-l-2xl">
+                <p className="text-base font-black text-slate-800">
+                  پیشنهادات غذایی برای: <span className="text-emerald-700">{currentUser.fullName || currentUser.username}</span>
+                </p>
+              </div>
+
+              <table className="w-full border-collapse" style={{ border: '2px solid black' }}>
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '50px' }}>ردیف</th>
+                    <th className="p-3 text-right font-black text-xs" style={{ border: '1px solid black', width: '120px' }}>زمان / روز</th>
+                    <th className="p-3 text-right font-black text-xs" style={{ border: '1px solid black' }}>نام پخت پیشنهادی</th>
+                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '100px' }}>دسته</th>
+                    <th className="p-3 text-center font-black text-xs" style={{ border: '1px solid black', width: '80px' }}>کالری</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chunk.map((plan, idx) => (
+                    <tr key={idx} style={{ height: '55px' }}>
+                      <td className="p-2 text-center font-bold text-xs" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
+                      <td className="p-2 text-right font-black text-xs" style={{ border: '1px solid black' }}>{plan.dayName}</td>
+                      <td className="p-2 text-right font-black text-sm text-emerald-900" style={{ border: '1px solid black' }}>{plan.dish.name}</td>
+                      <td className="p-2 text-center font-bold text-[10px] text-slate-600" style={{ border: '1px solid black' }}>{CATEGORY_LABELS[plan.dish.category] || '-'}</td>
+                      <td className="p-2 text-center font-black text-xs" style={{ border: '1px solid black' }}>{toPersianDigits(plan.dish.calories || estimateCalories(plan.dish))}</td>
+                    </tr>
+                  ))}
+                  {/* ردیف‌های خالی برای تثبیت ارتفاع جدول و جلوگیری از پریدن فوتر */}
+                  {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, eIdx) => (
+                    <tr key={`empty-${eIdx}`} style={{ height: '55px' }}>
+                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                      <td className="p-2" style={{ border: '1px solid black' }}>&nbsp;</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* فوتر چاپی - همیشه در انتهای همان صفحه */}
+            <div className="mt-6 pt-4 border-t-2 border-slate-200 flex justify-between items-end opacity-70">
+              <div className="flex flex-col gap-1">
+                 <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Powered by Noosh AI Engine</div>
+                 <div className="text-xs font-black text-slate-800">www.nooshapp.ir</div>
+              </div>
+              <div className="text-[8px] font-bold text-slate-500 italic">
+                نوش؛ دستیار هوشمند آشپزی و سلامت خانواده
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* هدر اپلیکیشن */}
@@ -309,12 +299,12 @@ const App: React.FC = () => {
                   </button>
                </div>
                
-               {/* دکمه پرینت هوشمند: فقط زمانی که برنامه‌ای تولید شده باشد نمایان می‌شود */}
+               {/* نمایش شرطی دکمه پرینت: فقط بعد از تولید برنامه */}
                {displayPlan.length > 0 && (
                  <button 
-                  onClick={() => window.print()} 
-                  className="p-5 bg-white text-slate-800 rounded-[2rem] shadow-sm border border-white/50 hover:bg-emerald-50 transition-all active:scale-90 animate-enter"
-                  title="چاپ برنامه"
+                   onClick={() => window.print()} 
+                   className="p-5 bg-white text-slate-800 rounded-[2rem] shadow-sm border border-white/50 hover:bg-emerald-50 transition-all active:scale-90 animate-enter"
+                   title="چاپ برنامه"
                  >
                    <Printer size={32} />
                  </button>
@@ -341,7 +331,7 @@ const App: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {/* فوتر با فیلترها */}
+      {/* فوتر اپلیکیشن */}
       <div className="fixed bottom-6 left-6 right-6 z-[110] no-print">
         <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[2.5rem] h-[105px] px-10 flex items-center justify-between">
             <div className="flex items-center gap-12">
