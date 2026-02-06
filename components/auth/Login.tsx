@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
 import { Mail, User, ArrowRight, AlertCircle, Loader2, ScanFace, CheckCircle2, Lock, CheckSquare, Square, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -10,12 +10,25 @@ interface LoginProps {
 
 type AuthMode = 'login' | 'register' | 'forgot';
 
+// Adding missing GoogleIcon component
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20">
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-    <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.39-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z"/>
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    <path
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      fill="#4285F4"
+    />
+    <path
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      fill="#34A853"
+    />
+    <path
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+      fill="#FBBC05"
+    />
+    <path
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      fill="#EA4335"
+    />
   </svg>
 );
 
@@ -27,8 +40,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [rememberMe, setRememberMe] = useState(true);
   const [bioStatus, setBioStatus] = useState<'idle' | 'scanning'>('idle');
   const [formData, setFormData] = useState({ email: '', password: '', fullName: '' });
+  const [appVersion, setAppVersion] = useState("V15.67"); // مقدار پیش‌فرض هماهنگ با متادیتا فعلی
 
   useEffect(() => {
+    // خواندن داینامیک نسخه از فایل متادیتا
+    const fetchMetadata = async () => {
+      try {
+        const response = await fetch('/metadata.json');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.name) {
+            // استخراج بخش نسخه (مثلاً از "NOOSH APP V15.67" بخش "V15.67" را برمی‌دارد)
+            const parts = data.name.split(' ');
+            const version = parts[parts.length - 1];
+            setAppVersion(version);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch app version from metadata:", err);
+      }
+    };
+    fetchMetadata();
+
     const savedEmail = localStorage.getItem('noosh_saved_email');
     if (savedEmail) setFormData(prev => ({ ...prev, email: savedEmail }));
     
@@ -77,6 +110,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(false);
   };
 
+  const toPersianDigits = (num: string) => num.replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-100 p-4 sm:p-8 font-sans dir-rtl overflow-hidden">
       <div className="w-full max-w-6xl h-full max-h-[850px] flex flex-col lg:flex-row bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-white">
@@ -87,9 +122,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-52 h-52 object-contain drop-shadow-[0_0_40px_rgba(45,212,191,0.5)]" />
           </div>
           <div className="text-center space-y-4 relative z-10">
-            <div className="flex flex-row items-baseline justify-center gap-2" style={{ direction: 'ltr' }}>
-              <span className="text-7xl font-black italic tracking-tighter">NOOSH</span>
-              <span className="text-3xl font-black text-teal-400 italic">APP</span>
+            <div className="flex flex-col items-center" style={{ direction: 'ltr' }}>
+              <div className="flex flex-row items-baseline justify-center gap-2">
+                <span className="text-7xl font-black italic tracking-tighter">NOOSH</span>
+                <span className="text-3xl font-black text-teal-400 italic">APP</span>
+              </div>
+              <div className="text-sm font-black text-teal-500/60 tracking-[0.6em] uppercase mt-2">
+                {appVersion}
+              </div>
             </div>
           </div>
           <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
@@ -106,6 +146,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                  <div className="flex items-baseline justify-center gap-1" style={{ direction: 'ltr' }}>
                     <span className="text-4xl font-black italic text-slate-900">NOOSH</span>
                     <span className="text-xl font-black text-teal-600">APP</span>
+                 </div>
+                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                    {appVersion}
                  </div>
               </div>
           </div>

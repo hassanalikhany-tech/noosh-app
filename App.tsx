@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [footerSearchTerm, setFooterSearchTerm] = useState('');
   const [statusAlert, setStatusAlert] = useState<StatusAlert>({ show: false, title: '', description: '', icon: Info, color: 'emerald' });
   const [printType, setPrintType] = useState<PrintType>('plan');
+  const [planLoading, setPlanLoading] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
   const planResultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -100,6 +101,24 @@ const App: React.FC = () => {
       await UserService.updateProfile(currentUser.username, { [filter]: newVal });
     } catch (err) {
       setCurrentUser(currentUser);
+    }
+  };
+
+  const handleGeneratePlan = async (type: 'daily' | 'weekly' | 'monthly') => {
+    if (!currentUser) return;
+    setPlanLoading(type);
+    try {
+      let result;
+      if (type === 'daily') result = await generateDailyPlan(currentUser);
+      else if (type === 'weekly') result = await generateWeeklyPlan(currentUser);
+      else result = await generateMonthlyPlan(currentUser);
+      
+      setDisplayPlan(result.plan);
+      setCurrentUser(result.updatedUser);
+    } catch (err) {
+      console.error("Failed to generate plan:", err);
+    } finally {
+      setPlanLoading(null);
     }
   };
 
@@ -183,10 +202,9 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* بخش مخصوص چاپ - متمرکز در ریشه برای جلوگیری از تداخل استایل‌ها */}
+      {/* بخش مخصوص چاپ */}
       <div className="print-only dir-rtl text-right w-full bg-white">
         {printType === 'plan' ? (
-          // خروجی چاپی برنامه پخت
           displayPlan.length > 0 && chunkedPlanForPrint.map((chunk, pageIdx) => (
             <div key={pageIdx} className="print-page">
               <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
@@ -251,7 +269,6 @@ const App: React.FC = () => {
             </div>
           ))
         ) : (
-          // خروجی چاپی سبد خرید - دقیقاً مشابه استایل برنامه‌ریزی
           activeShoppingItems.length > 0 && chunkedShoppingForPrint.map((chunk, pageIdx) => (
             <div key={pageIdx} className="print-page">
               <div className="flex justify-between items-center border-b-4 border-slate-900 pb-4 mb-6">
@@ -361,14 +378,29 @@ const App: React.FC = () => {
           <div className="space-y-12 animate-enter">
             <div className="max-w-4xl mx-auto bg-white/40 backdrop-blur-3xl border border-white/40 rounded-[3rem] p-4 shadow-2xl flex items-center gap-4">
                <div className="flex-grow grid grid-cols-3 gap-3">
-                  <button onClick={() => generateDailyPlan(currentUser).then(r => { setDisplayPlan(r.plan); setCurrentUser(r.updatedUser); })} className="flex items-center justify-center gap-3 py-5 bg-white text-slate-800 rounded-[2rem] font-black text-sm hover:bg-emerald-50 transition-all shadow-sm">
-                     <Utensils size={24} /> پیشنهاد امروز
+                  <button 
+                    onClick={() => handleGeneratePlan('daily')} 
+                    disabled={planLoading !== null}
+                    className="flex items-center justify-center gap-3 py-5 bg-white text-slate-800 rounded-[2rem] font-black text-sm hover:bg-emerald-50 transition-all shadow-sm disabled:opacity-75"
+                  >
+                     {planLoading === 'daily' ? <RefreshCw size={24} className="animate-spin text-teal-600" /> : <Utensils size={24} />} 
+                     {planLoading === 'daily' ? 'در حال تهیه...' : 'پیشنهاد امروز'}
                   </button>
-                  <button onClick={() => generateWeeklyPlan(currentUser).then(r => { setDisplayPlan(r.plan); setCurrentUser(r.updatedUser); })} className="flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-sm shadow-xl">
-                     <Calendar size={24} /> برنامه هفتگی
+                  <button 
+                    onClick={() => handleGeneratePlan('weekly')} 
+                    disabled={planLoading !== null}
+                    className="flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-sm shadow-xl disabled:opacity-75"
+                  >
+                     {planLoading === 'weekly' ? <RefreshCw size={24} className="animate-spin text-amber-400" /> : <Calendar size={24} />} 
+                     {planLoading === 'weekly' ? 'در حال تنظیم...' : 'برنامه هفتگی'}
                   </button>
-                  <button onClick={() => generateMonthlyPlan(currentUser).then(r => { setDisplayPlan(r.plan); setCurrentUser(r.updatedUser); })} className="flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-sm shadow-xl">
-                     <CalendarDays size={24} /> برنامه ماهانه
+                  <button 
+                    onClick={() => handleGeneratePlan('monthly')} 
+                    disabled={planLoading !== null}
+                    className="flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-sm shadow-xl disabled:opacity-75"
+                  >
+                     {planLoading === 'monthly' ? <RefreshCw size={24} className="animate-spin text-white" /> : <CalendarDays size={24} />} 
+                     {planLoading === 'monthly' ? 'در حال ایجاد...' : 'برنامه ماهانه'}
                   </button>
                </div>
                {displayPlan.length > 0 && (
