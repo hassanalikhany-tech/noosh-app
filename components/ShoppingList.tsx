@@ -34,7 +34,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const activeItems = useMemo(() => uniqueItems.filter(i => !i.checked), [uniqueItems]);
 
-  // تقسیم‌بندی اقلام برای چاپ (۱۰ قلم در هر صفحه برای اطمینان از عدم تداخل با فوتر)
+  // تقسیم‌بندی اقلام برای چاپ (۱۰ قلم در هر صفحه برای اطمینان از عدم تداخل با فوتر و تکرار ناخواسته)
   const chunkedItemsForPrint = useMemo(() => {
     const chunks: ShoppingItem[][] = [];
     const ITEMS_PER_PAGE = 10; 
@@ -90,22 +90,18 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const getFormattedListText = () => {
     if (activeItems.length === 0) return 'سبد خرید شما خالی است.';
-
     let text = `⚪️ NOOSH 🟢 APP\n`;
     text += `همراه سلامتی و آسایش شما\n`;
     text += `📅 تاریخ: ${persianDate}\n`;
     text += `------------------------------------------\n\n`;
     text += `🛒 *لیست مواد مورد نیاز:*\n\n`;
-
     activeItems.forEach((item, index) => {
        const qty = item.amount ? ` (${toPersianDigits(item.amount)} ${item.unit || ''})` : '';
        const source = item.fromRecipe ? ` [بابت: ${item.fromRecipe}]` : '';
        text += `${toPersianDigits(index + 1)}. ${item.name}${qty}${source}\n`;
     });
-
     text += `\n------------------------------------------\n`;
     text += `🌐 www.nooshapp.ir\n`;
-    
     return text;
   };
 
@@ -124,20 +120,18 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   const shareText = getFormattedListText();
   const encodedText = encodeURIComponent(shareText);
   const appUrl = encodeURIComponent('https://nooshapp.ir');
-  
   const telegramShareLink = `https://t.me/share/url?url=${appUrl}&text=${encodedText}`;
 
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
       
-      {/* بخش مخصوص چاپ - بهینه شده برای حذف تصاویر ناخواسته */}
+      {/* بخش مخصوص چاپ - بهینه شده برای حذف تصاویر ناخواسته و تنظیم کادرها */}
       <div className="print-only dir-rtl text-right w-full bg-white">
         {chunkedItemsForPrint.length === 0 ? (
           <div className="p-10 text-center font-black bg-white">لیست خرید خالی است.</div>
         ) : (
           chunkedItemsForPrint.map((chunk, pageIdx) => (
             <div key={pageIdx} className="print-page flex flex-col bg-white">
-              {/* هدر پرینت */}
               <div className="print-brand flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-6">
                 <div className="flex-1 flex flex-col items-start" style={{ direction: 'ltr' }}>
                   <div className="flex items-baseline gap-1">
@@ -146,47 +140,41 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                   </div>
                   <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Premium Kitchen Assistant</span>
                 </div>
-
                 <div className="flex-1 flex justify-center">
                   <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-12 h-12 object-contain" />
                 </div>
-                
                 <div className="flex-1 text-left font-black text-slate-800">
                   <div className="text-[10px] opacity-50 mb-1">تاریخ تهیه لیست</div>
                   <div className="text-lg">{toPersianDigits(persianDate)}</div>
                   <div className="text-[8px] opacity-40 mt-1">صفحه {toPersianDigits(pageIdx + 1)} از {toPersianDigits(chunkedItemsForPrint.length)}</div>
                 </div>
               </div>
-
               <div className="mb-6 p-4 bg-slate-50 border-r-4 border-teal-500 rounded-l-2xl">
                 <p className="text-sm font-black text-slate-700 leading-relaxed">
                   لیست مواد اولیه مورد نیاز جهت خرید - همراه سلامتی و آسایش شما
                 </p>
               </div>
-
-              {/* جدول اقلام */}
               <div className="flex-grow">
-                <table className="w-full border-collapse mb-8" style={{ border: '2px solid black' }}>
+                <table className="w-full border-collapse mb-8" style={{ border: '2px solid black', tableLayout: 'fixed' }}>
                   <thead>
                     <tr className="bg-slate-100">
-                      <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>ردیف</th>
+                      <th className="border p-3 text-center font-black text-sm" style={{ border: '1px solid black', width: '50px' }}>ردیف</th>
                       <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>شرح کالا</th>
-                      <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>مقدار/واحد</th>
-                      <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black' }}>بابت</th>
+                      <th className="border p-3 text-center font-black text-sm" style={{ border: '1px solid black', width: '120px' }}>مقدار/واحد</th>
+                      <th className="border p-3 text-right font-black text-sm" style={{ border: '1px solid black', width: '150px' }}>بابت</th>
                     </tr>
                   </thead>
                   <tbody>
                     {chunk.map((item, idx) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} style={{ height: '55px' }}>
                         <td className="border p-3 text-center text-sm font-bold" style={{ border: '1px solid black' }}>{toPersianDigits((pageIdx * 10) + idx + 1)}</td>
-                        <td className="border p-3 text-sm font-black" style={{ border: '1px solid black' }}>{item.name}</td>
-                        <td className="border p-3 text-sm font-bold" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
-                        <td className="border p-3 text-xs text-slate-500 font-bold" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
+                        <td className="border p-3 text-sm font-black overflow-hidden truncate" style={{ border: '1px solid black' }}>{item.name}</td>
+                        <td className="border p-3 text-center text-sm font-bold" style={{ border: '1px solid black' }}>{item.amount ? `${toPersianDigits(item.amount)} ${item.unit || ''}` : '-'}</td>
+                        <td className="border p-3 text-xs text-slate-500 font-bold overflow-hidden truncate" style={{ border: '1px solid black' }}>{item.fromRecipe || '-'}</td>
                       </tr>
                     ))}
-                    {/* ردیف‌های خالی برای حفظ فرمت ثابت */}
                     {chunk.length < 10 && Array.from({ length: 10 - chunk.length }).map((_, emptyIdx) => (
-                      <tr key={`empty-${emptyIdx}`}>
+                      <tr key={`empty-${emptyIdx}`} style={{ height: '55px' }}>
                         <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
                         <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
                         <td className="border p-5" style={{ border: '1px solid black' }}>&nbsp;</td>
@@ -196,8 +184,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                   </tbody>
                 </table>
               </div>
-
-              {/* فوتر پرینت */}
               <div className="text-center border-t pt-6 mt-10">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تهیه شده توسط اپلیکیشن هوشمند آشپزی نوش</div>
                 <div className="text-sm font-black text-slate-800">www.nooshapp.ir</div>
@@ -207,7 +193,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
         )}
       </div>
 
-      {/* بخش نمایش در اپلیکیشن */}
       <div className="no-print p-6 flex flex-col flex-grow overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-0 pt-2">
           <div className="flex items-center gap-4">
@@ -219,24 +204,19 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
               <p className="text-[10px] text-slate-400 font-bold mt-1">({toPersianDigits(activeItems.length)} قلم کالا)</p>
             </div>
           </div>
-          
           <div className="flex gap-2 flex-wrap">
             <button onClick={handlePrint} className="p-3 text-slate-600 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200 active:scale-90 shadow-sm" title="چاپ لیست">
               <Printer size={22} />
             </button>
-            
             <button onClick={handleSMS} className="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-blue-100 active:scale-90 shadow-sm" title="ارسال پیامک">
               <Smartphone size={22} />
             </button>
-
             <a href={`https://wa.me/?text=${encodedText}`} target="_blank" rel="noreferrer" className="p-3 text-green-600 hover:bg-green-50 rounded-2xl transition-all border border-green-100 active:scale-90 shadow-sm" title="ارسال به واتس‌اپ">
               <MessageCircle size={22} />
             </a>
-
             <a href={telegramShareLink} target="_blank" rel="noreferrer" className="p-3 text-sky-500 hover:bg-sky-100 rounded-2xl transition-all border border-sky-100 active:scale-90 shadow-sm" title="ارسال به تلگرام">
               <TelegramIcon />
             </a>
-            
             {customItems.length > 0 && (
                <button onClick={() => setShowDeleteConfirm(true)} className="p-3 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all border border-rose-100 active:scale-90 shadow-sm" title="حذف همه">
                  <Trash2 size={22} />
@@ -244,7 +224,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
             )}
           </div>
         </div>
-
         {showDeleteConfirm && (
           <div className="mb-6 p-5 bg-rose-50 border-2 border-rose-100 rounded-[2rem] flex items-center justify-between animate-enter shadow-lg shadow-rose-100/30">
              <div className="text-rose-700 font-black text-sm flex items-center gap-3"><AlertTriangle size={20} /> حذف کل لیست خرید؟</div>
@@ -254,7 +233,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
              </div>
           </div>
         )}
-
         <div className="flex-grow overflow-y-auto">
           <div className="space-y-8 max-w-2xl mx-auto pb-12 pr-1">
             <div className="sticky top-0 bg-white z-10 py-3 space-y-2">
@@ -299,7 +277,6 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Ruler size={10} /> واحد</span>
               </div>
             </div>
-
             <div className="space-y-3">
               {uniqueItems.length === 0 ? (
                 <div className="text-center py-24 text-slate-300 border-2 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/30">
