@@ -14,6 +14,7 @@ const ImageGuide: React.FC = () => {
   const dishes = useMemo(() => {
     let all = RecipeService.getAllDishes();
     if (showMissingOnly) {
+      // غذاهایی که آدرس تصویر خارجی ندارند و فقط به آیکون یا فایل محلی وابسته هستند
       all = all.filter(d => !d.imageUrl || d.imageUrl.trim() === "");
     }
     if (!searchTerm) return all;
@@ -31,18 +32,18 @@ const ImageGuide: React.FC = () => {
       'ID': d.id,
       'نام غذا': d.name,
       'دسته‌بندی': CATEGORY_LABELS[d.category] || d.category,
-      'وضعیت تصویر': d.imageUrl ? 'دارد' : 'ندارد (آیکون)',
-      'نام فایل PNG پیشنهادی': `${d.id}.png`
+      'وضعیت تصویر': d.imageUrl ? 'دارای آدرس آنلاین' : 'بدون آدرس (فایل محلی مورد نیاز)',
+      'نام فایل PNG مورد انتظار': `${d.id}.png`
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dishes_Images_Status");
-    XLSX.writeFile(wb, `Noosh_Images_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Missing_Images_Report");
+    XLSX.writeFile(wb, `Noosh_Images_Need_Check_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-200px)]">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-200px)] animate-enter">
       <div className="p-6 border-b border-slate-100 bg-slate-50">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
@@ -60,14 +61,14 @@ const ImageGuide: React.FC = () => {
               className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all border-2 ${showMissingOnly ? 'bg-amber-600 text-white border-amber-500 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'}`}
             >
               <Filter size={16} />
-              {showMissingOnly ? 'نمایش همه غذاها' : 'فقط غذاهای بدون عکس واقعی'}
+              {showMissingOnly ? 'نمایش همه' : 'فقط غذاهای بدون عکس آنلاین'}
             </button>
             <button 
               onClick={handleExportExcel}
               className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg hover:bg-emerald-700 active:scale-95 transition-all"
             >
               <FileSpreadsheet size={16} />
-              خروجی اکسل از لیست فعلی
+              خروجی اکسل
             </button>
           </div>
         </div>
@@ -88,10 +89,10 @@ const ImageGuide: React.FC = () => {
         <table className="w-full text-right text-sm">
           <thead className="bg-gray-100 text-gray-600 sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="p-4 w-20 text-center">وضعیت فعلی</th>
+              <th className="p-4 w-20 text-center">پیش‌نمایش</th>
               <th className="p-4">نام غذا</th>
               <th className="p-4">دسته‌بندی</th>
-              <th className="p-4 ltr text-left">نام فایل مورد نیاز (PNG)</th>
+              <th className="p-4 ltr text-left">نام فایل PNG مورد نیاز</th>
               <th className="p-4 w-20"></th>
             </tr>
           </thead>
@@ -107,7 +108,7 @@ const ImageGuide: React.FC = () => {
                   </td>
                   <td className="p-3 font-bold text-gray-800">
                     {dish.name}
-                    {!dish.imageUrl && <span className="mr-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] rounded-md font-black">بدون عکس</span>}
+                    {!dish.imageUrl && <span className="mr-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] rounded-md font-black">نیاز به عکس</span>}
                   </td>
                   <td className="p-3 text-gray-500">{CATEGORY_LABELS[dish.category]}</td>
                   <td className="p-3 text-left dir-ltr font-mono text-xs text-blue-700 select-all">
@@ -133,7 +134,7 @@ const ImageGuide: React.FC = () => {
         </table>
       </div>
       <div className="p-4 bg-gray-50 border-t text-center text-xs text-gray-400 font-black">
-        تعداد غذاهای لیست شده: {dishes.length} مورد
+        تعداد آیتم‌های نمایش داده شده: {dishes.length} مورد
       </div>
     </div>
   );

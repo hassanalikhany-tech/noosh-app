@@ -149,11 +149,12 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
         </div>
 
         {selectedCategory === 'international' && (
-          <div className="p-8 bg-white/70 backdrop-blur-2xl rounded-[3rem] border border-white shadow-sm">
+          <div className="p-8 bg-white/70 backdrop-blur-2xl rounded-[3rem] border border-white shadow-sm animate-enter">
             <div className="flex flex-wrap gap-4">
               <button onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-8 py-4 rounded-[1.5rem] text-sm font-black border-2 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}>همه</button>
               {COUNTRY_DATA.map(c => (
                 <div key={c.id} className="relative group">
+                   {/* Tooltip مشکی هوشمند */}
                    {hoveredCountry === c.id && (
                      <div className="absolute -top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-black text-white text-[11px] font-black rounded-xl z-[100] whitespace-nowrap shadow-2xl animate-in fade-in slide-in-from-bottom-2">
                        {c.label}

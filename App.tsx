@@ -114,8 +114,8 @@ const App: React.FC = () => {
       if (user) {
         setCurrentUser(user);
         if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
-        // فراخوانی مجدد همگام‌سازی پس از شناسایی کاربر برای اطمینان از دریافت داده‌های جدید
-        RecipeService.syncFromCloud(false);
+        // همگام‌سازی اجباری با سرور در بدو ورود برای اطمینان از آمادگی داده‌ها
+        RecipeService.syncFromCloud(true);
       }
       setIsInitializing(false);
       setRecipeCount(RecipeService.getRawDishes().length);
@@ -128,13 +128,6 @@ const App: React.FC = () => {
     window.addEventListener('recipes-updated', handleUpdate);
     return () => window.removeEventListener('recipes-updated', handleUpdate);
   }, []);
-
-  // همگام‌سازی اتوماتیک پس از لاگین موفق
-  useEffect(() => {
-    if (currentUser && !isInitializing) {
-       RecipeService.syncFromCloud(false);
-    }
-  }, [currentUser?.uid]);
 
   if (isInitializing) {
     return (
