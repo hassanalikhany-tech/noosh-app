@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, User, ArrowRight, AlertCircle, Loader2, Phone, CheckSquare, Square, ScanFace, CheckCircle2 } from 'lucide-react';
+import { Mail, User, ArrowRight, AlertCircle, Loader2, ScanFace, CheckCircle2, Lock, CheckSquare, Square, Check } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 
@@ -8,263 +8,204 @@ interface LoginProps {
   onLogin: (user: UserProfile) => void;
 }
 
-type AuthMode = 'login' | 'register' | 'forgot-password';
+type AuthMode = 'login' | 'register' | 'forgot';
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.39-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z"/>
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
   </svg>
 );
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  
-  // بررسی فعال بودن ورود بیومتریک از دفعات قبل
-  const [isBiometricActive] = useState(localStorage.getItem('noosh_biometric_active') === 'true');
-  const [bioStatus, setBioStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    phoneNumber: '',
-  });
+  const [success, setSuccess] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [bioStatus, setBioStatus] = useState<'idle' | 'scanning'>('idle');
+  const [formData, setFormData] = useState({ email: '', password: '', fullName: '' });
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('noosh_saved_email');
-    const savedPassword = localStorage.getItem('noosh_saved_password');
-    const savedRemember = localStorage.getItem('noosh_remember_me') === 'true';
-
-    if (savedRemember && savedEmail && savedPassword) {
-      setFormData(prev => ({ ...prev, email: savedEmail, password: savedPassword }));
-      setRememberMe(true);
-    }
+    if (savedEmail) setFormData(prev => ({ ...prev, email: savedEmail }));
+    
+    const isBioActive = localStorage.getItem('noosh_biometric_active') === 'true';
+    if (isBioActive && mode === 'login') handleTriggerBiometric();
   }, []);
 
   const handleTriggerBiometric = async () => {
-    if (!isBiometricActive) return;
     setBioStatus('scanning');
-    setError('');
-    try {
-      const result = await UserService.loginWithBiometric();
-      if (result.success && result.user) {
-        setBioStatus('success');
-        setTimeout(() => onLogin(result.user!), 600);
-      } else {
-        setBioStatus('idle');
-        setError(result.message || 'تایید هویت انجام نشد.');
-      }
-    } catch (e) {
-      setBioStatus('idle');
-      setError('خطا در دسترسی به سنسور هویت گوشی');
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
+    const result = await UserService.loginWithBiometric();
+    if (result.success && result.user) onLogin(result.user);
+    setBioStatus('idle');
   };
 
   const handleGoogleLogin = async () => {
-    if (isGoogleLoading) return;
-    setIsGoogleLoading(true);
-    setError('');
-    try {
-      const result = await UserService.loginWithGoogle();
-      if (result.success && result.user) onLogin(result.user);
-      else setIsGoogleLoading(false);
-    } catch (err) {
-      setIsGoogleLoading(false);
-      setError('ورود با گوگل با مشکل مواجه شد.');
-    }
+    setIsLoading(true);
+    const result = await UserService.loginWithGoogle();
+    if (result.success && result.user) onLogin(result.user);
+    else setError(result.message || 'خطا در ورود با گوگل');
+    setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
-
-    if (mode === 'forgot-password') {
-      setIsLoading(true);
-      const res = await UserService.sendResetPassword(formData.email);
-      setSuccessMsg(res.message);
-      setIsLoading(false);
-      return;
-    }
-
-    const email = formData.email.trim();
-    const password = formData.password;
-
-    if (!email || !password) {
-      setError('لطفاً ایمیل و رمز عبور را وارد کنید.');
-      return;
+    if (mode === 'forgot') {
+        setIsLoading(true);
+        const res = await UserService.sendResetPassword(formData.email);
+        if (res.success) setSuccess('لینک بازنشانی به ایمیل شما ارسال شد.');
+        else setError(res.message);
+        setIsLoading(false);
+        return;
     }
 
     setIsLoading(true);
-    try {
-      let result;
-      if (mode === 'login') {
-        result = await UserService.login(email, password);
-      } else {
-        result = await UserService.register({ ...formData, email });
-      }
+    setError('');
+    const result = mode === 'login' 
+      ? await UserService.login(formData.email.trim(), formData.password)
+      : await UserService.register({ ...formData });
 
-      if (result.success && result.user) {
-        if (rememberMe) {
-          localStorage.setItem('noosh_saved_email', email);
-          localStorage.setItem('noosh_saved_password', password);
-          localStorage.setItem('noosh_remember_me', 'true');
-        } else {
-          localStorage.removeItem('noosh_saved_email');
-          localStorage.removeItem('noosh_saved_password');
-          localStorage.setItem('noosh_remember_me', 'false');
-        }
+    if (result.success && result.user) {
+        if (rememberMe) localStorage.setItem('noosh_saved_email', formData.email);
         onLogin(result.user);
-      } else {
-        setError(result.message || 'خطا در عملیات ورود');
-      }
-    } catch (err) {
-      setError('خطای سیستمی در برقراری ارتباط با سرور');
-    } finally {
-      setIsLoading(false);
+    } else {
+        setError(result.message || 'خطا در عملیات');
     }
+    setIsLoading(false);
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-slate-950 font-sans overflow-hidden dir-rtl p-0 md:p-6 relative">
-      <div className="bg-noosh-pattern opacity-10 absolute inset-0 pointer-events-none"></div>
-      
-      <div className="w-full h-full md:h-auto md:max-w-4xl bg-white md:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row border border-white/5 relative z-10">
+    <div className="h-screen w-full flex items-center justify-center bg-slate-100 p-4 sm:p-8 font-sans dir-rtl overflow-hidden">
+      <div className="w-full max-w-6xl h-full max-h-[850px] flex flex-col lg:flex-row bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-white">
         
-        {/* بخش لوگو دسکتاپ (سمت چپ) */}
-        <div className="hidden md:flex md:w-1/2 bg-slate-950 p-12 flex-col justify-center text-white relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black opacity-70"></div>
-          <div className="relative z-10 text-center space-y-8">
-            <div className="animate-float">
-               <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-48 h-48 mx-auto object-contain drop-shadow-[0_0_25px_rgba(45,212,191,0.5)]" />
-            </div>
-            <div>
-              <div className="flex flex-row items-baseline justify-center gap-3" style={{ direction: 'ltr' }}>
-                 <span className="text-6xl font-black tracking-tighter italic text-white leading-none uppercase">NOOSH</span>
-                 <span className="text-3xl font-black text-teal-500 italic uppercase tracking-widest">APP</span>
-              </div>
-              <p className="text-slate-400 font-bold mt-6 text-lg uppercase tracking-wide">همراه سلامتی و آسایش شما</p>
+        {/* بخش برندینگ (تیره) */}
+        <div className="hidden lg:flex lg:w-1/2 metallic-navy relative flex-col items-center justify-center p-16 text-white overflow-hidden">
+          <div className="animate-float mb-10 relative z-10">
+            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-52 h-52 object-contain drop-shadow-[0_0_40px_rgba(45,212,191,0.5)]" />
+          </div>
+          <div className="text-center space-y-4 relative z-10">
+            <div className="flex flex-row items-baseline justify-center gap-2" style={{ direction: 'ltr' }}>
+              <span className="text-7xl font-black italic tracking-tighter">NOOSH</span>
+              <span className="text-3xl font-black text-teal-400 italic">APP</span>
             </div>
           </div>
+          <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-teal-500/10 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 rounded-full blur-[120px]"></div>
         </div>
 
-        {/* بخش فرم ورود (سمت راست) */}
-        <div className="w-full md:w-1/2 h-full p-6 sm:p-10 flex flex-col justify-center bg-white relative overflow-y-auto no-scrollbar">
+        {/* بخش فرم (روشن) */}
+        <div className="w-full lg:w-1/2 h-full flex flex-col justify-center p-8 sm:p-20 relative bg-white overflow-y-auto no-scrollbar">
           
-          {/* لوگوی مخصوص موبایل در هدر */}
-          <div className="md:hidden flex flex-col items-center mb-8 gap-2 animate-enter">
-            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Noosh Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.3)]" />
-            <div className="flex flex-row items-baseline justify-center gap-1.5" style={{ direction: 'ltr' }}>
-              <span className="text-3xl font-black italic tracking-tighter text-slate-900 uppercase">NOOSH</span>
-              <span className="text-xl font-black text-teal-600 italic uppercase">APP</span>
-            </div>
+          <div className="lg:hidden mb-12 flex flex-col items-center gap-3">
+              <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-24 h-24 animate-float" alt="Logo" />
+              <div className="text-center">
+                 <div className="flex items-baseline justify-center gap-1" style={{ direction: 'ltr' }}>
+                    <span className="text-4xl font-black italic text-slate-900">NOOSH</span>
+                    <span className="text-xl font-black text-teal-600">APP</span>
+                 </div>
+              </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-black text-slate-800">
-              {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'ساخت حساب کاربری' : 'بازیابی رمز عبور'}
-            </h2>
-            <p className="text-slate-400 text-xs font-bold mt-1 uppercase">NOOSH PREMIUM ACCESS</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'register' && (
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 pr-2">نام و نام خانوادگی</label>
-                <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none font-bold text-sm" />
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Mail size={12}/> آدرس ایمیل</label>
-              <input type="email" name="email" dir="ltr" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="example@gmail.com" />
+          <div className="w-full max-w-md mx-auto space-y-8 animate-enter">
+            <div className="text-center lg:text-right">
+              <h2 className="text-4xl font-black text-slate-800 mb-2">
+                {mode === 'login' ? 'خوش آمدید' : mode === 'register' ? 'عضویت در نوش' : 'بازیابی حساب'}
+              </h2>
             </div>
 
-            {mode !== 'forgot-password' && (
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 pr-2 flex items-center gap-1"><Lock size={12}/> رمز عبور</label>
-                <input type="password" name="password" dir="ltr" value={formData.password} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-teal-500 focus:bg-white rounded-xl outline-none transition-all font-bold text-sm text-left" placeholder="••••••••" />
-              </div>
-            )}
-
-            {/* بخش مرا به خاطر بسپار و فراموشی رمز عبور */}
-            {mode === 'login' && (
-              <div className="flex items-center justify-between px-1">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div 
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${rememberMe ? 'bg-teal-600 border-teal-600' : 'border-slate-200 group-hover:border-teal-400'}`}
-                  >
-                    {rememberMe && <CheckSquare size={14} className="text-white" />}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {mode === 'register' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 pr-4 uppercase tracking-[0.2em]">Full Name</label>
+                  <div className="relative group">
+                      <input type="text" placeholder="نام و نام خانوادگی" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} className="w-full px-7 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] outline-none font-bold text-sm focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/5 transition-all pr-14" required />
+                      <User className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500 transition-colors" size={22} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-500">مرا به خاطر بسپار</span>
-                </label>
-                <button 
-                  type="button" 
-                  onClick={() => setMode('forgot-password')}
-                  className="text-[10px] font-black text-teal-600 hover:underline"
-                >
-                  فراموشی رمز عبور؟
-                </button>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 pr-4 uppercase tracking-[0.2em]">Email Address</label>
+                 <div className="relative group">
+                      <input type="email" placeholder="example@email.com" dir="ltr" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-7 py-4 bg-slate-50 border border-slate-100 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/5 rounded-[1.5rem] outline-none transition-all font-bold text-sm text-left pr-14" required />
+                      <Mail className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500 transition-colors" size={22} />
+                 </div>
               </div>
-            )}
 
-            {error && <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-[10px] font-black border border-rose-100 flex items-center gap-2"><AlertCircle size={14} /> {error}</div>}
-            {successMsg && <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black border border-emerald-100">{successMsg}</div>}
+              {mode !== 'forgot' && (
+                <div className="space-y-2">
+                   <div className="px-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Security Password</label>
+                   </div>
+                   <div className="relative group">
+                      <input type="password" placeholder="••••••••" dir="ltr" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-7 py-4 bg-slate-50 border border-slate-100 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/5 rounded-[1.5rem] outline-none transition-all font-bold text-sm text-left pr-14" required />
+                      <Lock className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500 transition-colors" size={22} />
+                   </div>
+                </div>
+              )}
 
-            {/* دکمه ورود اصلی */}
-            <button type="submit" disabled={isLoading} className="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
-              {isLoading ? <Loader2 size={20} className="animate-spin" /> : <span>{mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'ثبت‌نام' : 'ارسال لینک'}</span>}
-              {!isLoading && <ArrowRight size={18} />}
-            </button>
+              {mode === 'login' && (
+                  <div className="flex items-center gap-3 px-4">
+                      <button type="button" onClick={() => setRememberMe(!rememberMe)} className="text-teal-600 transition-all active:scale-95 flex-shrink-0">
+                          {rememberMe ? (
+                            <div className="bg-teal-600 rounded-lg p-0.5 shadow-[0_5px_15px_-3px_rgba(13,148,136,0.6)] border-2 border-teal-500 flex items-center justify-center w-[30px] h-[30px]">
+                               <Check size={24} className="text-white" strokeWidth={4} />
+                            </div>
+                          ) : (
+                            <Square size={30} className="text-slate-300 border-[3px] border-slate-200 rounded-lg" />
+                          )}
+                      </button>
+                      <span className="text-base font-black text-slate-800 cursor-pointer select-none" onClick={() => setRememberMe(!rememberMe)}>مرا به خاطر بسپار</span>
+                  </div>
+              )}
 
-            {mode === 'login' && (
-              <div className="space-y-3 pt-2">
-                {/* دکمه ورود با گوگل */}
-                <button type="button" onClick={handleGoogleLogin} className="w-full bg-white hover:bg-slate-50 text-slate-700 font-black py-4 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">
-                  <GoogleIcon />
-                  <span className="text-[10px]">ورود با گوگل</span>
-                </button>
+              {error && (
+                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl text-[11px] font-black flex items-center gap-3 border border-rose-100 animate-shake">
+                  <AlertCircle size={20} /> {error}
+                </div>
+              )}
+              
+              {success && (
+                <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl text-[11px] font-black flex items-center gap-3 border border-emerald-100">
+                  <CheckCircle2 size={20} /> {success}
+                </div>
+              )}
 
-                {/* دکمه ورود با تشخیص چهره / هویت بیومتریک گوشی (دقیقاً زیر گوگل) */}
-                {isBiometricActive && (
-                  <button 
-                    type="button"
-                    onClick={handleTriggerBiometric}
-                    disabled={bioStatus !== 'idle'}
-                    className="w-full py-4 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl border-2 border-teal-100 border-dashed font-black transition-all active:scale-95 flex items-center justify-center gap-3"
-                  >
-                    {bioStatus === 'scanning' ? <Loader2 size={16} className="animate-spin" /> : bioStatus === 'success' ? <CheckCircle2 size={16} className="text-emerald-500" /> : <ScanFace size={18} />}
-                    <span className="text-[10px]">{bioStatus === 'scanning' ? 'در حال تایید...' : 'ورود سریع با تشخیص هویت گوشی'}</span>
+              <div className="space-y-4 pt-2">
+                  <button type="submit" disabled={isLoading} className="w-full bg-slate-900 hover:bg-black text-white font-black py-5 rounded-[1.75rem] shadow-xl shadow-slate-200 flex items-center justify-center gap-4 active:scale-[0.98] transition-all">
+                    {isLoading ? <Loader2 size={24} className="animate-spin" /> : mode === 'login' ? 'ورود به حساب' : mode === 'register' ? 'ثبت‌نام و شروع' : 'ارسال لینک بازنشانی'}
+                    <ArrowRight size={22} />
                   </button>
-                )}
-              </div>
-            )}
 
-            <div className="pt-4 text-center">
-              <button 
-                type="button" 
-                onClick={() => setMode(mode === 'login' ? 'register' : 'login')} 
-                className="text-teal-600 font-black text-[11px] underline-offset-4 hover:underline"
-              >
-                {mode === 'login' ? 'هنوز ثبت‌نام نکرده‌اید؟ ساخت حساب' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
-              </button>
-            </div>
-          </form>
+                  {mode === 'login' && (
+                    <button type="button" onClick={() => setMode('forgot')} className="w-full text-[15px] font-black text-teal-700 hover:text-teal-800 transition-colors flex items-center justify-center gap-1 py-2 underline decoration-teal-600/50 underline-offset-[10px]">
+                        آیا رمز خود را فراموش کرده اید ؟
+                    </button>
+                  )}
+              </div>
+
+              {mode !== 'forgot' && (
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <button type="button" onClick={handleGoogleLogin} className="flex items-center justify-center gap-3 py-4 bg-white border border-slate-100 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+                    <GoogleIcon /> حساب گوگل
+                  </button>
+                  <button type="button" onClick={handleTriggerBiometric} className="flex items-center justify-center gap-3 py-4 bg-teal-50 text-teal-700 rounded-2xl font-black text-xs border border-teal-100 transition-all active:scale-95 shadow-sm">
+                    {bioStatus === 'scanning' ? <Loader2 size={16} className="animate-spin" /> : <ScanFace size={20} />} ورود سریع
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-4 text-center border-t border-slate-50 mt-6">
+                <button type="button" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setSuccess(''); setError(''); }} className="text-slate-500 font-black text-sm hover:text-teal-600 transition-all">
+                  {mode === 'login' ? 'ساخت حساب کاربری جدید' : mode === 'register' ? 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید' : 'بازگشت به صفحه ورود'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

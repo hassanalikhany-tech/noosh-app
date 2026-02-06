@@ -13,8 +13,7 @@ export type DishCategory =
   | 'soup' 
   | 'fastfood'
   | 'kabab'
-  | 'international'
-  | 'appetizer';
+  | 'international';
 
 export type NatureType = 'hot' | 'cold' | 'balanced';
 
@@ -60,8 +59,7 @@ export const CATEGORY_LABELS: Record<DishCategory, string> = {
   soup: 'سوپ',
   fastfood: 'فست فود',
   kabab: 'کباب',
-  international: 'بین المللی',
-  appetizer: 'پیش‌غذاها و دسرها'
+  international: 'بین المللی'
 };
 
 export interface ShoppingItem {

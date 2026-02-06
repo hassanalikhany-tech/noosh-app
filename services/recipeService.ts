@@ -35,6 +35,8 @@ export const RecipeService = {
       }
 
       // تلاش برای همگام‌سازی خودکار با سرور
+      // از آنجا که این متد در ابتدای اپ فراخوانی می‌شود، 
+      // اگر کاربر لاگین باشد، داده‌های جدید را جایگزین می‌کند.
       const syncResult = await RecipeService.syncFromCloud(true); 
 
       if (syncResult.count > 0) {
@@ -58,19 +60,21 @@ export const RecipeService = {
 
   rebuildFreeAccessMap: () => {
     freeDishIds.clear();
-    const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international', 'appetizer'];
+    const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
     categories.forEach(cat => {
       const dishesInCategory = cachedDishes.filter(d => d.category === cat);
       dishesInCategory.slice(0, 3).forEach(d => freeDishIds.add(d.id));
     });
   },
 
-  // همگام‌سازی با سرور
+  // همگام‌سازی با سرور - پارامتر پیش‌فرض به true تغییر یافت
   syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
     try {
+      // اگر هنوز کاربر لاگین نکرده باشد، نمی‌توانیم همگام‌سازی کنیم
       if (!auth.currentUser) return { count: 0, error: 'not-logged-in' };
 
       const q = query(collection(db, "dishes"), limit(3000));
+      // اجبار به خواندن از سرور برای اطمینان از دریافت آخرین تغییرات
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
       

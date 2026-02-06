@@ -1,19 +1,24 @@
 
 import React, { useState, useMemo } from 'react';
 import { RecipeService } from '../../services/recipeService';
-import { Copy, Check, Search, Image as ImageIcon } from 'lucide-react';
+import { Copy, Check, Search, Image as ImageIcon, FileSpreadsheet, Filter } from 'lucide-react';
 import DishVisual from '../DishVisual';
 import { CATEGORY_LABELS } from '../../types';
+import * as XLSX from 'xlsx';
 
 const ImageGuide: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showMissingOnly, setShowMissingOnly] = useState(false);
 
   const dishes = useMemo(() => {
-    const all = RecipeService.getAllDishes();
+    let all = RecipeService.getAllDishes();
+    if (showMissingOnly) {
+      all = all.filter(d => !d.imageUrl || d.imageUrl.trim() === "");
+    }
     if (!searchTerm) return all;
     return all.filter(d => d.name.includes(searchTerm));
-  }, [searchTerm]);
+  }, [searchTerm, showMissingOnly]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -21,18 +26,51 @@ const ImageGuide: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleExportExcel = () => {
+    const exportData = dishes.map(d => ({
+      'ID': d.id,
+      'نام غذا': d.name,
+      'دسته‌بندی': CATEGORY_LABELS[d.category] || d.category,
+      'وضعیت تصویر': d.imageUrl ? 'دارد' : 'ندارد (آیکون)',
+      'نام فایل PNG پیشنهادی': `${d.id}.png`
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dishes_Images_Status");
+    XLSX.writeFile(wb, `Noosh_Images_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[calc(100vh-200px)]">
       <div className="p-6 border-b border-slate-100 bg-slate-50">
-        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
-          <ImageIcon size={24} className="text-blue-600" />
-          راهنمای نام‌گذاری تصاویر
-        </h2>
-        <p className="text-sm text-slate-500 mb-4">
-          برای نمایش عکس هر غذا، فایل عکس (PNG) را با نام مشخص شده در پوشه 
-          <span className="mx-1 font-mono bg-gray-200 px-1 rounded text-red-600">public/images/dishes</span>
-          قرار دهید.
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+              <ImageIcon size={24} className="text-blue-600" />
+              راهنمای نام‌گذاری تصاویر
+            </h2>
+            <p className="text-sm text-slate-500">
+              فایل‌های PNG را در پوشه <span className="mx-1 font-mono bg-gray-200 px-1 rounded text-red-600">public/images/dishes</span> قرار دهید.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowMissingOnly(!showMissingOnly)} 
+              className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all border-2 ${showMissingOnly ? 'bg-amber-600 text-white border-amber-500 shadow-lg' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'}`}
+            >
+              <Filter size={16} />
+              {showMissingOnly ? 'نمایش همه غذاها' : 'فقط غذاهای بدون عکس واقعی'}
+            </button>
+            <button 
+              onClick={handleExportExcel}
+              className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-lg hover:bg-emerald-700 active:scale-95 transition-all"
+            >
+              <FileSpreadsheet size={16} />
+              خروجی اکسل از لیست فعلی
+            </button>
+          </div>
+        </div>
         
         <div className="relative">
           <input 
@@ -67,7 +105,10 @@ const ImageGuide: React.FC = () => {
                        <DishVisual category={dish.category} dishId={dish.id} imageUrl={dish.imageUrl} iconSize={20} />
                     </div>
                   </td>
-                  <td className="p-3 font-bold text-gray-800">{dish.name}</td>
+                  <td className="p-3 font-bold text-gray-800">
+                    {dish.name}
+                    {!dish.imageUrl && <span className="mr-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[8px] rounded-md font-black">بدون عکس</span>}
+                  </td>
                   <td className="p-3 text-gray-500">{CATEGORY_LABELS[dish.category]}</td>
                   <td className="p-3 text-left dir-ltr font-mono text-xs text-blue-700 select-all">
                     {fileName}
@@ -91,8 +132,8 @@ const ImageGuide: React.FC = () => {
           </tbody>
         </table>
       </div>
-      <div className="p-4 bg-gray-50 border-t text-center text-xs text-gray-400">
-        تعداد کل غذاها: {dishes.length}
+      <div className="p-4 bg-gray-50 border-t text-center text-xs text-gray-400 font-black">
+        تعداد غذاهای لیست شده: {dishes.length} مورد
       </div>
     </div>
   );
