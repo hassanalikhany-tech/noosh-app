@@ -7,7 +7,8 @@ import {
   Soup, 
   Leaf, 
   Pizza, 
-  Globe2
+  Globe2,
+  IceCream
 } from 'lucide-react';
 import { DishCategory } from '../types';
 
@@ -34,7 +35,6 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     if (imageUrl && imageUrl.trim() !== "") {
       setResolvedSrc(imageUrl);
     } else if (dishId) {
-      // استفاده از مسیر نسبی برای سازگاری بیشتر با Netlify
       const path = `images/dishes/${dishId}.png`;
       setResolvedSrc(path);
     } else {
@@ -42,7 +42,6 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     }
   }, [imageUrl, dishId]);
 
-  // بررسی برای تصاویری که سریع لود می‌شوند یا در کش هستند
   useEffect(() => {
     if (imgRef.current && imgRef.current.complete) {
       setIsLoaded(true);
@@ -55,7 +54,6 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       return;
     }
 
-    // تلاش مجدد با فرمت‌های رایج دیگر
     if (retryCount === 0) { 
       setResolvedSrc(`images/dishes/${dishId}.jpg`); 
       setRetryCount(1); 
@@ -77,6 +75,7 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       case 'khorak': return { bg: 'bg-gradient-to-br from-yellow-500 to-amber-700', icon: ChefHat, pattern: 'opacity-20' };
       case 'fastfood': return { bg: 'bg-gradient-to-br from-pink-500 to-rose-700', icon: Pizza, pattern: 'opacity-20' };
       case 'international': return { bg: 'bg-gradient-to-br from-indigo-500 to-violet-800', icon: Globe2, pattern: 'opacity-20' };
+      case 'dessert': return { bg: 'bg-gradient-to-br from-amber-500 to-amber-800', icon: IceCream, pattern: 'opacity-20' };
       default: return { bg: 'bg-gradient-to-br from-gray-500 to-gray-700', icon: ChefHat, pattern: 'opacity-10' };
     }
   };
@@ -89,7 +88,6 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
       <div className={`absolute inset-0 ${config.pattern} bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]`}></div>
       <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]"></div>
       
-      {/* آیکون جایگزین - فقط اگر عکسی لود نشده باشد یا خطا بدهد */}
       {(!resolvedSrc || imageError || !isLoaded) && (
         <div className="absolute inset-0 flex items-center justify-center z-10 transition-opacity duration-300">
           <Icon size={iconSize} className="text-white opacity-40 drop-shadow-lg" strokeWidth={1.5} />

@@ -41,7 +41,7 @@ const COUNTRY_DATA = [
 ].sort((a, b) => a.label.localeCompare(b.label, 'fa'));
 
 const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externalSearchTerm = '' }) => {
-  const [selectedCategory, setSelectedCategory] = useState<DishCategory | 'all' | 'dessert'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<DishCategory | 'all'>('all');
   const [selectedCountryId, setSelectedCountryId] = useState<string | 'all'>('all');
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -64,31 +64,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     setIsSyncing(false);
   };
 
-  const categoryCounts = useMemo(() => {
-    let count = 0;
-    allDishes.forEach(dish => {
-      const name = dish.name || "";
-      const desc = dish.description || "";
-      const matchesSearch = name.includes(externalSearchTerm) || desc.includes(externalSearchTerm);
-      if (!matchesSearch) return;
-
-      if (selectedCategory === 'dessert') {
-        const keywords = ['دسر', 'خاگینه', 'کاچی', 'حلوا', 'شیرینی', 'کیک', 'ژله', 'فرنی', 'شله زرد', 'بستنی'];
-        if (!keywords.some(k => name.includes(k) || desc.includes(k))) return;
-      } else if (selectedCategory !== 'all' && dish.category !== selectedCategory) {
-        return;
-      }
-
-      if (selectedCountryId !== 'all') {
-        const country = COUNTRY_DATA.find(c => c.id === selectedCountryId);
-        if (!country?.matches.some(m => dish.nationality?.includes(m))) return;
-      }
-
-      count++;
-    });
-    return count;
-  }, [allDishes, selectedCategory, selectedCountryId, externalSearchTerm]);
-
   const filteredDishes = useMemo(() => {
     return allDishes.filter(dish => {
       const name = dish.name || "";
@@ -96,11 +71,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       const matchesSearch = name.includes(externalSearchTerm) || desc.includes(externalSearchTerm);
       if (!matchesSearch) return false;
       
-      if (selectedCategory === 'dessert') {
-        const keywords = ['دسر', 'خاگینه', 'کاچی', 'حلوا', 'شیرینی', 'کیک', 'ژله', 'فرنی', 'شله زرد', 'بستنی'];
-        return keywords.some(k => name.includes(k) || desc.includes(k));
-      }
-
       if (selectedCategory !== 'all' && dish.category !== selectedCategory) return false;
       
       if (selectedCategory === 'international' && selectedCountryId !== 'all') {
@@ -111,23 +81,29 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     });
   }, [externalSearchTerm, selectedCategory, selectedCountryId, allDishes]);
 
+  const categoryCounts = filteredDishes.length;
+
   const paginatedDishes = filteredDishes.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-8 animate-enter">
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap gap-2 items-center">
-          <button onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}>
+          <button 
+            onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} 
+            className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}
+          >
              همه
           </button>
           {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
-            <button key={cat} onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}>
+            <button 
+              key={cat} 
+              onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} 
+              className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}
+            >
               {CATEGORY_LABELS[cat]}
             </button>
           ))}
-          <button onClick={() => { setSelectedCategory('dessert'); setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === 'dessert' ? 'bg-amber-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}>
-             پیش‌غذا و دسرها
-          </button>
 
           {/* کادر آمار انگلیسی و دکمه همگام‌سازی */}
           <div className="mr-auto flex items-center gap-3">
@@ -181,7 +157,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'دسر و پیش‌غذا', dish }} user={user} onUpdateUser={onUpdateUser} />)}
+        {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'پخت برتر', dish }} user={user} onUpdateUser={onUpdateUser} />)}
       </div>
       
       {filteredDishes.length === 0 && (

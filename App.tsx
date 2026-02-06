@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [recipeCount, setRecipeCount] = useState(0);
   const [footerSearchTerm, setFooterSearchTerm] = useState('');
   const [statusAlert, setStatusAlert] = useState<StatusAlert>({ show: false, title: '', description: '', icon: Info, color: 'emerald' });
@@ -106,27 +107,38 @@ const App: React.FC = () => {
     window.print();
   };
 
+  // پروتکل بوت‌آپ هوشمند
   useEffect(() => {
-    const checkAuth = async () => {
-      // لود خودکار دیتابیس همزمان با احراز هویت
+    const bootstrap = async () => {
+      // ۱. لود آنی دیتای محلی برای جلوگیری از صفحه سفید
       await RecipeService.initialize();
+      setRecipeCount(RecipeService.getRawDishes().length);
+
+      // ۲. بررسی وضعیت کاربر
       const user = await UserService.getCurrentUser();
       if (user) {
         setCurrentUser(user);
         if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
-        // همگام‌سازی اجباری با سرور در بدو ورود برای اطمینان از آمادگی داده‌ها
-        RecipeService.syncFromCloud(true);
+        
+        // ۳. شروع خودکار همسان‌سازی در پس‌زمینه بلافاصله پس از تایید هویت
+        setIsAutoSyncing(true);
+        try {
+          await RecipeService.syncFromCloud(true);
+        } catch (e) {
+          console.log("Background sync failed, using cache.");
+        }
+        setIsAutoSyncing(false);
       }
       setIsInitializing(false);
-      setRecipeCount(RecipeService.getRawDishes().length);
     };
-    checkAuth();
+    
+    bootstrap();
 
-    const handleUpdate = () => {
+    const handleRecipesUpdate = () => {
       setRecipeCount(RecipeService.getRawDishes().length);
     };
-    window.addEventListener('recipes-updated', handleUpdate);
-    return () => window.removeEventListener('recipes-updated', handleUpdate);
+    window.addEventListener('recipes-updated', handleRecipesUpdate);
+    return () => window.removeEventListener('recipes-updated', handleRecipesUpdate);
   }, []);
 
   if (isInitializing) {
@@ -147,6 +159,14 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-right dir-rtl">
       
+      {/* نشانگر وضعیت همسان‌سازی خودکار در پس‌زمینه */}
+      {isAutoSyncing && (
+        <div className="fixed top-28 right-6 z-[1000] bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-teal-100 shadow-xl flex items-center gap-3 animate-enter">
+          <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />
+          <span className="text-[10px] font-black text-teal-800">بروزرسانی خودکار دیتابیس...</span>
+        </div>
+      )}
+
       {/* مودال اطلاع‌رسانی شیشه‌ای هوشمند */}
       <div className={`fixed inset-x-0 top-0 z-[2000] flex justify-center p-6 transition-all duration-700 pointer-events-none ${statusAlert.show ? 'translate-y-24 opacity-100 scale-100' : '-translate-y-full opacity-0 scale-90'}`}>
          <div className="bg-white/40 backdrop-blur-3xl border border-white/60 p-8 rounded-[2.5rem] shadow-[0_32px_64px_rgba(0,0,0,0.1)] max-w-lg w-full flex items-start gap-6 relative overflow-hidden pointer-events-auto">

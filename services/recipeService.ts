@@ -19,62 +19,44 @@ import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
 
 let cachedDishes: Dish[] = [];
 let isInitialized = false;
+let _isSyncing = false; // قفل برای جلوگیری از اجرای همزمان
 const freeDishIds = new Set<string>();
 
 export const RecipeService = {
-  // مقداردهی اولیه هوشمند با اولویت دریافت از ابر
-  initialize: async (onProgress?: (p: number, status: string) => void): Promise<{count: number, error?: string, source: string}> => {
+  // مقداردهی اولیه سریع: فقط از حافظه محلی لود می‌کند
+  initialize: async (): Promise<{count: number}> => {
     try {
-      onProgress?.(10, 'در حال بررسی حافظه موقت...');
       const localCache = await DB.getAll('dishes');
-      
       if (localCache && localCache.length > 0) {
         cachedDishes = localCache;
         RecipeService.rebuildFreeAccessMap();
-        onProgress?.(30, 'داده‌های محلی بارگذاری شد. در حال همگام‌سازی با سرور...');
       }
-
-      // تلاش برای همگام‌سازی خودکار با سرور
-      // از آنجا که این متد در ابتدای اپ فراخوانی می‌شود، 
-      // اگر کاربر لاگین باشد، داده‌های جدید را جایگزین می‌کند.
-      const syncResult = await RecipeService.syncFromCloud(true); 
-
-      if (syncResult.count > 0) {
-        onProgress?.(100, 'دیتابیس ابری با موفقیت همگام شد.');
-        isInitialized = true;
-        return { count: syncResult.count, source: 'cloud' };
-      }
-
-      onProgress?.(100, 'آماده اجرا.');
       isInitialized = true;
-      return { 
-        count: cachedDishes.length, 
-        source: cachedDishes.length > 0 ? 'cache' : 'none'
-      };
-
-    } catch (e: any) {
-      console.error("Critical Init Error:", e);
-      return { count: cachedDishes.length || 0, source: 'error', error: e.message };
+      return { count: cachedDishes.length };
+    } catch (e) {
+      console.error("Local Init Error:", e);
+      return { count: 0 };
     }
   },
 
   rebuildFreeAccessMap: () => {
     freeDishIds.clear();
-    const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international'];
+    const categories: string[] = ['ash', 'polo', 'khorak', 'stew', 'soup', 'fastfood', 'kabab', 'international', 'dessert'];
     categories.forEach(cat => {
       const dishesInCategory = cachedDishes.filter(d => d.category === cat);
       dishesInCategory.slice(0, 3).forEach(d => freeDishIds.add(d.id));
     });
   },
 
-  // همگام‌سازی با سرور - پارامتر پیش‌فرض به true تغییر یافت
+  // همگام‌سازی هوشمند و خودکار با ابر
   syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
+    if (_isSyncing) return { count: cachedDishes.length }; // اگر در حال همسان‌سازی است، مجدد اجرا نشود
+    
     try {
-      // اگر هنوز کاربر لاگین نکرده باشد، نمی‌توانیم همگام‌سازی کنیم
       if (!auth.currentUser) return { count: 0, error: 'not-logged-in' };
-
-      const q = query(collection(db, "dishes"), limit(3000));
-      // اجبار به خواندن از سرور برای اطمینان از دریافت آخرین تغییرات
+      
+      _isSyncing = true;
+      const q = query(collection(db, "dishes"), limit(4000));
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
       
@@ -85,51 +67,24 @@ export const RecipeService = {
         const store = transaction.objectStore('dishes');
         await store.clear();
         
+        // ذخیره دسته‌ای در IndexedDB برای پرفورمنس
         for (const d of cloudDishes) {
           await store.put(d);
         }
         
         RecipeService.rebuildFreeAccessMap();
+        // اطلاع‌رسانی به کل اپلیکیشن برای آپدیت رابط کاربری
         window.dispatchEvent(new CustomEvent('recipes-updated', { detail: { count: cloudDishes.length } }));
+        _isSyncing = false;
         return { count: cloudDishes.length };
       }
       
+      _isSyncing = false;
       return { count: cachedDishes.length };
     } catch (e: any) {
-      console.error("Sync Error:", e.code || e.message);
+      _isSyncing = false;
+      console.error("Auto Sync Error:", e.message);
       return { count: 0, error: e.code || 'unknown' };
-    }
-  },
-
-  applyBulkChanges: async (deletions: string[], renames: Map<string, string>): Promise<boolean> => {
-    try {
-      if (!auth.currentUser) throw new Error("لطفاً ابتدا وارد حساب کاربری خود شوید.");
-      
-      const allTasks: {type: 'delete' | 'update', id: string, data?: any}[] = [];
-      deletions.forEach(id => allTasks.push({ type: 'delete', id }));
-      renames.forEach((name, id) => allTasks.push({ type: 'update', id, data: { name } }));
-
-      if (allTasks.length === 0) return true;
-
-      const CHUNK_SIZE = 400;
-      for (let i = 0; i < allTasks.length; i += CHUNK_SIZE) {
-        const chunk = allTasks.slice(i, i + CHUNK_SIZE);
-        const batch = writeBatch(db);
-        
-        chunk.forEach(task => {
-          const ref = doc(db, "dishes", task.id);
-          if (task.type === 'delete') batch.delete(ref);
-          else batch.update(ref, task.data);
-        });
-
-        await batch.commit();
-      }
-
-      await RecipeService.syncFromCloud(true);
-      return true;
-    } catch (e: any) {
-      console.error("Bulk Change Error:", e);
-      throw e; 
     }
   },
 
