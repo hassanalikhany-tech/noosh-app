@@ -39,7 +39,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
      let newNatures = [...(user.preferredNatures || [])];
      if (newNatures.includes(nature)) newNatures = newNatures.filter(n => n !== nature);
      else newNatures.push(nature);
-     if (newNatures.length === 0) return; // اجازه نمی‌دهیم لیست خالی شود
+     if (newNatures.length === 0) return; 
      onUpdateUser({ ...user, preferredNatures: newNatures });
      UserService.updateProfile(user.username, { preferredNatures: newNatures });
   };
@@ -59,7 +59,17 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
     setIsBiometricLoading(false);
   };
 
-  const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+  const handleRemoveFavorite = async (dishId: string) => {
+    const updatedUser = await UserService.toggleFavorite(user.username, dishId);
+    onUpdateUser(updatedUser);
+  };
+
+  const handleRemoveBlacklist = async (dishId: string) => {
+    const updatedUser = await UserService.toggleBlacklist(user.username, dishId);
+    onUpdateUser(updatedUser);
+  };
+
+  const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
   const favoritesList = useMemo(() => {
     return RecipeService.getAllDishes().filter(d => (user.favoriteDishIds || []).includes(d.id));
@@ -70,7 +80,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
   }, [user.blacklistedDishIds]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-24 px-4 text-right dir-rtl select-none">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32 px-4 text-right dir-rtl select-none">
       
       {/* هدر پروفایل */}
       <div className="relative group overflow-hidden metallic-navy rounded-[3rem] p-10 shadow-2xl border border-white/5">
@@ -90,7 +100,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
         </div>
       </div>
 
-      {/* بخش جدید فیلتر بر اساس طبع */}
+      {/* بخش فیلتر بر اساس طبع */}
       <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
          <div className="flex items-center gap-3">
             <div className="p-3 bg-orange-50 text-orange-600 rounded-2xl"><ShieldCheck size={24}/></div>
@@ -147,11 +157,11 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
         </button>
       </div>
 
-      {/* محدودیت‌ها و علاقه‌مندی‌ها */}
+      {/* محدودیت‌های دسته‌بندی */}
       <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><FilterX size={24} /></div>
-          <div><h2 className="text-lg font-black text-slate-800">دسته‌بندی‌های پیشنهادی</h2><p className="text-[10px] text-slate-400 font-bold uppercase">Cooklist Restrictions</p></div>
+          <div><h2 className="text-lg font-black text-slate-800">فیلتر هوشمند دسته‌ها</h2><p className="text-[10px] text-slate-400 font-bold uppercase">Cooklist Restrictions</p></div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
@@ -160,6 +170,98 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout 
               </button>
             ))}
         </div>
+      </div>
+
+      {/* بخش غذاهای محبوب */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl"><Heart size={24} fill="currentColor" /></div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800">غذاهای محبوب من</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">Favorite Dishes List</p>
+            </div>
+          </div>
+          <div className="px-4 py-1.5 bg-rose-100 text-rose-700 rounded-xl text-xs font-black">
+            {toPersianDigits(favoritesList.length)} مورد
+          </div>
+        </div>
+        
+        {favoritesList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {favoritesList.map(dish => (
+              <div key={dish.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                    <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} iconSize={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-800 text-sm">{dish.name}</h4>
+                    <span className="text-[10px] text-slate-400 font-bold">{CATEGORY_LABELS[dish.category]}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleRemoveFavorite(dish.id)}
+                  className="p-3 text-slate-300 hover:text-indigo-600 hover:bg-indigo-100 rounded-xl transition-all"
+                  title="تجدیدنظر و بازگشت به لیست عادی"
+                >
+                  <RotateCcw size={20} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center text-slate-300 font-bold">
+            <Heart size={48} className="mx-auto mb-4 opacity-10" />
+            <p>هنوز غذایی را به محبوب‌ها اضافه نکرده‌اید.</p>
+          </div>
+        )}
+      </div>
+
+      {/* بخش لیست سیاه */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-50 pb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-slate-900 text-white rounded-2xl"><ThumbsDown size={24} /></div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800">لیست سیاه (حذف شده‌ها)</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">Excluded from Suggestions</p>
+            </div>
+          </div>
+          <div className="px-4 py-1.5 bg-slate-200 text-slate-700 rounded-xl text-xs font-black">
+            {toPersianDigits(blacklistedList.length)} مورد
+          </div>
+        </div>
+
+        {blacklistedList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {blacklistedList.map(dish => (
+              <div key={dish.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 grayscale">
+                    <DishVisual category={dish.category} imageUrl={dish.imageUrl} dishId={dish.id} iconSize={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-slate-800 text-sm">{dish.name}</h4>
+                    <span className="text-[10px] text-slate-400 font-bold">{CATEGORY_LABELS[dish.category]}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleRemoveBlacklist(dish.id)}
+                  className="p-3 text-slate-300 hover:text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all"
+                  title="بازگرداندن به چرخه پیشنهادات"
+                >
+                  <RotateCcw size={20} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center text-slate-300 font-bold">
+            <ThumbsDown size={48} className="mx-auto mb-4 opacity-10" />
+            <p>لیست سیاه شما خالی است.</p>
+          </div>
+        )}
       </div>
     </div>
   );
