@@ -1,5 +1,5 @@
 
-import { Mail, User, ArrowRight, AlertCircle, Loader2, ScanFace, CheckCircle2, Lock, CheckSquare, Square, Check } from 'lucide-react';
+import { Mail, User, ArrowRight, AlertCircle, Loader2, ScanFace, CheckCircle2, Lock, CheckSquare, Square, Check, UserPlus } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
@@ -10,7 +10,6 @@ interface LoginProps {
 
 type AuthMode = 'login' | 'register' | 'forgot';
 
-// Adding missing GoogleIcon component
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20">
     <path
@@ -39,18 +38,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [success, setSuccess] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [bioStatus, setBioStatus] = useState<'idle' | 'scanning'>('idle');
-  const [formData, setFormData] = useState({ email: '', password: '', fullName: '' });
-  const [appVersion, setAppVersion] = useState("V15.67"); // مقدار پیش‌فرض هماهنگ با متادیتا فعلی
+  const [formData, setFormData] = useState({ email: '', password: '', fullName: '', referralCode: '' });
+  const [appVersion, setAppVersion] = useState("V15.68");
 
   useEffect(() => {
-    // خواندن داینامیک نسخه از فایل متادیتا
     const fetchMetadata = async () => {
       try {
         const response = await fetch('/metadata.json');
         if (response.ok) {
           const data = await response.json();
           if (data.name) {
-            // استخراج بخش نسخه (مثلاً از "NOOSH APP V15.67" بخش "V15.67" را برمی‌دارد)
             const parts = data.name.split(' ');
             const version = parts[parts.length - 1];
             setAppVersion(version);
@@ -110,13 +107,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(false);
   };
 
-  const toPersianDigits = (num: string) => num.replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
-
   return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-100 p-4 sm:p-8 font-sans dir-rtl overflow-hidden">
       <div className="w-full max-w-6xl h-full max-h-[850px] flex flex-col lg:flex-row bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-white">
         
-        {/* بخش برندینگ (تیره) */}
         <div className="hidden lg:flex lg:w-1/2 metallic-navy relative flex-col items-center justify-center p-16 text-white overflow-hidden">
           <div className="animate-float mb-10 relative z-10">
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-52 h-52 object-contain drop-shadow-[0_0_40px_rgba(45,212,191,0.5)]" />
@@ -137,7 +131,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-500/10 rounded-full blur-[120px]"></div>
         </div>
 
-        {/* بخش فرم (روشن) */}
         <div className="w-full lg:w-1/2 h-full flex flex-col justify-center p-8 sm:p-20 relative bg-white overflow-y-auto no-scrollbar">
           
           <div className="lg:hidden mb-12 flex flex-col items-center gap-3">
@@ -188,6 +181,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                       <input type="password" placeholder="••••••••" dir="ltr" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-7 py-4 bg-slate-50 border border-slate-100 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/5 rounded-[1.5rem] outline-none transition-all font-bold text-sm text-left pr-14" required />
                       <Lock className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500 transition-colors" size={22} />
                    </div>
+                </div>
+              )}
+
+              {mode === 'register' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 pr-4 uppercase tracking-[0.2em]">Referral Code (Optional)</label>
+                  <div className="relative group">
+                      <input type="text" placeholder="کد معرف (در صورت وجود)" dir="ltr" value={formData.referralCode} onChange={e => setFormData({...formData, referralCode: e.target.value.toUpperCase()})} className="w-full px-7 py-4 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 rounded-[1.5rem] outline-none transition-all font-bold text-sm text-left pr-14" />
+                      <UserPlus className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={22} />
+                  </div>
                 </div>
               )}
 

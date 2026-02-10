@@ -14,10 +14,15 @@ import {
   getDoc, 
   updateDoc,
   collection,
-  getDocs
+  getDocs,
+  query,
+  where,
+  limit,
+  arrayUnion,
+  deleteDoc
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
-import { UserProfile, ShoppingItem } from "../types";
+import { UserProfile, ShoppingItem, PaymentRecord, AppConfig } from "../types";
 import { RecipeService } from "./recipeService";
 
 const ADMIN_EMAIL = 'YOUR_ACTUAL_EMAIL@GMAIL.COM'.toLowerCase();
@@ -26,146 +31,182 @@ const notifyUpdate = () => {
   window.dispatchEvent(new CustomEvent('user-data-updated'));
 };
 
-const createDefaultProfile = (user: any, fullName: string, phoneNumber?: string): UserProfile => {
-  const userEmail = (user.email || "").toLowerCase();
-  const isOwner = userEmail === ADMIN_EMAIL;
+const generateUniqueReferralCode = async (): Promise<string> => {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%^&*';
+  const all = upper + lower + digits + symbols;
   
-  return {
-    uid: user.uid,
-    username: user.email ? user.email.split('@')[0] : user.uid.slice(0, 8),
-    fullName: fullName || user.displayName || "کاربر نوش",
-    passwordCode: "PROTECTED",
-    email: userEmail,
-    phoneNumber: phoneNumber || "",
-    subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000), 
-    blacklistedDishIds: [],
-    favoriteDishIds: [],
-    dislikedIngredients: [],
-    excludedCategories: [],
-    preferredNatures: ['hot', 'cold', 'balanced'],
-    history: [],
-    familySize: 4,
-    hasCompletedSetup: false,
-    customShoppingList: [],
-    isAdmin: isOwner,
-    isApproved: isOwner,
-    isDeleted: false,
-    isBiometricEnabled: false
-  };
+  let isUnique = false;
+  let finalCode = '';
+
+  while (!isUnique) {
+    let code = '';
+    for(let i=0; i<2; i++) {
+      code += upper.charAt(Math.floor(Math.random() * upper.length));
+      code += lower.charAt(Math.floor(Math.random() * lower.length));
+      code += digits.charAt(Math.floor(Math.random() * digits.length));
+      code += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    }
+    finalCode = code.split('').sort(() => 0.5 - Math.random()).join('');
+    const q = query(collection(db, "users"), where("referralCode", "==", finalCode), limit(1));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) isUnique = true;
+  }
+  return finalCode;
 };
 
 export const UserService = {
+  getAppConfig: async (): Promise<AppConfig> => {
+    try {
+      const docRef = doc(db, "settings", "app_config");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data() as AppConfig;
+      }
+      return { subscriptionFee: 1500000, commissionRate: 20 };
+    } catch {
+      return { subscriptionFee: 1500000, commissionRate: 20 };
+    }
+  },
+
+  updateAppConfig: async (config: AppConfig) => {
+    const docRef = doc(db, "settings", "app_config");
+    await setDoc(docRef, config);
+  },
+
   login: async (email: string, password: string): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
       await RecipeService.clearAllCache();
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-      
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
       
       if (!userDoc.exists()) {
-        const userData = createDefaultProfile(firebaseUser, "");
+        const uniqueCode = await generateUniqueReferralCode();
+        const userData: UserProfile = {
+          uid: firebaseUser.uid,
+          username: firebaseUser.email?.split('@')[0] || firebaseUser.uid.slice(0, 8),
+          fullName: "کاربر جدید",
+          passwordCode: "PROTECTED",
+          email: firebaseUser.email || "",
+          subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000),
+          blacklistedDishIds: [],
+          favoriteDishIds: [],
+          dislikedIngredients: [],
+          excludedCategories: [],
+          preferredNatures: ['hot', 'cold', 'balanced'],
+          history: [],
+          familySize: 4,
+          isAdmin: (firebaseUser.email || "").toLowerCase() === ADMIN_EMAIL,
+          isApproved: (firebaseUser.email || "").toLowerCase() === ADMIN_EMAIL,
+          referralCode: uniqueCode,
+          referralBalance: 0,
+          referralTotalEarned: 0,
+          referralCount: 0,
+          paymentHistory: []
+        };
         await setDoc(userDocRef, userData);
         return { success: true, user: userData };
       }
 
       let userData = userDoc.data() as UserProfile;
       userData.uid = firebaseUser.uid;
-
-      if (userData.isDeleted) {
-        await signOut(auth);
-        return { success: false, message: "حساب کاربری غیرفعال شده است." };
-      }
-
-      const newSessionId = userData.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
-      localStorage.setItem('noosh_active_session', newSessionId);
-      await updateDoc(userDocRef, { currentSessionId: newSessionId });
-      
-      return { success: true, user: { ...userData, currentSessionId: newSessionId } };
+      return { success: true, user: userData };
     } catch (error: any) {
-      return { success: false, message: "ایمیل یا رمز عبور اشتباه است." };
+      return { success: false, message: "خطا در ورود." };
     }
   },
 
-  // این متد مستقیماً سخت‌افزار گوشی را بیدار می‌کند
-  loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
+  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
-      if (!window.PublicKeyCredential) return { success: false, message: "عدم پشتیبانی سخت‌افزاری" };
-      
-      const savedEmail = localStorage.getItem('noosh_saved_email');
-      const savedPassword = localStorage.getItem('noosh_saved_password');
-      
-      if (!savedEmail || !savedPassword) return { success: false, message: "ابتدا یکبار به صورت دستی وارد شوید." };
-
-      // ایجاد چالش برای بیدار کردن سنسور گوشی
-      const challenge = new Uint8Array(32);
-      window.crypto.getRandomValues(challenge);
-
-      // فراخوانی پنجره استاندارد FaceID / Fingerprint گوشی
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge: challenge,
-          userVerification: "required",
-          timeout: 60000
-        }
-      });
-
-      // اگر کاربر تایید شد (پنجره گوشی با موفقیت بسته شد)
-      if (credential) {
-        return await UserService.login(savedEmail, savedPassword);
+      const { email, password, fullName, phoneNumber, referralCode } = data;
+      let referredByUid = "";
+      if (referralCode && referralCode.trim() !== "") {
+        const q = query(collection(db, "users"), where("referralCode", "==", referralCode.trim()), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) referredByUid = snap.docs[0].id;
       }
-      return { success: false, message: "تایید نشد." };
-    } catch (e: any) {
-      console.error("Hardware Error:", e);
-      // اگر خطای NotAllowedError داد یعنی کاربر کنسل کرده یا تعامل فیزیکی نداشته
-      return { success: false, message: "خطای دسترسی به سنسور" };
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uniqueCode = await generateUniqueReferralCode();
+      const newUser: UserProfile = {
+        uid: userCredential.user.uid,
+        username: email.split('@')[0],
+        fullName: fullName || "کاربر نوش",
+        passwordCode: "PROTECTED",
+        email: email.toLowerCase(),
+        phoneNumber: phoneNumber || "",
+        subscriptionExpiry: Date.now() + (365 * 24 * 60 * 60 * 1000),
+        blacklistedDishIds: [],
+        favoriteDishIds: [],
+        dislikedIngredients: [],
+        excludedCategories: [],
+        preferredNatures: ['hot', 'cold', 'balanced'],
+        history: [],
+        familySize: 4,
+        isAdmin: email.toLowerCase() === ADMIN_EMAIL,
+        isApproved: email.toLowerCase() === ADMIN_EMAIL,
+        referralCode: uniqueCode,
+        referredBy: referredByUid,
+        referralBalance: 0,
+        referralTotalEarned: 0,
+        referralCount: 0,
+        paymentHistory: []
+      };
+      await setDoc(doc(db, "users", newUser.uid), newUser);
+      return { success: true, user: newUser };
+    } catch (error: any) {
+      return { success: false, message: "خطا در ثبت‌نام." };
     }
   },
 
-  enableBiometric: async (uid: string, enabled: boolean): Promise<boolean> => {
+  sendResetPassword: async (email: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const userDocRef = doc(db, "users", uid);
-      await updateDoc(userDocRef, { isBiometricEnabled: enabled });
-      if (enabled) {
-        localStorage.setItem('noosh_biometric_active', 'true');
-      } else {
-        localStorage.removeItem('noosh_biometric_active');
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch { return { success: false, message: "خطا در ارسال ایمیل." }; }
+  },
+
+  toggleUserApproval: async (uid: string, currentStatus: boolean) => {
+    const userRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) return;
+    const userData = userDoc.data() as UserProfile;
+    const newStatus = !currentStatus;
+    
+    await updateDoc(userRef, { isApproved: newStatus });
+
+    if (newStatus && userData.referredBy) {
+      const config = await UserService.getAppConfig();
+      const referrerRef = doc(db, "users", userData.referredBy);
+      const referrerDoc = await getDoc(referrerRef);
+      if (referrerDoc.exists()) {
+        const rData = referrerDoc.data();
+        const commission = config.subscriptionFee * (config.commissionRate / 100);
+        await updateDoc(referrerRef, {
+          referralCount: (rData.referralCount || 0) + 1,
+          referralBalance: (rData.referralBalance || 0) + commission,
+          referralTotalEarned: (rData.referralTotalEarned || 0) + commission
+        });
       }
-      notifyUpdate();
-      return true;
-    } catch (e) {
-      return false;
     }
+    notifyUpdate();
   },
 
-  logout: async () => {
-    localStorage.removeItem('noosh_active_session');
-    await RecipeService.clearAllCache();
-    await signOut(auth);
-  },
-
-  isSubscriptionValid: (user: UserProfile): boolean => {
-    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
-  },
-
-  getCurrentUser: async (): Promise<UserProfile | null> => {
-    return new Promise((resolve) => {
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        unsubscribe();
-        if (user) {
-          try {
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              const data = userDoc.data() as UserProfile;
-              data.uid = user.uid;
-              resolve(data.isDeleted ? null : data);
-            } else { resolve(null); }
-          } catch { resolve(null); }
-        } else { resolve(null); }
-      });
+  settleVisitorBalance: async (uid: string, amount: number) => {
+    const visitorRef = doc(db, "users", uid);
+    const newRecord: PaymentRecord = {
+      date: Date.now(),
+      amount: amount,
+      referenceId: `PAY-${Date.now().toString().slice(-6)}`
+    };
+    await updateDoc(visitorRef, {
+      referralBalance: 0,
+      paymentHistory: arrayUnion(newRecord)
     });
+    notifyUpdate();
   },
 
   updateProfile: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
@@ -177,51 +218,42 @@ export const UserService = {
     return updated.data() as UserProfile;
   },
 
-  register: async (data: any): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
-    try {
-      const { email, password, fullName, phoneNumber } = data;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = createDefaultProfile(userCredential.user, fullName, phoneNumber);
-      const newSessionId = newUser.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
-      localStorage.setItem('noosh_active_session', newSessionId);
-      newUser.currentSessionId = newSessionId;
-      await setDoc(doc(db, "users", userCredential.user.uid), newUser);
-      return { success: true, user: newUser };
-    } catch (error: any) {
-      return { success: false, message: "خطا در ثبت‌نام." };
-    }
+  getCurrentUser: async (): Promise<UserProfile | null> => {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        unsubscribe();
+        if (user) {
+          try {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data() as UserProfile;
+              data.uid = user.uid;
+              resolve(data);
+            } else resolve(null);
+          } catch { resolve(null); }
+        } else resolve(null);
+      });
+    });
   },
 
-  sendResetPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true, message: "لینک بازنشانی ارسال شد." };
-    } catch {
-      return { success: false, message: "خطا در ارسال." };
-    }
+  logout: async () => {
+    await signOut(auth);
+  },
+
+  isSubscriptionValid: (user: UserProfile): boolean => {
+    return !!(user.isAdmin || user.subscriptionExpiry > Date.now());
+  },
+
+  loginWithBiometric: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
+    return { success: false };
   },
 
   loginWithGoogle: async (): Promise<{ success: boolean; user?: UserProfile; message?: string }> => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider); 
-      const user = result.user;
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists()) {
-        const data = createDefaultProfile(user, user.displayName || "");
-        await setDoc(userDocRef, data);
-        return { success: true, user: data };
-      }
-      let data = userDoc.data() as UserProfile;
-      data.uid = user.uid;
-      const newSessionId = data.isAdmin ? 'ADMIN_SESSION' : crypto.randomUUID();
-      localStorage.setItem('noosh_active_session', newSessionId);
-      await updateDoc(userDocRef, { currentSessionId: newSessionId });
-      return { success: true, user: { ...data, currentSessionId: newSessionId } };
-    } catch (error: any) {
-      return { success: false, message: "خطا در ورود با گوگل" };
-    }
+      return UserService.login(result.user.email || "", "GOOGLE_AUTH");
+    } catch { return { success: false, message: "خطا در گوگل" }; }
   },
 
   toggleFavorite: async (username: string, dishId: string): Promise<UserProfile> => {
@@ -250,24 +282,24 @@ export const UserService = {
     const userDocRef = doc(db, "users", uid);
     const userDoc = await getDoc(userDocRef);
     const userData = userDoc.data() as UserProfile;
-    const now = Date.now();
-    const currentExpiry = userData.subscriptionExpiry || now;
-    const newExpiry = Math.max(currentExpiry, now) + (31 * 24 * 60 * 60 * 1000);
+    const newExpiry = Math.max(userData.subscriptionExpiry || Date.now(), Date.now()) + (days * 24 * 60 * 60 * 1000);
     await updateDoc(userDocRef, { subscriptionExpiry: newExpiry });
     notifyUpdate();
     return { ...userData, subscriptionExpiry: newExpiry };
   },
 
+  toggleVisitorStatus: async (uid: string, currentStatus: boolean): Promise<void> => {
+    await updateDoc(doc(db, "users", uid), { isVisitor: !currentStatus });
+    notifyUpdate();
+  },
+
   getAllUsers: async (): Promise<{ success: boolean; data: any[]; error?: string }> => {
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
-      return { success: true, data: querySnapshot.docs.map(d => ({ ...d.data(), uid: d.id })) };
-    } catch (e: any) { return { success: false, data: [] }; }
-  },
-
-  toggleUserApproval: async (uid: string, currentStatus: boolean) => {
-    await updateDoc(doc(db, "users", uid), { isApproved: !currentStatus });
-    notifyUpdate();
+      // فیلتر کردن کاربران برای اطمینان از نمایش ندادن رکوردهای خراب
+      const users = querySnapshot.docs.map(d => ({ ...d.data(), uid: d.id }));
+      return { success: true, data: users };
+    } catch (e: any) { return { success: false, data: [], error: e.message }; }
   },
 
   resetUserDevices: async (uid: string): Promise<void> => {
@@ -276,7 +308,8 @@ export const UserService = {
   },
 
   deleteUser: async (uid: string): Promise<void> => {
-    await updateDoc(doc(db, "users", uid), { isDeleted: true });
+    // حذف قطعی از دیتابیس (Hard Delete) برای رفع مشکل عدم حذف در پنل مدیریت
+    await deleteDoc(doc(db, "users", uid));
     notifyUpdate();
   }
 };

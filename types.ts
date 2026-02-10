@@ -84,8 +84,19 @@ export interface Challenge {
   bannedKeywords?: string[];
 }
 
+export interface PaymentRecord {
+  date: number;
+  amount: number;
+  referenceId: string;
+}
+
+export interface AppConfig {
+  subscriptionFee: number;
+  commissionRate: number; // به صورت درصد مثلا 20
+}
+
 export interface UserProfile {
-  uid: string; // شناسه منحصر به فرد فایربیس
+  uid: string;
   username: string;
   fullName: string; 
   passwordCode: string; 
@@ -104,6 +115,7 @@ export interface UserProfile {
   isAdmin?: boolean;
   isApproved?: boolean; 
   isDeleted?: boolean; 
+  isVisitor?: boolean; 
   dietMode?: boolean; 
   activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
@@ -115,4 +127,10 @@ export interface UserProfile {
   currentSessionId?: string;
   registeredDevices?: string[]; 
   isBiometricEnabled?: boolean;
+  referralCode: string;
+  referredBy?: string;
+  referralBalance: number; 
+  referralTotalEarned: number; 
+  referralCount: number;
+  paymentHistory?: PaymentRecord[]; 
 }
