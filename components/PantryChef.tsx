@@ -1,12 +1,10 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChefHat, Sparkles, Search, CheckCircle2, AlertCircle, ShoppingCart, X, Drumstick, Wheat, Carrot, UtensilsCrossed, ArrowLeft, Lock, ChevronDown, ChevronUp, RefreshCw, Trash2 } from 'lucide-react';
-import { PANTRY_ITEMS, SPICES_AND_ADDITIVES } from '../data/pantry';
+import React, { useState, useMemo, useRef } from 'react';
+import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed, RefreshCw, Trash2 } from 'lucide-react';
+import { PANTRY_ITEMS } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
-import { UserService } from '../services/userService';
-import { Dish, UserProfile, ShoppingItem } from '../types';
+import { Dish, UserProfile } from '../types';
 import RecipeModal from './RecipeModal';
-import DishVisual from './DishVisual';
 import MealCard from './MealCard';
 
 interface PantryChefProps {
@@ -54,7 +52,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   const toggleItem = (item: string) => {
-    if (user.dislikedIngredients?.includes(item)) return;
+    if (user?.dislikedIngredients?.includes(item)) return;
     setSelectedItems(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
     setResults(null);
   };
@@ -128,7 +126,12 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                <h3 className="font-black text-slate-800 text-lg leading-none">{category.title}</h3>
             </div>
             <div className="flex-grow overflow-hidden">
-               <CategoryItemsList items={category.items} selectedItems={selectedItems} dislikedIngredients={user.dislikedIngredients || []} toggleItem={toggleItem} />
+               <CategoryItemsList 
+                items={category.items} 
+                selectedItems={selectedItems} 
+                dislikedIngredients={user?.dislikedIngredients || []} 
+                toggleItem={toggleItem} 
+               />
             </div>
           </div>
         ))}

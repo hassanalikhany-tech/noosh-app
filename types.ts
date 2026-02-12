@@ -11,9 +11,9 @@ export type DishCategory =
   | 'khorak' 
   | 'stew' 
   | 'soup' 
-  | 'fastfood'
-  | 'kabab'
-  | 'international'
+  | 'fastfood' 
+  | 'kabab' 
+  | 'international' 
   | 'dessert';
 
 export type NatureType = 'hot' | 'cold' | 'balanced';
@@ -40,6 +40,17 @@ export interface DayPlan {
   dayName: string;
   dish: Dish;
   sideDish?: Dish;
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  color: string;
+  bannedCategories?: DishCategory[];
+  bannedKeywords?: string[];
+  requiredKeywords?: string[];
 }
 
 export const DAYS_OF_WEEK = [
@@ -73,32 +84,159 @@ export interface ShoppingItem {
   fromRecipe?: string;
 }
 
-export interface Challenge {
+export interface AuthUser {
+  uid: string;
+  mobileNumber: string;
+  firstName?: string;
+  lastName?: string;
+  createdAt: number;
+  lastLogin: number;
+  sessionId: string;
+  deviceId: string;
+  deviceType?: string;
+  osVersion?: string;
+  appVersion?: string;
+  isActive: boolean;
+  isBlocked: boolean;
+  role: 'user' | 'admin' | 'visitor' | 'normal';
+  referredBy?: string;
+}
+
+export interface VisitorProfile {
+  user_id: string;
+  referral_code: string;
+  total_commission: number;
+  kyc_status: 'none' | 'pending' | 'verified' | 'rejected';
+  payment_info_status: 'none' | 'completed';
+  referrals_count: number;
+  created_at: number;
+  is_active: boolean;
+  total_paid?: number;
+  last_settlement_at?: number;
+}
+
+export interface VisitorFinancialInfo {
+  visitor_id: string;
+  fullName: string;
+  iban: string;
+  card_number?: string;
+  national_id: string;
+  birth_date: string;
+  id_card_image_url?: string;
+  verified: boolean;
+  status: 'pending' | 'verified' | 'rejected';
+}
+
+export type CommissionStatus = 'pending' | 'ready' | 'paid' | 'rejected';
+
+export interface CommissionLog {
   id: string;
-  title: string;
-  description: string;
-  icon: any;
-  color: string;
-  bannedCategories?: DishCategory[];
-  requiredKeywords?: string[];
-  bannedKeywords?: string[];
+  visitor_id: string;
+  user_id: string;
+  amount: number;
+  base_amount?: number;
+  type: 'first_purchase' | 'renewal';
+  status: CommissionStatus;
+  date: number;
 }
 
 export interface PaymentRecord {
-  date: number;
+  id: string;
+  user_id: string;
+  user_full_name: string;
   amount: number;
-  referenceId: string;
+  plan_type: 'monthly' | 'yearly';
+  authority: string;
+  ref_id: string;
+  status: 'pending' | 'success' | 'failed';
+  created_at: number;
+}
+
+export interface VisitorSettlement {
+  id: string;
+  visitor_id: string;
+  visitor_name: string;
+  visitor_mobile: string;
+  visitor_iban: string;
+  total_amount: number;
+  settlement_month: string;
+  status: 'ready' | 'paid';
+  commission_ids: string[];
+  created_at: number;
+  paid_at?: number;
 }
 
 export interface AppConfig {
-  subscriptionFee: number;
-  commissionRate: number; // به صورت درصد مثلا 20
+  monthly_price: number;
+  yearly_price: number;
+  last_updated: number;
+}
+
+// New Security & Alert Types
+export type AlertStatus = 'new' | 'seen' | 'acknowledged';
+export type RiskLevel = 'low' | 'medium' | 'high';
+
+export interface SecurityAlert {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  visitor_id?: string;
+  event_type: 'multi_device' | 'referral_fraud' | 'payment_anomaly' | 'login_brute_force' | 'location_jump';
+  risk_score: number;
+  risk_level: RiskLevel;
+  device_id: string;
+  ip: string;
+  status: AlertStatus;
+  timestamp: number;
+  metadata?: any;
+}
+
+export interface AnalyticsData {
+  totalUsers: number;
+  activeSubscribers: number;
+  expiredUsers: number;
+  conversionRate: number;
+  churnRate: number;
+  totalRevenue: number;
+  monthlyRevenue: number;
+  yearlyRevenue: number;
+  planDistribution: { monthly: number; yearly: number };
+  visitorStats: {
+    totalVisitors: number;
+    activeReferrals: number;
+    pendingCommissions: number;
+  };
+}
+
+export type SecurityEventType = 'device_change' | 'multiple_login' | 'suspicious_ip' | 'session_replace' | 'login_failed' | 'admin_analytics_view';
+
+export interface SecurityLog {
+  id: string;
+  user_id: string;
+  user_full_name: string;
+  event_type: SecurityEventType;
+  risk_level: RiskLevel;
+  device_id: string;
+  ip: string;
+  timestamp: number;
+  metadata?: any;
+}
+
+export interface UserDevice {
+  id?: string;
+  user_id: string;
+  device_id: string;
+  device_info: string;
+  last_login: number;
+  status: 'active' | 'inactive';
 }
 
 export interface UserProfile {
   uid: string;
   username: string;
-  fullName: string; 
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
   passwordCode: string; 
   email?: string;
   phoneNumber?: string;
@@ -115,7 +253,6 @@ export interface UserProfile {
   isAdmin?: boolean;
   isApproved?: boolean; 
   isDeleted?: boolean; 
-  isVisitor?: boolean; 
   dietMode?: boolean; 
   activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
@@ -127,10 +264,8 @@ export interface UserProfile {
   currentSessionId?: string;
   registeredDevices?: string[]; 
   isBiometricEnabled?: boolean;
-  referralCode: string;
+  role?: 'user' | 'admin' | 'visitor' | 'normal';
+  deviceId?: string;
   referredBy?: string;
-  referralBalance: number; 
-  referralTotalEarned: number; 
-  referralCount: number;
-  paymentHistory?: PaymentRecord[]; 
+  riskScore?: RiskLevel;
 }

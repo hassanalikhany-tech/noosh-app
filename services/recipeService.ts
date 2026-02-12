@@ -4,7 +4,6 @@ import { DEFAULT_DISHES } from '../data/recipes';
 import { 
   collection, 
   getDocs,
-  getDocsFromCache,
   getDocsFromServer,
   writeBatch,
   doc,
@@ -26,7 +25,6 @@ const notifyRecipesUpdate = (count: number) => {
 };
 
 export const RecipeService = {
-  // لود آنی از IndexedDB
   initialize: async (): Promise<{count: number}> => {
     try {
       const localCache = await DB.getAll('dishes');
@@ -36,34 +34,25 @@ export const RecipeService = {
       isInitialized = true;
       return { count: cachedDishes.length };
     } catch (e) {
-      console.error("Local Init Error:", e);
       return { count: 0 };
     }
   },
 
-  // متد اصلی همگام‌سازی که باید خودکار فراخوانی شود
   syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
     if (_isSyncing) return { count: cachedDishes.length };
     
     try {
-      // صبر می‌کنیم تا وضعیت Auth مشخص شود
-      if (!auth.currentUser) {
-        // اگر کاربر هنوز لود نشده، کمی صبر می‌کنیم
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (!auth.currentUser) return { count: 0, error: 'not-logged-in' };
-      }
-      
       _isSyncing = true;
-      const q = query(collection(db, "dishes"), limit(4000));
       
-      // تلاش برای دریافت داده‌های جدید
+      // تلاش برای دریافت داده‌ها (حتی اگر Auth کامل نشده باشد، قوانین فایربیس اگر روی true باشد اجازه می‌دهد)
+      const q = query(collection(db, "dishes"), limit(4000));
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
+      
       const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
       
       if (cloudDishes.length > 0) {
         cachedDishes = cloudDishes;
         
-        // ذخیره در IndexedDB برای دفعات بعدی
         const dbInstance = await DB.init();
         const transaction = dbInstance.transaction('dishes', 'readwrite');
         const store = transaction.objectStore('dishes');
@@ -79,8 +68,7 @@ export const RecipeService = {
       return { count: cachedDishes.length };
     } catch (e: any) {
       _isSyncing = false;
-      console.error("Critical Sync Error:", e.message);
-      // اگر خطای سرور داد، حداقل داده‌های کش قبلی را برمی‌گردانیم
+      console.error("Sync error:", e.message);
       return { count: cachedDishes.length, error: e.message };
     }
   },
@@ -97,9 +85,7 @@ export const RecipeService = {
 
   isDishAccessible: (dishId: string, user: UserProfile | null): boolean => {
     if (!user) return false;
-    if (user.isAdmin || user.isApproved) return true;
-    // ۳ غذای اول هر دسته رایگان
-    return true; // برای سادگی فعلاً همه را باز می‌گذاریم یا طبق منطق قبلی شما
+    return true; 
   },
 
   getAccessibleDishes: (user: UserProfile | null): Dish[] => {
@@ -139,16 +125,18 @@ export const RecipeService = {
   },
 
   getOfflineCacheCount: async () => cachedDishes.length,
+  
   getRealCloudCount: async () => {
-    if (!auth.currentUser) return 0;
     try {
       const snapshot = await getDocs(query(collection(db, "dishes"), limit(1)));
       return snapshot.size > 0 ? cachedDishes.length : 0; 
     } catch { return 0; }
   },
+
   getLocalCount: () => 0,
+
   seedFromExternalData: async (dishes: Dish[]) => {
-    const batchSize = 500;
+    const batchSize = 400;
     for (let i = 0; i < dishes.length; i += batchSize) {
       const chunk = dishes.slice(i, i + batchSize);
       const batch = writeBatch(db);
@@ -157,6 +145,7 @@ export const RecipeService = {
     }
     return { success: true, message: "انجام شد" };
   },
+
   purgeCloudDatabase: async () => {
     const snapshot = await getDocs(collection(db, "dishes"));
     const batch = writeBatch(db);
