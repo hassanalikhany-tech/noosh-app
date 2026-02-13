@@ -38,12 +38,17 @@ export const AuthService = {
 
   sendOtp: async (mobile: string): Promise<{ success: boolean; message: string }> => {
     const cleanMobile = normalizeMobile(mobile);
-    const isTest = cleanMobile === TEST_MOBILE;
+    const isSandbox = localStorage.getItem('noosh_sandbox_mode') === 'true';
+    const isTest = cleanMobile === TEST_MOBILE || isSandbox;
+    
     try {
       let otp = Math.floor(10000 + Math.random() * 90000).toString();
       if (isTest) otp = TEST_OTP;
       sessionStorage.setItem(`otp_${cleanMobile}`, otp);
-      return { success: true, message: isTest ? "کد تایید تست فعال شد (۱۱۱۱۱)" : "کد تایید صادر شد." };
+      return { 
+        success: true, 
+        message: isTest ? "کد تایید تست فعال شد (۱۱۱۱۱)" : "کد تایید با موفقیت صادر شد." 
+      };
     } catch (e) {
       return { success: false, message: "خطا در ارتباط با سرور." };
     }
@@ -52,7 +57,8 @@ export const AuthService = {
   verifyOtp: async (mobile: string, code: string, registerData?: { firstName: string; lastName: string, referralCode?: string }): Promise<{ success: boolean; user?: AuthUser; message?: string; needsRegistration?: boolean }> => {
     const cleanMobile = normalizeMobile(mobile);
     const savedCode = sessionStorage.getItem(`otp_${cleanMobile}`);
-    const isTest = cleanMobile === TEST_MOBILE;
+    const isSandbox = localStorage.getItem('noosh_sandbox_mode') === 'true';
+    const isTest = cleanMobile === TEST_MOBILE || isSandbox;
     
     if (code !== savedCode && !(isTest && code === TEST_OTP)) {
       return { success: false, message: "کد وارد شده صحیح نیست." };
@@ -61,21 +67,6 @@ export const AuthService = {
     const newSessionId = generateSessionId();
     const deviceId = navigator.userAgent;
     const now = Date.now();
-
-    if (isTest) {
-      const testUser: AuthUser = {
-        uid: TEST_MOBILE, mobileNumber: TEST_MOBILE, firstName: "مدیر", lastName: "سیستم",
-        createdAt: now, lastLogin: now, sessionId: newSessionId, deviceId: deviceId,
-        isActive: true, isBlocked: false, role: 'admin'
-      };
-      try {
-        if (!auth.currentUser) await signInAnonymously(auth);
-        await setDoc(doc(db, "users", TEST_MOBILE), { ...testUser, fullName: "مدیر سیستم", isAdmin: true }, { merge: true });
-      } catch (e) {}
-      localStorage.setItem('noosh_auth_session', newSessionId);
-      localStorage.setItem('noosh_auth_mobile', TEST_MOBILE);
-      return { success: true, user: testUser };
-    }
 
     try {
       if (!auth.currentUser) await signInAnonymously(auth);
@@ -92,7 +83,6 @@ export const AuthService = {
           const vSnap = await getDocs(vQuery);
           if (!vSnap.empty) {
             const foundVisitorId = vSnap.docs[0].data().user_id;
-            // جلوگیری از معرفی خود
             if (foundVisitorId !== cleanMobile) {
                 referredBy = foundVisitorId;
             }
@@ -102,7 +92,7 @@ export const AuthService = {
         userData = {
           uid: cleanMobile, mobileNumber: cleanMobile, firstName: registerData.firstName, lastName: registerData.lastName,
           createdAt: now, lastLogin: now, sessionId: newSessionId, deviceId: deviceId,
-          isActive: true, isBlocked: false, role: 'user', referredBy
+          isActive: true, isBlocked: false, role: (cleanMobile === TEST_MOBILE) ? 'admin' : 'user', referredBy
         };
         await setDoc(userRef, {
           ...userData, fullName: `${registerData.firstName} ${registerData.lastName}`, username: cleanMobile,

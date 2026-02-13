@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard, Bell } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Subscription from './components/auth/Subscription';
@@ -10,6 +10,7 @@ import Preferences from './components/Preferences';
 import RecipeSearch from './components/RecipeSearch';
 import ShoppingList from './components/ShoppingList';
 import AuthGate from './components/auth/AuthGate';
+import NotificationCenter from './components/NotificationCenter';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, ShoppingItem, DishCategory } from './types';
@@ -33,6 +34,7 @@ const AppContent: React.FC = () => {
   const [displayPlan, setDisplayPlan] = useState<DayPlan[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('plan');
   const [isShoppingListOpen, setIsShoppingListOpen] = useState(false);
+  const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
@@ -200,7 +202,6 @@ const AppContent: React.FC = () => {
     </div>
   );
 
-  // منطق تقویت شده شناسایی ادمین با شماره موبایل اختصاصی
   const isAdmin = currentUser.role === 'admin' || currentUser.uid === ADMIN_MOBILE || currentUser.username === ADMIN_MOBILE;
   
   if (isAdminMode && isAdmin) return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
@@ -252,7 +253,7 @@ const AppContent: React.FC = () => {
           </div>
       )}
 
-      {/* هدر اصلاح شده - تطابق با پنل ورودی */}
+      {/* هدر */}
       <div className="fixed top-4 left-4 right-4 z-[100] no-print">
         <header className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[2.5rem] shadow-sm p-4 h-[110px] flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -279,6 +280,9 @@ const AppContent: React.FC = () => {
             ))}
           </nav>
           <div className="flex items-center gap-3">
+             <button onClick={() => setIsNotificationCenterOpen(true)} className="p-4 bg-white border border-slate-100 text-indigo-600 rounded-2xl shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer relative">
+               <Bell size={28} />
+             </button>
              {isAdmin && (
                <button onClick={() => setIsAdminMode(true)} className="p-4 bg-slate-950 text-teal-400 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/10" title="ورود به پنل مدیریت ارشد">
                  <ShieldAlert size={28} />
@@ -295,6 +299,8 @@ const AppContent: React.FC = () => {
           </div>
         </header>
       </div>
+
+      <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => setIsNotificationCenterOpen(false)} user={currentUser!} />
 
       <main className="pt-48 pb-48 px-4 container mx-auto no-print">
         {viewMode === 'plan' && (
@@ -362,7 +368,7 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      {/* فوتر موبایل و دسکتاپ */}
+      {/* فوتر */}
       <div className="fixed bottom-6 left-6 right-6 z-[110] no-print">
         <footer className="backdrop-blur-3xl bg-white/30 border border-white/40 rounded-[2.5rem] h-[105px] px-10 flex items-center justify-between shadow-2xl">
             <div className="flex items-center gap-6 sm:gap-12 overflow-x-auto no-scrollbar">

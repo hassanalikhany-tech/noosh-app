@@ -2,10 +2,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, VisitorProfile } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import { PANTRY_ITEMS } from '../data/pantry';
 import DishVisual from './DishVisual';
+import FeedbackModal from './FeedbackModal';
 
 interface PreferencesProps {
   user: UserProfile;
@@ -16,6 +17,7 @@ interface PreferencesProps {
 
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout, onNotify }) => {
   const [ingredientSearch, setIngredientSearch] = useState('');
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const toggleCategory = (cat: DishCategory) => {
     onUpdateUser(prev => {
@@ -28,7 +30,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
         newExcluded = [...currentExcluded, cat];
       }
       
-      // آپدیت دیتابیس در پس‌زمینه
       UserService.updateProfile(prev.username, { excludedCategories: newExcluded });
       
       return { ...prev, excludedCategories: newExcluded };
@@ -96,9 +97,14 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
               <p className="text-teal-400 text-xs font-bold mt-1 uppercase tracking-widest">{user.role === 'admin' ? 'مدیر ارشد' : 'عضو ویژه نـوش'}</p>
             </div>
           </div>
-          <button onClick={onLogout} className="px-6 py-3 bg-rose-500 text-white rounded-2xl font-black shadow-lg flex items-center gap-2 transition-all active:scale-95"><LogOut size={20} /> خروج</button>
+          <div className="flex gap-3">
+             <button onClick={() => setIsFeedbackOpen(true)} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black border border-white/20 flex items-center gap-2 transition-all active:scale-95"><MessageSquare size={20} /> ارسال نظر و پیشنهاد</button>
+             <button onClick={onLogout} className="px-6 py-3 bg-rose-500 text-white rounded-2xl font-black shadow-lg flex items-center gap-2 transition-all active:scale-95"><LogOut size={20} /> خروج</button>
+          </div>
         </div>
       </div>
+
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
 
       {/* بخش طبع غذاها */}
       <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">

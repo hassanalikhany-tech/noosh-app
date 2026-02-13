@@ -269,3 +269,39 @@ export interface UserProfile {
   referredBy?: string;
   riskScore?: RiskLevel;
 }
+
+// --- Independent Add-on Modules: Notification & Feedback ---
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  target_group: 'all' | 'active' | 'visitors';
+  send_time: number;
+  status: 'pending' | 'sent';
+  created_by: string;
+}
+
+export interface NotificationLog {
+  id: string;
+  user_id: string;
+  notification_id: string;
+  delivered: boolean;
+  clicked: boolean;
+  timestamp: number;
+}
+
+export type FeedbackCategory = 'suggestion' | 'issue' | 'criticism' | 'feature_request';
+
+export interface UserFeedback {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  user_mobile?: string;
+  category: FeedbackCategory;
+  message: string;
+  image_url?: string;
+  status: 'new' | 'reviewed';
+  created_at: number;
+  device: string;
+}
