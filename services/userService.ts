@@ -266,6 +266,8 @@ export const UserService = {
     localStorage.removeItem('noosh_auth_session');
     localStorage.removeItem('noosh_auth_mobile');
     await signOut(auth);
+    // انتشار رویداد برای لایه‌های رابط کاربری
+    window.dispatchEvent(new CustomEvent('auth-logout'));
   },
 
   updateShoppingList: async (username: string, items: any[]) => UserService.updateProfile(username, { customShoppingList: items }),

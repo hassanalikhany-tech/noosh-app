@@ -43,6 +43,16 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       setIsAuthenticated(isValid && user?.isActive !== false);
     };
     verify();
+
+    // شنود رویداد خروج برای بازگشت به صفحه لاگین
+    const handleLogoutEvent = () => {
+      setIsAuthenticated(false);
+      setStep('mobile');
+      setOtp(['', '', '', '', '']);
+    };
+
+    window.addEventListener('auth-logout', handleLogoutEvent);
+    return () => window.removeEventListener('auth-logout', handleLogoutEvent);
   }, []);
 
   const validateName = (name: string) => /^[\u0600-\u06FF\s]+$/.test(name) && name.length >= 2;
@@ -126,7 +136,7 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   if (!isAuthenticated) return (
     <div className="h-screen w-full flex items-center justify-center metallic-navy p-4 dir-rtl overflow-hidden">
-      <div className="w-full max-w-lg bg-white rounded-[3.5rem] shadow-2xl p-8 sm:p-12 animate-enter">
+      <div className="w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 sm:p-12 animate-enter">
         <div className="flex flex-col items-center mb-10">
           <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-20 h-20 animate-float" />
           <div className="mt-4 text-center">

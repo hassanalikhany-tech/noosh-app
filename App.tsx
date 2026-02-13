@@ -176,12 +176,16 @@ const AppContent: React.FC = () => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
+      // فقط متد خروج را صدا می‌زنیم؛ AuthGate خودش بقیه کارها را مدیریت می‌کند
       await UserService.logout();
+      // استیت‌های لوکال را برای امنیت پاک می‌کنیم (اختیاری چون AuthGate کلا این بخش را حذف می‌کند)
       setCurrentUser(null);
       setIsAdminMode(false);
     } catch (error) {
       console.error("Logout error:", error);
-      setIsLoggingOut(false);
+    } finally {
+        // دیگر از window.location.reload() استفاده نمی‌کنیم
+        setIsLoggingOut(false);
     }
   };
 
