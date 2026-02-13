@@ -1,6 +1,5 @@
 
 import { Dish, UserProfile } from '../types';
-import { DEFAULT_DISHES } from '../data/recipes';
 import { 
   collection, 
   getDocs,
@@ -30,21 +29,22 @@ export const RecipeService = {
       const localCache = await DB.getAll('dishes');
       if (localCache && localCache.length > 0) {
         cachedDishes = localCache;
+        isInitialized = true;
+        return { count: cachedDishes.length };
       }
-      isInitialized = true;
-      return { count: cachedDishes.length };
+      return { count: 0 };
     } catch (e) {
       return { count: 0 };
     }
   },
+
+  isSyncing: () => _isSyncing,
 
   syncFromCloud: async (forceServer: boolean = true): Promise<{count: number, error?: string}> => {
     if (_isSyncing) return { count: cachedDishes.length };
     
     try {
       _isSyncing = true;
-      
-      // تلاش برای دریافت داده‌ها (حتی اگر Auth کامل نشده باشد، قوانین فایربیس اگر روی true باشد اجازه می‌دهد)
       const q = query(collection(db, "dishes"), limit(4000));
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       
@@ -52,7 +52,6 @@ export const RecipeService = {
       
       if (cloudDishes.length > 0) {
         cachedDishes = cloudDishes;
-        
         const dbInstance = await DB.init();
         const transaction = dbInstance.transaction('dishes', 'readwrite');
         const store = transaction.objectStore('dishes');
@@ -60,7 +59,7 @@ export const RecipeService = {
         for (const d of cloudDishes) {
           await store.put(d);
         }
-        
+        isInitialized = true;
         notifyRecipesUpdate(cloudDishes.length);
       }
       
@@ -68,7 +67,6 @@ export const RecipeService = {
       return { count: cachedDishes.length };
     } catch (e: any) {
       _isSyncing = false;
-      console.error("Sync error:", e.message);
       return { count: cachedDishes.length, error: e.message };
     }
   },
@@ -84,12 +82,7 @@ export const RecipeService = {
   getRawDishes: (): Dish[] => cachedDishes,
 
   isDishAccessible: (dishId: string, user: UserProfile | null): boolean => {
-    if (!user) return false;
     return true; 
-  },
-
-  getAccessibleDishes: (user: UserProfile | null): Dish[] => {
-    return RecipeService.getAllDishes();
   },
 
   updateDish: async (dishId: string, updates: Partial<Dish>): Promise<boolean> => {
@@ -100,9 +93,7 @@ export const RecipeService = {
       await DB.put('dishes', cachedDishes.find(d => d.id === dishId));
       notifyRecipesUpdate(cachedDishes.length);
       return true;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   },
 
   deleteDish: async (dishId: string): Promise<boolean> => {
@@ -112,9 +103,7 @@ export const RecipeService = {
       await DB.delete('dishes', dishId);
       notifyRecipesUpdate(cachedDishes.length);
       return true;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   },
 
   clearAllCache: async () => {
@@ -133,7 +122,7 @@ export const RecipeService = {
     } catch { return 0; }
   },
 
-  getLocalCount: () => 0,
+  getLocalCount: () => cachedDishes.length,
 
   seedFromExternalData: async (dishes: Dish[]) => {
     const batchSize = 400;

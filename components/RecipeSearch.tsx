@@ -81,9 +81,15 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     });
   }, [externalSearchTerm, selectedCategory, selectedCountryId, allDishes]);
 
-  const categoryCounts = filteredDishes.length;
-
+  const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
   const paginatedDishes = filteredDishes.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const toPersian = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
   return (
     <div className="space-y-8 animate-enter">
@@ -105,12 +111,11 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
             </button>
           ))}
 
-          {/* کادر آمار انگلیسی و دکمه همگام‌سازی */}
           <div className="mr-auto flex items-center gap-3">
              <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden" title="تعداد نتایج">
                 <BarChart3 size={18} className="text-teal-400" />
                 <span className="text-[16px] font-black text-white font-mono tracking-widest leading-none pt-0.5" style={{ direction: 'ltr' }}>
-                   {categoryCounts.toString()}
+                   {toPersian(filteredDishes.length)}
                 </span>
              </div>
              <button 
@@ -130,7 +135,6 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
               <button onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-8 py-4 rounded-[1.5rem] text-sm font-black border-2 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}>همه</button>
               {COUNTRY_DATA.map(c => (
                 <div key={c.id} className="relative group">
-                   {/* Tooltip مشکی هوشمند */}
                    {hoveredCountry === c.id && (
                      <div className="absolute -top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-black text-white text-[11px] font-black rounded-xl z-[100] whitespace-nowrap shadow-2xl animate-in fade-in slide-in-from-bottom-2">
                        {c.label}
@@ -159,6 +163,54 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'پخت برتر', dish }} user={user} onUpdateUser={onUpdateUser} />)}
       </div>
+      
+      {/* بخش Pagination بازگردانی شده */}
+      {totalPages > 1 && (
+        <div className="flex flex-col items-center gap-6 py-12 border-t border-slate-100 mt-12 animate-enter">
+          <div className="flex items-center gap-2">
+             <button 
+               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+               disabled={currentPage === 1}
+               className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+             >
+               <ChevronRight size={24} />
+             </button>
+             
+             <div className="flex gap-2 mx-4">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // منطق نمایش هوشمند شماره صفحات حول صفحه فعلی
+                  let pageNum = currentPage;
+                  if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
+                  
+                  if (pageNum < 1 || pageNum > totalPages) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-14 h-14 rounded-2xl font-black text-lg transition-all border-2 ${currentPage === pageNum ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-110' : 'bg-white border-slate-100 text-slate-400 hover:border-emerald-200'}`}
+                    >
+                      {toPersian(pageNum)}
+                    </button>
+                  );
+                })}
+             </div>
+
+             <button 
+               onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+               disabled={currentPage === totalPages}
+               className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
+             >
+               <ChevronLeft size={24} />
+             </button>
+          </div>
+          <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+            صفحه {toPersian(currentPage)} از {toPersian(totalPages)}
+          </div>
+        </div>
+      )}
       
       {filteredDishes.length === 0 && (
          <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4 animate-enter">
