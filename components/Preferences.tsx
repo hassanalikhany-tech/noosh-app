@@ -23,15 +23,12 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     onUpdateUser(prev => {
       const currentExcluded = prev.excludedCategories || [];
       let newExcluded: DishCategory[];
-      
       if (currentExcluded.includes(cat)) {
         newExcluded = currentExcluded.filter(c => c !== cat);
       } else {
         newExcluded = [...currentExcluded, cat];
       }
-      
       UserService.updateProfile(prev.username, { excludedCategories: newExcluded });
-      
       return { ...prev, excludedCategories: newExcluded };
     });
   };
@@ -41,7 +38,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
       const currentNatures = prev.preferredNatures || ['balanced'];
       const isActive = currentNatures.includes(nature);
       let newNatures: NatureType[];
-
       if (isActive) {
         if (currentNatures.length <= 1) {
           if (onNotify) onNotify('خطای تنظیمات', 'حداقل یک طبع باید فعال بماند.', AlertTriangle, 'rose');
@@ -51,7 +47,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
       } else {
         newNatures = [...currentNatures, nature];
       }
-
       UserService.updateProfile(prev.username, { preferredNatures: newNatures });
       return { ...prev, preferredNatures: newNatures };
     });
@@ -61,11 +56,11 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     onUpdateUser(prev => {
       let current = [...(prev.dislikedIngredients || [])];
       if (current.includes(ing)) {
+        // Fix: Changed 'item' to 'ing' which is defined in the outer scope
         current = current.filter(i => i !== ing);
       } else {
         current = [...current, ing];
       }
-      
       UserService.updateProfile(prev.username, { dislikedIngredients: current });
       return { ...prev, dislikedIngredients: current };
     });
@@ -86,117 +81,112 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
   }, [ingredientSearch]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-32 px-4 text-right dir-rtl select-none animate-enter">
-      {/* هدر پروفایل */}
-      <div className="metallic-navy rounded-[3rem] p-10 shadow-2xl border border-white/5">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-teal-500 text-white rounded-[2rem] flex items-center justify-center shadow-2xl"><User size={40} /></div>
-            <div>
-              <h2 className="text-2xl font-black text-white">{user.fullName || "کاربر نوش"}</h2>
-              <p className="text-teal-400 text-xs font-bold mt-1 uppercase tracking-widest">{user.role === 'admin' ? 'مدیر ارشد' : 'عضو ویژه نـوش'}</p>
+    <div className="flex flex-col h-full animate-enter">
+      {/* پنل پروفایل قفل شده */}
+      <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
+          <div className="metallic-navy rounded-2xl sm:rounded-[3.5rem] p-4 sm:p-12 shadow-2xl border border-white/5 max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-8">
+              <div className="flex items-center gap-3 sm:gap-6 text-right w-full sm:w-auto">
+                <div className="w-12 h-12 sm:w-24 sm:h-24 bg-teal-500 text-white rounded-xl sm:rounded-[2.5rem] flex items-center justify-center shadow-2xl shrink-0"><User size={24} className="sm:w-10" /></div>
+                <div>
+                  <h2 className="text-base sm:text-4xl font-black text-white leading-none">{user.fullName || "کاربر نـوش"}</h2>
+                  <p className="text-teal-400 text-[8px] sm:text-sm font-bold mt-1 sm:mt-3 uppercase tracking-widest sm:tracking-[0.3em]">{user.role === 'admin' ? 'مدیریت کل سیستم' : 'عضویت ویژه طلایی'}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
+                 <button onClick={() => setIsFeedbackOpen(true)} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-5 bg-white/10 hover:bg-white/20 text-white rounded-xl sm:rounded-[1.75rem] font-black border border-white/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm"><MessageSquare size={16} className="sm:w-5" /> ارسال نظر</button>
+                 <button onClick={onLogout} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-5 bg-rose-600 text-white rounded-xl sm:rounded-[1.75rem] font-black shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm"><LogOut size={16} className="sm:w-5" /> خروج</button>
+              </div>
             </div>
           </div>
-          <div className="flex gap-3">
-             <button onClick={() => setIsFeedbackOpen(true)} className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black border border-white/20 flex items-center gap-2 transition-all active:scale-95"><MessageSquare size={20} /> ارسال نظر و پیشنهاد</button>
-             <button onClick={onLogout} className="px-6 py-3 bg-rose-500 text-white rounded-2xl font-black shadow-lg flex items-center gap-2 transition-all active:scale-95"><LogOut size={20} /> خروج</button>
-          </div>
-        </div>
       </div>
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
 
-      {/* بخش طبع غذاها */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
-         <div className="flex items-center gap-3"><div className="p-3 bg-orange-50 text-orange-600 rounded-2xl"><ShieldCheck size={24}/></div><div><h2 className="text-lg font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[10px] text-slate-400 font-bold">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
-         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button onClick={() => toggleNature('hot')} className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all active:scale-95 ${(user.preferredNatures || []).includes('hot') ? 'bg-orange-500 border-orange-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:border-orange-200'}`}>
-               <div className="flex items-center gap-3"><Sun size={24} /><span className="font-black text-sm">طبع گرم</span></div>
-               {(user.preferredNatures || []).includes('hot') ? <CheckCircle size={20}/> : <div className="w-5 h-5 rounded-full border-2 border-slate-100"></div>}
-            </button>
-            <button onClick={() => toggleNature('cold')} className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all active:scale-95 ${(user.preferredNatures || []).includes('cold') ? 'bg-blue-600 border-blue-700 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:border-blue-200'}`}>
-               <div className="flex items-center gap-3"><Snowflake size={24} /><span className="font-black text-sm">طبع سرد</span></div>
-               {(user.preferredNatures || []).includes('cold') ? <CheckCircle size={20}/> : <div className="w-5 h-5 rounded-full border-2 border-slate-100"></div>}
-            </button>
-            <button onClick={() => toggleNature('balanced')} className={`flex items-center justify-between p-5 rounded-3xl border-2 transition-all active:scale-95 ${(user.preferredNatures || []).includes('balanced') ? 'bg-emerald-500 border-emerald-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400 hover:border-emerald-200'}`}>
-               <div className="flex items-center gap-3"><Scale size={24} /><span className="font-black text-sm">طبع معتدل</span></div>
-               {(user.preferredNatures || []).includes('balanced') ? <CheckCircle size={20}/> : <div className="w-5 h-5 rounded-full border-2 border-slate-100"></div>}
-            </button>
-         </div>
-      </div>
+      {/* بخش اسکرول با فاصله ۳ خطی */}
+      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
+          <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
+          <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
+              {/* طبع غذاها */}
+              <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                 <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+                    {[
+                      { id: 'hot', label: 'طبع گرم', icon: Sun, color: 'orange' },
+                      { id: 'cold', label: 'طبع سرد', icon: Snowflake, color: 'blue' },
+                      { id: 'balanced', label: 'طبع معتدل', icon: Scale, color: 'emerald' }
+                    ].map(n => (
+                      <button key={n.id} onClick={() => toggleNature(n.id as NatureType)} className={`flex items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border-2 transition-all active:scale-95 ${(user.preferredNatures || []).includes(n.id as NatureType) ? `bg-${n.color === 'blue' ? 'blue-600' : n.color + '-500'} border-${n.color === 'blue' ? 'blue-700' : n.color + '-600'} text-white shadow-xl` : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'}`}>
+                         <div className="flex items-center gap-3 sm:gap-4"><n.icon size={22} className="sm:w-7" /><span className="font-black text-xs sm:text-base">{n.label}</span></div>
+                         {(user.preferredNatures || []).includes(n.id as NatureType) ? <CheckCircle size={18} className="sm:w-6" /> : <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-slate-100"></div>}
+                      </button>
+                    ))}
+                 </div>
+              </div>
 
-      {/* بخش مواد غذایی ممنوعه */}
-      <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
-        <div className="flex items-center gap-3"><div className="p-3 bg-rose-50 text-rose-600 rounded-2xl"><UserX size={24}/></div><div><h2 className="text-lg font-black text-slate-800">مواد غذایی ممنوعه (حساسیت)</h2><p className="text-[10px] text-slate-400 font-bold">غذاهای حاوی این مواد هرگز پیشنهاد نمی‌شوند</p></div></div>
-        <div className="relative">
-          <input type="text" placeholder="جستجو و حذف ماده (سیر، پیاز و...)" value={ingredientSearch} onChange={e => setIngredientSearch(e.target.value)} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-rose-400 font-bold text-sm" />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(user.dislikedIngredients || []).map(ing => (
-            <button key={ing} onClick={() => toggleIngredient(ing)} className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md">
-              {ing} <X size={14}/>
-            </button>
-          ))}
-        </div>
-        <div className="pt-4 border-t border-slate-50">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-            {commonIngredients.filter(i => !(user.dislikedIngredients || []).includes(i)).map(ing => (
-              <button key={ing} onClick={() => toggleIngredient(ing)} className="px-3 py-2 bg-slate-50 text-slate-500 rounded-xl text-[11px] font-bold border border-transparent hover:border-rose-200 hover:text-rose-600 transition-all">
-                + {ing}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+              {/* حساسیت غذایی */}
+              <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><UserX size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">مواد غذایی ممنوعه</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">غذاهای حاوی این مواد هرگز پیشنهاد نمی‌شوند</p></div></div>
+                <div className="relative">
+                  <input type="text" placeholder="جستجو و حذف ماده..." value={ingredientSearch} onChange={e => setIngredientSearch(e.target.value)} className="w-full px-5 py-3 sm:px-8 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-[2rem] outline-none focus:border-rose-400 font-bold text-sm sm:text-lg transition-all" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 sm:w-6" size={18} />
+                </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  {(user.dislikedIngredients || []).map(ing => (
+                    <button key={ing} onClick={() => toggleIngredient(ing)} className="px-4 py-2 sm:px-6 sm:py-3 bg-rose-600 text-white rounded-lg sm:rounded-2xl text-[10px] sm:text-sm font-black flex items-center gap-2 sm:gap-3 shadow-lg">
+                      {ing} <X size={14} className="sm:w-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      {/* محبوب‌ها و لیست سیاه */}
-      <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
-            <div className="flex items-center gap-3"><div className="p-3 bg-rose-50 text-rose-600 rounded-2xl"><Heart size={20} fill="currentColor"/></div><h2 className="text-sm font-black text-slate-800">محبوب‌های من ({toPersian(favoritesList.length)})</h2></div>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                {favoritesList.map(dish => (
-                    <div key={dish.id} className="relative group rounded-xl overflow-hidden h-14 bg-slate-50 border">
-                        <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
-                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black p-1 text-center text-slate-700">{dish.name}</span>
-                        <button onClick={() => UserService.toggleFavorite(user.username, dish.id).then((u) => onUpdateUser(u))} className="absolute top-1 left-1 bg-white p-1 rounded-md text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"><X size={10}/></button>
+              {/* محبوب‌ها و لیست سیاه */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                  <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                    <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><Heart size={22} fill="currentColor"/></div><h2 className="text-sm sm:text-xl font-black text-slate-800">غذاهای محبوب من</h2></div>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto no-scrollbar">
+                        {favoritesList.map(dish => (
+                            <div key={dish.id} className="relative group rounded-xl sm:rounded-2xl overflow-hidden h-16 sm:h-20 bg-slate-50 border border-slate-100">
+                                <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
+                                <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black p-2 text-center text-slate-700 leading-tight">{dish.name}</span>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-          </div>
-          <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 space-y-6">
-            <div className="flex items-center gap-3"><div className="p-3 bg-slate-100 text-slate-600 rounded-2xl"><ThumbsDown size={20}/></div><h2 className="text-sm font-black text-slate-800">لیست سیاه ({toPersian(blacklistedList.length)})</h2></div>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                {blacklistedList.map(dish => (
-                    <div key={dish.id} className="relative group rounded-xl overflow-hidden h-14 bg-slate-50 border">
-                        <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
-                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black p-1 text-center text-slate-700">{dish.name}</span>
-                        <button onClick={() => UserService.toggleBlacklist(user.username, dish.id).then((u) => onUpdateUser(u))} className="absolute top-1 left-1 bg-white p-1 rounded-md text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"><RotateCcw size={10}/></button>
+                  </div>
+                  <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                    <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 bg-slate-100 text-slate-600 rounded-xl sm:rounded-[1.5rem]"><ThumbsDown size={22}/></div><h2 className="text-sm sm:text-xl font-black text-slate-800">لیست سیاه غذاها</h2></div>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto no-scrollbar">
+                        {blacklistedList.map(dish => (
+                            <div key={dish.id} className="relative group rounded-xl sm:rounded-2xl overflow-hidden h-16 sm:h-20 bg-slate-50 border border-slate-100">
+                                <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
+                                <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black p-2 text-center text-slate-700 leading-tight">{dish.name}</span>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-          </div>
-      </div>
+                  </div>
+              </div>
 
-      {/* فیلتر هوشمند دسته‌ها */}
-      <div id="smart-filters-section" className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 scroll-mt-32">
-        <div className="flex items-center gap-3 mb-8"><div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl"><FilterX size={24} /></div><div><h2 className="text-lg font-black text-slate-800">فیلتر هوشمند دسته‌ها</h2><p className="text-[10px] text-slate-400 font-bold">دسته‌های انتخابی از برنامه حذف می‌شوند</p></div></div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
-              <button 
-                key={cat} 
-                onClick={() => toggleCategory(cat)} 
-                className={`px-4 py-4 rounded-2xl text-[11px] font-black transition-all border-2 flex flex-col items-center gap-2 ${
-                  user.excludedCategories?.includes(cat) 
-                    ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-60' 
-                    : 'bg-white border-teal-500 text-teal-700 shadow-md ring-2 ring-teal-50'
-                }`}
-              >
-                  {CATEGORY_LABELS[cat]}
-                  {user.excludedCategories?.includes(cat) ? <X size={14}/> : <Check size={14}/>}
-              </button>
-            ))}
-        </div>
+              {/* دسته‌بندی‌ها */}
+              <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10"><div className="p-3 sm:p-4 bg-indigo-50 text-indigo-600 rounded-xl sm:rounded-[1.5rem]"><FilterX size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر هوشمند دسته‌ها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">دسته‌های انتخابی از برنامه حذف می‌شوند</p></div></div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+                    {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
+                      <button 
+                        key={cat} 
+                        onClick={() => toggleCategory(cat)} 
+                        className={`px-3 py-3 sm:px-6 sm:py-6 rounded-xl sm:rounded-[2rem] text-[10px] sm:text-sm font-black transition-all border-2 flex flex-col items-center gap-2 sm:gap-3 ${
+                          user.excludedCategories?.includes(cat) 
+                            ? 'bg-slate-50 border-slate-100 text-slate-400 opacity-60' 
+                            : 'bg-white border-teal-500 text-teal-700 shadow-lg ring-2 sm:ring-8 ring-teal-50'
+                        }`}
+                      >
+                          {CATEGORY_LABELS[cat]}
+                          {user.excludedCategories?.includes(cat) ? <X size={14} className="sm:w-5" /> : <Check size={14} className="sm:w-5" />}
+                      </button>
+                    ))}
+                </div>
+              </div>
+          </div>
       </div>
     </div>
   );

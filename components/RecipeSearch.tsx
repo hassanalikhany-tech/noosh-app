@@ -1,6 +1,6 @@
 
-import { Search, Database, RefreshCw, ChevronRight, ChevronLeft, LayoutList, MapPin, CloudDownload, Loader2, BarChart3 } from 'lucide-react';
-import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Database, RefreshCw, ChevronRight, ChevronLeft, LayoutList, MapPin, CloudDownload, Loader2, BarChart3, X } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dish, DishCategory, CATEGORY_LABELS, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
 import MealCard from './MealCard';
@@ -46,7 +46,9 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState(externalSearchTerm);
+  
+  const flagsScrollRef = useRef<HTMLDivElement>(null);
 
   const loadDishes = () => {
     setAllDishes(RecipeService.getAllDishes());
@@ -64,11 +66,20 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
     setIsSyncing(false);
   };
 
+  const scrollFlags = (direction: 'right' | 'left') => {
+    if (flagsScrollRef.current) {
+      const scrollAmount = 150;
+      flagsScrollRef.current.scrollBy({
+        left: direction === 'right' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const filteredDishes = useMemo(() => {
     return allDishes.filter(dish => {
       const name = dish.name || "";
-      const desc = dish.description || "";
-      const matchesSearch = name.includes(externalSearchTerm) || desc.includes(externalSearchTerm);
+      const matchesSearch = name.includes(searchTerm);
       if (!matchesSearch) return false;
       
       if (selectedCategory !== 'all' && dish.category !== selectedCategory) return false;
@@ -79,145 +90,141 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       }
       return true;
     });
-  }, [externalSearchTerm, selectedCategory, selectedCountryId, allDishes]);
+  }, [searchTerm, selectedCategory, selectedCountryId, allDishes]);
 
   const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
   const paginatedDishes = filteredDishes.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const toPersian = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
   return (
-    <div className="space-y-8 animate-enter">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap gap-2 items-center">
-          <button 
-            onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} 
-            className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}
-          >
-             همه
-          </button>
-          {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
-            <button 
-              key={cat} 
-              onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} 
-              className={`px-6 py-3.5 rounded-2xl text-[14px] font-black border transition-all ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white text-slate-600 hover:border-slate-300'}`}
-            >
-              {CATEGORY_LABELS[cat]}
-            </button>
-          ))}
+    <div className="flex flex-col h-full animate-enter">
+      {/* کادر جستجو قفل شده */}
+      <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
+        <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-3 sm:p-6 shadow-xl border border-slate-100 max-w-7xl mx-auto space-y-3 sm:space-y-5">
+           <div className="relative group">
+              <input 
+                type="text" 
+                placeholder="جستجو در نام غذاها..." 
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="w-full px-10 sm:px-16 py-2.5 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-[1.75rem] outline-none focus:border-teal-500 focus:bg-white transition-all font-black text-xs sm:text-lg text-slate-800 shadow-inner"
+              />
+              <Search className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500" size={18} sm:size={28} />
+              {searchTerm && (
+                <button onClick={() => { setSearchTerm(''); setCurrentPage(1); }} className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 bg-slate-200 text-slate-500 rounded-full hover:bg-rose-100 hover:text-rose-500 transition-all"><X size={14} sm:size={20}/></button>
+              )}
+           </div>
 
-          <div className="mr-auto flex items-center gap-3">
-             <div className="flex items-center gap-2.5 px-5 py-3.5 bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden" title="تعداد نتایج">
-                <BarChart3 size={18} className="text-teal-400" />
-                <span className="text-[16px] font-black text-white font-mono tracking-widest leading-none pt-0.5" style={{ direction: 'ltr' }}>
-                   {toPersian(filteredDishes.length)}
-                </span>
-             </div>
-             <button 
-                onClick={handleManualSync}
-                disabled={isSyncing}
-                className="p-4 bg-white border border-slate-200 text-slate-500 rounded-2xl hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-md active:scale-95"
-                title="همگام‌سازی دیتابیس"
-             >
-                {isSyncing ? <Loader2 className="animate-spin" size={20} /> : <CloudDownload size={22} />}
-             </button>
-          </div>
-        </div>
-
-        {selectedCategory === 'international' && (
-          <div className="p-8 bg-white/70 backdrop-blur-2xl rounded-[3rem] border border-white shadow-sm animate-enter">
-            <div className="flex flex-wrap gap-4">
-              <button onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} className={`px-8 py-4 rounded-[1.5rem] text-sm font-black border-2 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}>همه</button>
-              {COUNTRY_DATA.map(c => (
-                <div key={c.id} className="relative group">
-                   {hoveredCountry === c.id && (
-                     <div className="absolute -top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-black text-white text-[11px] font-black rounded-xl z-[100] whitespace-nowrap shadow-2xl animate-in fade-in slide-in-from-bottom-2">
-                       {c.label}
-                       <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-black"></div>
-                     </div>
-                   )}
-                   <button 
-                     onMouseEnter={() => setHoveredCountry(c.id)} 
-                     onMouseLeave={() => setHoveredCountry(null)} 
-                     onClick={() => { setSelectedCountryId(c.id); setCurrentPage(1); }} 
-                     className={`w-16 h-16 rounded-[1.25rem] border-2 transition-all overflow-hidden flex items-center justify-center p-0 ${selectedCountryId === c.id ? 'border-indigo-600 scale-110 shadow-xl z-10 ring-4 ring-indigo-50' : 'border-slate-100 hover:border-slate-300 shadow-sm'}`}
-                   >
-                     <img 
-                       src={`https://flagcdn.com/w160/${c.id}.png`} 
-                       alt={c.label} 
-                       className="w-full h-full object-cover" 
-                     />
-                   </button>
-                </div>
+           <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center overflow-x-auto no-scrollbar pb-1">
+              <button 
+                onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} 
+                className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-[14px] font-black border transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-transparent hover:border-slate-200'}`}
+              >
+                 همه غذاها
+              </button>
+              {(Object.keys(CATEGORY_LABELS) as DishCategory[]).map(cat => (
+                <button 
+                  key={cat} 
+                  onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} 
+                  className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-[14px] font-black border transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-transparent hover:border-slate-200'}`}
+                >
+                  {CATEGORY_LABELS[cat]}
+                </button>
               ))}
+
+              <div className="mr-auto flex items-center gap-1.5 sm:gap-3">
+                 <div className="flex items-center gap-1.5 sm:gap-3 px-3 py-2 sm:px-6 sm:py-3.5 bg-slate-900 rounded-lg sm:rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
+                    <BarChart3 size={14} className="text-teal-400 sm:w-5" />
+                    <span className="text-[10px] sm:text-lg font-black text-white font-mono pt-0.5" style={{ direction: 'ltr' }}>
+                       {toPersian(filteredDishes.length)}
+                    </span>
+                 </div>
+                 <button onClick={handleManualSync} disabled={isSyncing} className="p-2 sm:p-4 bg-white border border-slate-200 text-slate-500 rounded-lg sm:rounded-2xl hover:text-emerald-600 transition-all shadow-sm active:scale-95">
+                    {isSyncing ? <Loader2 className="animate-spin" size={16} sm:size={22} /> : <CloudDownload size={16} sm:size={22} />}
+                 </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'پخت برتر', dish }} user={user} onUpdateUser={onUpdateUser} />)}
-      </div>
-      
-      {/* بخش Pagination بازگردانی شده */}
-      {totalPages > 1 && (
-        <div className="flex flex-col items-center gap-6 py-12 border-t border-slate-100 mt-12 animate-enter">
-          <div className="flex items-center gap-2">
-             <button 
-               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-               disabled={currentPage === 1}
-               className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
-             >
-               <ChevronRight size={24} />
-             </button>
-             
-             <div className="flex gap-2 mx-4">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  // منطق نمایش هوشمند شماره صفحات حول صفحه فعلی
-                  let pageNum = currentPage;
-                  if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                  else pageNum = currentPage - 2 + i;
-                  
-                  if (pageNum < 1 || pageNum > totalPages) return null;
+            {selectedCategory === 'international' && (
+              <div className="relative pt-2 sm:pt-4 border-t border-slate-50 animate-enter flex items-center group/flags">
+                <button 
+                  onClick={() => scrollFlags('right')}
+                  className="absolute right-0 z-20 p-2 sm:p-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-slate-100 text-indigo-600 hover:bg-white transition-all flex items-center justify-center"
+                >
+                  <ChevronRight size={18} sm:size={20} strokeWidth={3} />
+                </button>
 
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-14 h-14 rounded-2xl font-black text-lg transition-all border-2 ${currentPage === pageNum ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-110' : 'bg-white border-slate-100 text-slate-400 hover:border-emerald-200'}`}
+                <div 
+                  ref={flagsScrollRef}
+                  className="flex gap-2 sm:gap-3 items-center overflow-x-auto no-scrollbar pb-1 w-full px-8 sm:px-10"
+                >
+                  <button 
+                    onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} 
+                    className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-[9px] sm:text-xs font-black border-2 transition-all shrink-0 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-slate-50 text-slate-600 border-transparent hover:border-slate-200'}`}
+                  >
+                    همه ملل
+                  </button>
+                  {COUNTRY_DATA.map(c => (
+                    <button 
+                      key={c.id}
+                      onClick={() => { setSelectedCountryId(c.id); setCurrentPage(1); }} 
+                      className={`relative w-9 h-9 sm:w-12 sm:h-12 rounded-xl border-2 transition-all flex-shrink-0 overflow-hidden ${selectedCountryId === c.id ? 'border-indigo-600 scale-110 shadow-lg' : 'border-slate-100 hover:border-slate-300'}`}
+                      title={c.label}
                     >
-                      {toPersian(pageNum)}
+                      <img src={`https://flagcdn.com/w160/${c.id}.png`} alt={c.label} className="w-full h-full object-cover" />
                     </button>
-                  );
-                })}
-             </div>
+                  ))}
+                </div>
 
-             <button 
-               onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-               disabled={currentPage === totalPages}
-               className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"
-             >
-               <ChevronLeft size={24} />
-             </button>
-          </div>
-          <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-            صفحه {toPersian(currentPage)} از {toPersian(totalPages)}
-          </div>
+                <button 
+                  onClick={() => scrollFlags('left')}
+                  className="absolute left-0 z-20 p-2 sm:p-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-slate-100 text-indigo-600 hover:bg-white transition-all flex items-center justify-center"
+                >
+                  <ChevronLeft size={18} sm:size={20} strokeWidth={3} />
+                </button>
+              </div>
+            )}
         </div>
-      )}
-      
-      {filteredDishes.length === 0 && (
-         <div className="py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-4 animate-enter">
-            <Search size={48} className="text-slate-200" />
-            <p className="text-slate-400 font-black">پخت مورد نظر شما در این بخش یافت نشد.</p>
-         </div>
-      )}
+      </div>
+
+      {/* بخش اسکرول با فاصله ۳ خطی */}
+      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
+          <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
+          <div className="max-w-7xl mx-auto py-4 sm:py-6 space-y-6 sm:space-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+                {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'غذای برتر', dish }} user={user} onUpdateUser={onUpdateUser} />)}
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex flex-col items-center gap-4 sm:gap-6 py-10 sm:py-16 border-t border-slate-100 mt-6 sm:mt-10">
+                  <div className="flex items-center gap-2">
+                     <button onClick={() => handlePageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-3 sm:p-5 bg-white border border-slate-200 rounded-xl sm:rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"><ChevronRight size={20} sm:size={28} /></button>
+                     <div className="flex gap-1.5 sm:gap-3 mx-2 sm:mx-4">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum = currentPage;
+                          if (currentPage <= 3) pageNum = i + 1;
+                          else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                          else pageNum = currentPage - 2 + i;
+                          if (pageNum < 1 || pageNum > totalPages) return null;
+                          return (
+                            <button key={pageNum} onClick={() => handlePageChange(pageNum)} className={`w-10 h-10 sm:w-16 sm:h-16 rounded-lg sm:rounded-[1.25rem] font-black text-xs sm:text-xl transition-all border-2 ${currentPage === pageNum ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-110' : 'bg-white border-slate-100 text-slate-400 hover:border-emerald-200'}`}>
+                              {toPersian(pageNum)}
+                            </button>
+                          );
+                        })}
+                     </div>
+                     <button onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-3 sm:p-5 bg-white border border-slate-200 rounded-xl sm:rounded-2xl text-slate-400 hover:text-emerald-600 disabled:opacity-30 transition-all shadow-sm active:scale-90"><ChevronLeft size={20} sm:size={28} /></button>
+                  </div>
+                  <div className="text-[9px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">صفحه {toPersian(currentPage)} از {toPersian(totalPages)}</div>
+                </div>
+              )}
+          </div>
+      </div>
     </div>
   );
 };

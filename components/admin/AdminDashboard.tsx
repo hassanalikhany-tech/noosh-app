@@ -127,6 +127,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             {id: 'visitors', label: 'ویزیتورها', icon: Award},
             {id: 'duplicates', label: 'اصلاح پخت‌ها', icon: Layers},
             {id: 'database', label: 'بانک پخت‌ها', icon: FileJson},
+            {id: 'csv-converter', label: 'مبدل اکسل', icon: FileSpreadsheet},
             {id: 'backup', label: 'پشتیبان‌گیری', icon: Save},
           ].map(tab => (
             <button 
@@ -148,7 +149,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                <div className="p-6 bg-slate-50 flex justify-between items-center border-b"><div className="relative"><input placeholder="جستجوی نام یا موبایل..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="px-6 py-3 bg-white border rounded-2xl outline-none focus:border-indigo-500 font-bold text-sm w-72 pr-12" /><Search size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300"/></div><div className="text-xs font-black text-slate-400">تعداد کل: {toPersian(processedUsers.length)}</div></div>
                <div className="overflow-x-auto">
                   <table className="w-full text-right text-sm">
-                    <thead className="bg-slate-50 font-black text-[10px] uppercase opacity-60"><tr><th className="p-5">اطلاعات کاربر</th><th className="p-5 text-center">نوع حساب</th><th className="p-5 text-center">وضعیت تایید</th><th className="p-5 text-left">عملیات ادمین</th></tr></thead>
+                    <thead className="bg-slate-50 font-black text-[10px] uppercase opacity-60"><tr><th className="p-5">اطلاوات کاربر</th><th className="p-5 text-center">نوع حساب</th><th className="p-5 text-center">وضعیت تایید</th><th className="p-5 text-left">عملیات ادمین</th></tr></thead>
                     <tbody className="divide-y divide-slate-100">
                       {processedUsers.map(user => (
                         <tr key={user.uid} className="hover:bg-slate-50 transition-colors">

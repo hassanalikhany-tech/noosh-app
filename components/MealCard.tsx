@@ -64,7 +64,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
 
   const handleCardClick = () => {
     if (isLocked) {
-      alert("مشترک گرامی، دسترسی به این محتوا نیازمند تایید حساب توسط مدیریت می‌باشد.");
+      alert("مشترک گرامی، دسترسی به این غذا نیازمند تایید حساب توسط مدیریت می‌باشد.");
       return;
     }
     setIsModalOpen(true);

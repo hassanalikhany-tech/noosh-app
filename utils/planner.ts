@@ -19,10 +19,10 @@ const filterDishes = (user: UserProfile) => {
   
   if (pool.length === 0) return [];
 
-  // ۱. حذف قطعی لیست سیاه
+  // ۱. حذف قطعی لیست سیاه کاربر
   pool = pool.filter(d => !user.blacklistedDishIds?.includes(d.id));
   
-  // ۲. فیلتر مواد ممنوعه
+  // ۲. فیلتر مواد ممنوعه (حساسیت‌های کاربر)
   if (user.dislikedIngredients?.length) {
     pool = pool.filter(dish => {
         return !dish.ingredients.some(ing => 
@@ -33,11 +33,11 @@ const filterDishes = (user: UserProfile) => {
     });
   }
 
-  // ۳. فیلتر دسته‌های حذف شده
+  // ۳. فیلتر دسته‌های حذف شده در تنظیمات
   const filteredByCategory = pool.filter(d => !user.excludedCategories?.includes(d.category));
   if (filteredByCategory.length > 0) pool = filteredByCategory;
 
-  // ۴. فیلتر طبع
+  // ۴. فیلتر طبع (گرم، سرد، معتدل)
   const preferred = (user.preferredNatures && user.preferredNatures.length > 0) 
     ? user.preferredNatures 
     : ['hot', 'cold', 'balanced'];
@@ -48,16 +48,34 @@ const filterDishes = (user: UserProfile) => {
   });
   if (filteredByNature.length > 0) pool = filteredByNature;
   
-  // ۵. فیلترهای سریع
+  // ۵. فیلترهای هوشمند سریع
   if (user.onlyFavoritesMode) {
       const favorites = pool.filter(d => user.favoriteDishIds?.includes(d.id));
       if (favorites.length > 0) pool = favorites;
   }
   
+  // --- تقویت شدید فیلتر گیاهی (فقط مواد غیرگوشتی) ---
   if (user.meatlessMode) {
-      const meatKeywords = ['گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'کباب', 'بره', 'گوساله'];
-      const meatless = pool.filter(d => !meatKeywords.some(k => d.name.includes(k) || (d.description || "").includes(k)));
-      if (meatless.length > 0) pool = meatless;
+      const meatKeywords = [
+        'گوشت', 'مرغ', 'ماهی', 'میگو', 'کالباس', 'سوسیس', 'ژامبون', 'بره', 'گوساله', 'گوسفند', 
+        'بوقلمون', 'جگر', 'زبان', 'سیرابی', 'کله', 'پاچه', 'شتر', 'بلدرچین', 'اردک', 'غاز', 
+        'فیله', 'استیک', 'کباب', 'مغز', 'دل', 'قلوه', 'خویش', 'دنبه', 'تن ماهی', 'ژلاتین'
+      ];
+      
+      pool = pool.filter(dish => {
+          // بررسی نام غذا
+          const nameHasMeat = meatKeywords.some(k => dish.name.includes(k));
+          // بررسی توضیحات غذا
+          const descHasMeat = meatKeywords.some(k => (dish.description || "").includes(k));
+          // بررسی تک‌تک مواد اولیه (بسیار مهم)
+          const ingredientsHaveMeat = dish.ingredients.some(ing => 
+            meatKeywords.some(k => ing.item.includes(k))
+          );
+          // کباب‌ها معمولاً گیاهی نیستند مگر اینکه در نام ذکر شده باشد
+          const isKababCategory = dish.category === 'kabab' && !dish.name.includes('گیاهی');
+
+          return !nameHasMeat && !descHasMeat && !ingredientsHaveMeat && !isKababCategory;
+      });
   }
   
   if (user.quickMealsMode) {
@@ -89,7 +107,6 @@ export const generateWeeklyPlan = async (user: UserProfile): Promise<{ plan: Day
   const days = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
   const shuffled = shuffleArray(pool);
   
-  // اطمینان از اینکه اگر تعداد غذاها کمتر از ۷ تا بود، خطا ندهد
   const plan = days.map((day, idx) => ({ 
     dayName: day, 
     dish: shuffled[idx % shuffled.length] 
