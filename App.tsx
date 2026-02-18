@@ -196,11 +196,13 @@ const AppContent: React.FC = () => {
     return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
   }, []);
 
+  const planRowsPerPage = 13; // تعداد ردیف برنامه در هر صفحه برای جا شدن فوتر
+  const shopRowsPerPage = 20; // تعداد ردیف خرید در هر صفحه برای جا شدن فوتر
+
   const chunkedPlan = useMemo(() => {
     const chunks = [];
-    const rowsPerPage = 15;
-    for (let i = 0; i < displayPlan.length; i += rowsPerPage) {
-      chunks.push(displayPlan.slice(i, i + rowsPerPage));
+    for (let i = 0; i < displayPlan.length; i += planRowsPerPage) {
+      chunks.push(displayPlan.slice(i, i + planRowsPerPage));
     }
     return chunks;
   }, [displayPlan]);
@@ -211,9 +213,8 @@ const AppContent: React.FC = () => {
 
   const chunkedShoppingList = useMemo(() => {
     const chunks = [];
-    const rowsPerPage = 22; // تعداد ردیف بیشتر برای لیست خرید چون تک‌خطی هستند
-    for (let i = 0; i < shoppingItemsToPrint.length; i += rowsPerPage) {
-      chunks.push(shoppingItemsToPrint.slice(i, i + rowsPerPage));
+    for (let i = 0; i < shoppingItemsToPrint.length; i += shopRowsPerPage) {
+      chunks.push(shoppingItemsToPrint.slice(i, i + shopRowsPerPage));
     }
     return chunks;
   }, [shoppingItemsToPrint]);
@@ -280,9 +281,9 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* بخش اختصاصی چاپ */}
+      {/* بخش اختصاصی چاپ با هدر و فوتر تکرار شونده در تمامی صفحات */}
       <div className="print-only">
-        {/* ۱. چاپ برنامه غذایی (اگر سبد خرید باز نیست) */}
+        {/* ۱. چاپ برنامه غذایی */}
         {!isShoppingListOpen && chunkedPlan.map((chunk, pageIdx) => (
           <div key={`plan-page-${pageIdx}`} className="print-page-container">
              <div className="print-header flex items-center justify-between">
@@ -310,7 +311,7 @@ const AppContent: React.FC = () => {
                 <tbody>
                    {chunk.map((plan, idx) => (
                       <tr key={idx}>
-                         <td className="text-center font-mono">{toPersian(pageIdx * 15 + idx + 1)}</td>
+                         <td className="text-center font-mono">{toPersian(pageIdx * planRowsPerPage + idx + 1)}</td>
                          <td className="font-bold">{plan.dayName}</td>
                          <td className="font-black text-slate-800">{plan.dish.name}</td>
                          <td className="text-slate-500">{CATEGORY_LABELS[plan.dish.category]}</td>
@@ -327,7 +328,7 @@ const AppContent: React.FC = () => {
           </div>
         ))}
 
-        {/* ۲. چاپ لیست خرید (اگر سبد خرید باز است) */}
+        {/* ۲. چاپ لیست خرید */}
         {isShoppingListOpen && chunkedShoppingList.map((chunk, pageIdx) => (
           <div key={`shop-page-${pageIdx}`} className="print-page-container">
              <div className="print-header flex items-center justify-between">
@@ -356,7 +357,7 @@ const AppContent: React.FC = () => {
                 <tbody>
                    {chunk.map((item, idx) => (
                       <tr key={item.id}>
-                         <td className="text-center font-mono">{toPersian(pageIdx * 22 + idx + 1)}</td>
+                         <td className="text-center font-mono">{toPersian(pageIdx * shopRowsPerPage + idx + 1)}</td>
                          <td className="font-black text-slate-800">{item.name}</td>
                          <td className="text-center font-bold text-teal-600">{toPersian(item.amount || '---')}</td>
                          <td className="text-center text-slate-500">{item.unit || '---'}</td>

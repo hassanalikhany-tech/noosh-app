@@ -77,11 +77,13 @@
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* استایل‌های کاملاً اصلاح شده برای چاپ چند صفحه‌ای */
+      /* استایل‌های کاملاً اصلاح شده برای چاپ حرفه‌ای چند صفحه‌ای */
       @media print {
-        @page { size: A4 portrait; margin: 0; }
+        @page { 
+          size: A4 portrait; 
+          margin: 0; 
+        }
         
-        /* حذف محدودیت‌های ارتفاع تمام والدین برای اجازه به چاپ صفحات بعد */
         html, body, #root, [class*="h-[100dvh]"], main { 
           height: auto !important; 
           overflow: visible !important; 
@@ -94,8 +96,8 @@
         
         .print-page-container {
           width: 210mm;
-          min-height: 297mm;
-          padding: 15mm;
+          height: 297mm; /* ارتفاع ثابت A4 برای تراز شدن فوتر در پایین */
+          padding: 15mm 15mm 10mm 15mm;
           margin: 0 auto;
           background: white !important;
           display: flex;
@@ -106,32 +108,42 @@
           position: relative;
         }
 
-        .print-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
-        .print-table th, .print-table td { 
-          border: 1px solid #ddd; 
-          padding: 10px 12px; 
-          text-align: right; 
-          font-size: 13px;
-          line-height: 1.5;
+        .print-table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-top: 10mm; 
+          margin-bottom: auto; /* اجازه می‌دهد فوتر به پایین رانده شود */
         }
-        .print-table th { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; font-weight: 900; color: #0f172a; }
+        
+        .print-table th, .print-table td { 
+          border: 1px solid #e2e8f0; 
+          padding: 8px 10px; 
+          text-align: right; 
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        
+        .print-table th { 
+          background-color: #f1f5f9 !important; 
+          -webkit-print-color-adjust: exact; 
+          font-weight: 900; 
+          color: #0f172a; 
+        }
         
         .print-header { 
           border-bottom: 3px solid #0d9488; 
-          padding-bottom: 15px; 
-          margin-bottom: 10px; 
+          padding-bottom: 5mm; 
           flex-shrink: 0; 
         }
         
         .print-footer { 
-          margin-top: auto; 
           width: 100%; 
           text-align: center; 
-          font-size: 11px; 
-          color: #64748b; 
-          border-top: 1px solid #e2e8f0; 
-          padding-top: 10px; 
-          padding-bottom: 5px;
+          font-size: 10px; 
+          color: #94a3b8; 
+          border-top: 1px solid #f1f5f9; 
+          padding-top: 5mm;
+          margin-top: auto; 
           flex-shrink: 0;
         }
       }
