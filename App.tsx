@@ -168,7 +168,6 @@ const AppContent: React.FC = () => {
     if (RecipeService.getLocalCount() === 0) return "در حال بارگذاری بانک اطلاعات پخت‌ها...";
     if (!currentUser) return "دستیار هوشمند نوش آماده به کار است";
 
-    // 1. اولویت اول: وضعیت اشتراک
     const now = Date.now();
     const expiry = currentUser.subscriptionExpiry || 0;
     if (expiry < now) return "⚠️ اشتراک شما منقضی شده؛ جهت دسترسی کامل تمدید کنید.";
@@ -176,13 +175,11 @@ const AppContent: React.FC = () => {
     const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
     if (diffDays <= 5) return `⏳ فقط ${toPersian(diffDays)} روز تا پایان اشتراک ویژه باقی مانده است.`;
 
-    // 2. اولویت دوم: چالش فعال
     if (currentUser.activeChallengeId) {
         const challenge = CHALLENGES.find(c => c.id === currentUser.activeChallengeId);
         if (challenge) return `🏆 چالش «${challenge.title}» فعال است؛ پیشنهادات بر این اساس تنظیم شده‌اند.`;
     }
 
-    // 3. اولویت سوم: فیلترهای فعال
     const activeFilters = [];
     if (currentUser.meatlessMode) activeFilters.push("گیاهی");
     if (currentUser.onlyFavoritesMode) activeFilters.push("محبوب‌ها");
@@ -199,10 +196,10 @@ const AppContent: React.FC = () => {
     return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
   }, []);
 
-  // تقسیم برنامه برای صفحه‌بندی چاپ (هر صفحه ۱۱ ردیف طبق درخواست)
+  // تقسیم برنامه برای صفحه‌بندی چاپ (افزایش به ۱۵ ردیف در هر صفحه طبق اجازه کاربر)
   const chunkedPlan = useMemo(() => {
     const chunks = [];
-    const rowsPerPage = 11;
+    const rowsPerPage = 15;
     for (let i = 0; i < displayPlan.length; i += rowsPerPage) {
       chunks.push(displayPlan.slice(i, i + rowsPerPage));
     }
@@ -267,20 +264,20 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* بخش اختصاصی چاپ (اصلاح شده برای تکرار هدر و فوتر در هر صفحه ۱۱ ردیفی) */}
+      {/* بخش اختصاصی چاپ (اصلاح شده برای تکرار هدر و فوتر در تمامی صفحات برنامه) */}
       <div className="print-only">
         {chunkedPlan.map((chunk, pageIdx) => (
           <div key={pageIdx} className="print-page-container">
              {/* هدر در ابتدای هر صفحه */}
              <div className="print-header flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-20 h-20 object-contain" alt="Logo" />
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-16 h-16 object-contain" alt="Logo" />
                   <div className="flex flex-col">
-                    <h1 className="text-3xl font-black text-slate-900">برنامه پیشنهادی نوش</h1>
-                    <p className="text-teal-600 font-bold">همراه سلامتی و آسایش شما</p>
+                    <h1 className="text-2xl font-black text-slate-900">برنامه پیشنهادی نوش</h1>
+                    <p className="text-teal-600 font-bold text-xs">همراه سلامتی و آسایش شما</p>
                   </div>
                 </div>
-                <div className="text-left font-bold text-slate-600">
+                <div className="text-left font-bold text-slate-600 text-xs leading-6">
                   <div>تاریخ گزارش: {persianDate}</div>
                   <div>صفحه: {toPersian(pageIdx + 1)} از {toPersian(chunkedPlan.length)}</div>
                 </div>
@@ -289,32 +286,32 @@ const AppContent: React.FC = () => {
              <table className="print-table">
                 <thead>
                    <tr>
-                      <th className="w-12">ردیف</th>
+                      <th className="w-12 text-center">ردیف</th>
                       <th className="w-32">وعده / روز</th>
-                      <th>نام غذا</th>
-                      <th className="w-32">دسته‌بندی</th>
+                      <th>نام پخت پیشنهادی</th>
+                      <th className="w-32">نوع غذا</th>
                    </tr>
                 </thead>
                 <tbody>
                    {chunk.map((plan, idx) => (
                       <tr key={idx}>
-                         <td className="text-center font-mono">{toPersian(pageIdx * 11 + idx + 1)}</td>
+                         <td className="text-center font-mono">{toPersian(pageIdx * 15 + idx + 1)}</td>
                          <td className="font-bold">{plan.dayName}</td>
-                         <td className="font-black text-lg">{plan.dish.name}</td>
-                         <td>{CATEGORY_LABELS[plan.dish.category]}</td>
+                         <td className="font-black text-slate-800">{plan.dish.name}</td>
+                         <td className="text-slate-500">{CATEGORY_LABELS[plan.dish.category]}</td>
                       </tr>
                    ))}
                 </tbody>
              </table>
              
-             {/* پیام پایانی فقط در آخرین صفحه */}
+             {/* پیام پایانی فقط در آخرین صفحه برنامه */}
              {pageIdx === chunkedPlan.length - 1 && (
-               <div className="mt-6 text-center">
-                 <p className="text-slate-400 font-bold italic">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
+               <div className="mt-4 text-center">
+                 <p className="text-slate-400 font-bold italic text-sm">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
                </div>
              )}
              
-             {/* فوتر در انتهای هر صفحه */}
+             {/* فوتر در انتهای هر صفحه چاپی */}
              <div className="print-footer">
                 🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش
              </div>
@@ -360,7 +357,7 @@ const AppContent: React.FC = () => {
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
             <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10 border-b border-white/20">
-                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 shadow-xl shadow-slate-200/50 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
                     <div className="flex justify-center gap-8 sm:gap-16 border-b border-white/40 pb-2 sm:pb-4">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
                          <Leaf size={24} className="sm:w-8 sm:h-8" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
