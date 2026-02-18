@@ -196,7 +196,6 @@ const AppContent: React.FC = () => {
     return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
   }, []);
 
-  // تقسیم برنامه برای صفحه‌بندی چاپ (افزایش به ۱۵ ردیف در هر صفحه طبق اجازه کاربر)
   const chunkedPlan = useMemo(() => {
     const chunks = [];
     const rowsPerPage = 15;
@@ -205,6 +204,23 @@ const AppContent: React.FC = () => {
     }
     return chunks;
   }, [displayPlan]);
+
+  const shoppingItemsToPrint = useMemo(() => {
+    return currentUser?.customShoppingList?.filter(i => !i.checked) || [];
+  }, [currentUser?.customShoppingList]);
+
+  const chunkedShoppingList = useMemo(() => {
+    const chunks = [];
+    const rowsPerPage = 22; // تعداد ردیف بیشتر برای لیست خرید چون تک‌خطی هستند
+    for (let i = 0; i < shoppingItemsToPrint.length; i += rowsPerPage) {
+      chunks.push(shoppingItemsToPrint.slice(i, i + rowsPerPage));
+    }
+    return chunks;
+  }, [shoppingItemsToPrint]);
+
+  const activeShoppingCount = useMemo(() => {
+    return currentUser?.customShoppingList?.filter(i => !i.checked).length || 0;
+  }, [currentUser?.customShoppingList]);
 
   if (isInitializing || !currentUser) return (
     <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl overflow-hidden">
@@ -264,11 +280,11 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* بخش اختصاصی چاپ (اصلاح شده برای تکرار هدر و فوتر در تمامی صفحات برنامه) */}
+      {/* بخش اختصاصی چاپ */}
       <div className="print-only">
-        {chunkedPlan.map((chunk, pageIdx) => (
-          <div key={pageIdx} className="print-page-container">
-             {/* هدر در ابتدای هر صفحه */}
+        {/* ۱. چاپ برنامه غذایی (اگر سبد خرید باز نیست) */}
+        {!isShoppingListOpen && chunkedPlan.map((chunk, pageIdx) => (
+          <div key={`plan-page-${pageIdx}`} className="print-page-container">
              <div className="print-header flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-16 h-16 object-contain" alt="Logo" />
@@ -282,7 +298,6 @@ const AppContent: React.FC = () => {
                   <div>صفحه: {toPersian(pageIdx + 1)} از {toPersian(chunkedPlan.length)}</div>
                 </div>
              </div>
-
              <table className="print-table">
                 <thead>
                    <tr>
@@ -303,18 +318,60 @@ const AppContent: React.FC = () => {
                    ))}
                 </tbody>
              </table>
-             
-             {/* پیام پایانی فقط در آخرین صفحه برنامه */}
              {pageIdx === chunkedPlan.length - 1 && (
                <div className="mt-4 text-center">
                  <p className="text-slate-400 font-bold italic text-sm">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
                </div>
              )}
-             
-             {/* فوتر در انتهای هر صفحه چاپی */}
-             <div className="print-footer">
-                🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش
+             <div className="print-footer">🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش</div>
+          </div>
+        ))}
+
+        {/* ۲. چاپ لیست خرید (اگر سبد خرید باز است) */}
+        {isShoppingListOpen && chunkedShoppingList.map((chunk, pageIdx) => (
+          <div key={`shop-page-${pageIdx}`} className="print-page-container">
+             <div className="print-header flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-16 h-16 object-contain" alt="Logo" />
+                  <div className="flex flex-col">
+                    <h1 className="text-2xl font-black text-slate-900">لیست خرید نوش</h1>
+                    <p className="text-teal-600 font-bold text-xs">مواد اولیه مورد نیاز برای پخت و پز</p>
+                  </div>
+                </div>
+                <div className="text-left font-bold text-slate-600 text-xs leading-6">
+                  <div>تاریخ گزارش: {persianDate}</div>
+                  <div>صفحه: {toPersian(pageIdx + 1)} از {toPersian(chunkedShoppingList.length)}</div>
+                </div>
              </div>
+             <table className="print-table">
+                <thead>
+                   <tr>
+                      <th className="w-12 text-center">ردیف</th>
+                      <th>نام کالا / مواد اولیه</th>
+                      <th className="w-32 text-center">مقدار</th>
+                      <th className="w-32 text-center">واحد</th>
+                      <th className="w-48">بابت دستور پخت</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {chunk.map((item, idx) => (
+                      <tr key={item.id}>
+                         <td className="text-center font-mono">{toPersian(pageIdx * 22 + idx + 1)}</td>
+                         <td className="font-black text-slate-800">{item.name}</td>
+                         <td className="text-center font-bold text-teal-600">{toPersian(item.amount || '---')}</td>
+                         <td className="text-center text-slate-500">{item.unit || '---'}</td>
+                         <td className="text-[11px] text-slate-400">{item.fromRecipe || 'خرید متفرقه'}</td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+             {pageIdx === chunkedShoppingList.length - 1 && (
+               <div className="mt-8 border-2 border-dashed border-slate-200 p-4 rounded-2xl flex items-center justify-center gap-4 opacity-50">
+                  <ShoppingCart size={24} className="text-slate-300" />
+                  <p className="text-slate-400 font-black text-sm">مجموع اقلام خرید: {toPersian(shoppingItemsToPrint.length)} مورد</p>
+               </div>
+             )}
+             <div className="print-footer">🌐 www.nooshapp.ir | لیست خرید هوشمند اپلیکیشن نوش</div>
           </div>
         ))}
       </div>
@@ -346,6 +403,11 @@ const AppContent: React.FC = () => {
              {isAdmin && <button onClick={() => setIsAdminMode(true)} className="p-2 sm:p-3.5 bg-slate-900 text-teal-400 rounded-xl sm:rounded-2xl shadow-lg border border-white/10"><ShieldAlert size={18} className="sm:w-6 sm:h-6" /></button>}
              <button onClick={() => setIsShoppingListOpen(true)} className="relative p-2 sm:p-3.5 bg-emerald-600 text-white rounded-xl sm:rounded-2xl shadow-lg">
               <ShoppingCart size={18} className="sm:w-6 sm:h-6" />
+              {activeShoppingCount > 0 && (
+                <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-600 text-white text-[8px] sm:text-[10px] font-black w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
+                  {toPersian(activeShoppingCount)}
+                </div>
+              )}
             </button>
           </div>
         </div>
@@ -454,7 +516,14 @@ const AppContent: React.FC = () => {
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 sm:p-8 bg-black/60 backdrop-blur-sm no-print" onClick={() => setIsShoppingListOpen(false)}>
            <div className="relative w-full max-w-2xl bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden animate-enter h-full sm:h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-8 left-8 p-3 bg-slate-100 rounded-full text-slate-500 z-[210] hover:bg-slate-200 transition-all shadow-sm"><X size={24} /></button>
-              <div className="flex-grow overflow-y-auto"><ShoppingList user={currentUser!} weeklyPlan={displayPlan} onUpdateUser={setCurrentUser} /></div>
+              <div className="flex-grow overflow-y-auto">
+                <ShoppingList 
+                  user={currentUser!} 
+                  weeklyPlan={displayPlan} 
+                  onUpdateUser={setCurrentUser} 
+                  onPrintInternal={() => window.print()}
+                />
+              </div>
            </div>
         </div>
       )}
