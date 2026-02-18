@@ -14,6 +14,7 @@ import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
+import { CHALLENGES } from './data/challenges';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -160,23 +161,50 @@ const AppContent: React.FC = () => {
     finally { setIsLoggingOut(false); }
   };
 
+  const toPersian = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
+
   const footerMessage = useMemo(() => {
     if (planLoading) return "در حال تنظیم هوشمند برنامه غذایی شما...";
     if (RecipeService.getLocalCount() === 0) return "در حال بارگذاری بانک اطلاعات پخت‌ها...";
-    return "دستیار هوشمند نوش آماده به کار است";
-  }, [planLoading, RecipeService.getLocalCount()]);
+    if (!currentUser) return "دستیار هوشمند نوش آماده به کار است";
 
-  const toPersian = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-  
+    // 1. اولویت اول: وضعیت اشتراک
+    const now = Date.now();
+    const expiry = currentUser.subscriptionExpiry || 0;
+    if (expiry < now) return "⚠️ اشتراک شما منقضی شده؛ جهت دسترسی کامل تمدید کنید.";
+    
+    const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 5) return `⏳ فقط ${toPersian(diffDays)} روز تا پایان اشتراک ویژه باقی مانده است.`;
+
+    // 2. اولویت دوم: چالش فعال
+    if (currentUser.activeChallengeId) {
+        const challenge = CHALLENGES.find(c => c.id === currentUser.activeChallengeId);
+        if (challenge) return `🏆 چالش «${challenge.title}» فعال است؛ پیشنهادات بر این اساس تنظیم شده‌اند.`;
+    }
+
+    // 3. اولویت سوم: فیلترهای فعال
+    const activeFilters = [];
+    if (currentUser.meatlessMode) activeFilters.push("گیاهی");
+    if (currentUser.onlyFavoritesMode) activeFilters.push("محبوب‌ها");
+    if (currentUser.quickMealsMode) activeFilters.push("سریع");
+
+    if (activeFilters.length > 0) {
+        return `🔍 فیلتر فعال: ${activeFilters.join(' + ')} (در حال اعمال روی پیشنهادات)`;
+    }
+
+    return "دستیار هوشمند نوش آماده به کار است";
+  }, [planLoading, RecipeService.getLocalCount(), currentUser]);
+
   const persianDate = useMemo(() => {
     return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
   }, []);
 
-  // تقسیم برنامه برای صفحه‌بندی چاپ (هر صفحه ۱۰ ردیف)
+  // تقسیم برنامه برای صفحه‌بندی چاپ (هر صفحه ۱۱ ردیف طبق درخواست)
   const chunkedPlan = useMemo(() => {
     const chunks = [];
-    for (let i = 0; i < displayPlan.length; i += 10) {
-      chunks.push(displayPlan.slice(i, i + 10));
+    const rowsPerPage = 11;
+    for (let i = 0; i < displayPlan.length; i += rowsPerPage) {
+      chunks.push(displayPlan.slice(i, i + rowsPerPage));
     }
     return chunks;
   }, [displayPlan]);
@@ -239,10 +267,11 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* بخش اختصاصی چاپ (فقط در خروجی چاپ دیده می‌شود) */}
-      <div className="print-only p-10 bg-white min-h-screen font-sans dir-rtl">
+      {/* بخش اختصاصی چاپ (اصلاح شده برای تکرار هدر و فوتر در هر صفحه ۱۱ ردیفی) */}
+      <div className="print-only">
         {chunkedPlan.map((chunk, pageIdx) => (
-          <div key={pageIdx} className={`w-full ${pageIdx < chunkedPlan.length - 1 ? 'page-break' : ''}`}>
+          <div key={pageIdx} className="print-page-container">
+             {/* هدر در ابتدای هر صفحه */}
              <div className="print-header flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-20 h-20 object-contain" alt="Logo" />
@@ -269,7 +298,7 @@ const AppContent: React.FC = () => {
                 <tbody>
                    {chunk.map((plan, idx) => (
                       <tr key={idx}>
-                         <td className="text-center font-mono">{toPersian(pageIdx * 10 + idx + 1)}</td>
+                         <td className="text-center font-mono">{toPersian(pageIdx * 11 + idx + 1)}</td>
                          <td className="font-bold">{plan.dayName}</td>
                          <td className="font-black text-lg">{plan.dish.name}</td>
                          <td>{CATEGORY_LABELS[plan.dish.category]}</td>
@@ -278,12 +307,14 @@ const AppContent: React.FC = () => {
                 </tbody>
              </table>
              
+             {/* پیام پایانی فقط در آخرین صفحه */}
              {pageIdx === chunkedPlan.length - 1 && (
-               <div className="mt-10 text-center border-t pt-6">
+               <div className="mt-6 text-center">
                  <p className="text-slate-400 font-bold italic">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
                </div>
              )}
              
+             {/* فوتر در انتهای هر صفحه */}
              <div className="print-footer">
                 🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش
              </div>
