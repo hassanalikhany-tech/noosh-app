@@ -70,6 +70,22 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     return num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
   };
 
+  const handleRemoveFavorite = async (e: React.MouseEvent, dishId: string) => {
+    e.stopPropagation();
+    try {
+      const updatedUser = await UserService.toggleFavorite(user.username, dishId);
+      onUpdateUser(updatedUser);
+    } catch (err) {}
+  };
+
+  const handleRemoveBlacklist = async (e: React.MouseEvent, dishId: string) => {
+    e.stopPropagation();
+    try {
+      const updatedUser = await UserService.toggleBlacklist(user.username, dishId);
+      onUpdateUser(updatedUser);
+    } catch (err) {}
+  };
+
   const favoritesList = useMemo(() => RecipeService.getRawDishes().filter(d => (user.favoriteDishIds || []).includes(d.id)), [user.favoriteDishIds]);
   const blacklistedList = useMemo(() => RecipeService.getRawDishes().filter(d => (user.blacklistedDishIds || []).includes(d.id)), [user.blacklistedDishIds]);
   
@@ -138,25 +154,47 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                   <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
-                    <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><Heart size={22} fill="currentColor"/></div><h2 className="text-sm sm:text-xl font-black text-slate-800">غذاهای محبوب من</h2></div>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-3 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><Heart size={22} fill="currentColor"/></div>
+                      <h2 className="text-sm sm:text-xl font-black text-slate-800">غذاهای محبوب من</h2>
+                    </div>
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto no-scrollbar">
-                        {favoritesList.map(dish => (
+                        {favoritesList.length > 0 ? favoritesList.map(dish => (
                             <div key={dish.id} className="relative group rounded-xl sm:rounded-2xl overflow-hidden h-16 sm:h-20 bg-slate-50 border border-slate-100">
                                 <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
                                 <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black p-2 text-center text-slate-700 leading-tight">{dish.name}</span>
+                                <button 
+                                  onClick={(e) => handleRemoveFavorite(e, dish.id)}
+                                  className="absolute top-1 left-1 p-1 bg-white/80 rounded-full text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                >
+                                  <X size={12} strokeWidth={3} />
+                                </button>
                             </div>
-                        ))}
+                        )) : (
+                          <div className="col-span-2 py-10 text-center text-slate-300 text-xs font-bold italic">لیست خالی است</div>
+                        )}
                     </div>
                   </div>
                   <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
-                    <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 bg-slate-100 text-slate-600 rounded-xl sm:rounded-[1.5rem]"><ThumbsDown size={22}/></div><h2 className="text-sm sm:text-xl font-black text-slate-800">لیست سیاه غذاها</h2></div>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="p-3 bg-slate-100 text-slate-600 rounded-xl sm:rounded-[1.5rem]"><ThumbsDown size={22}/></div>
+                      <h2 className="text-sm sm:text-xl font-black text-slate-800">لیست سیاه غذاها</h2>
+                    </div>
                     <div className="grid grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto no-scrollbar">
-                        {blacklistedList.map(dish => (
+                        {blacklistedList.length > 0 ? blacklistedList.map(dish => (
                             <div key={dish.id} className="relative group rounded-xl sm:rounded-2xl overflow-hidden h-16 sm:h-20 bg-slate-50 border border-slate-100">
                                 <DishVisual category={dish.category} className="w-full h-full opacity-40" dishId={dish.id} />
                                 <span className="absolute inset-0 flex items-center justify-center text-[9px] sm:text-[10px] font-black p-2 text-center text-slate-700 leading-tight">{dish.name}</span>
+                                <button 
+                                  onClick={(e) => handleRemoveBlacklist(e, dish.id)}
+                                  className="absolute top-1 left-1 p-1 bg-white/80 rounded-full text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                >
+                                  <X size={12} strokeWidth={3} />
+                                </button>
                             </div>
-                        ))}
+                        )) : (
+                          <div className="col-span-2 py-10 text-center text-slate-300 text-xs font-bold italic">لیست خالی است</div>
+                        )}
                     </div>
                   </div>
               </div>

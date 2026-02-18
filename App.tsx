@@ -166,6 +166,21 @@ const AppContent: React.FC = () => {
     return "دستیار هوشمند نوش آماده به کار است";
   }, [planLoading, RecipeService.getLocalCount()]);
 
+  const toPersian = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
+  
+  const persianDate = useMemo(() => {
+    return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
+  }, []);
+
+  // تقسیم برنامه برای صفحه‌بندی چاپ (هر صفحه ۱۰ ردیف)
+  const chunkedPlan = useMemo(() => {
+    const chunks = [];
+    for (let i = 0; i < displayPlan.length; i += 10) {
+      chunks.push(displayPlan.slice(i, i + 10));
+    }
+    return chunks;
+  }, [displayPlan]);
+
   if (isInitializing || !currentUser) return (
     <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl overflow-hidden">
       <Loader2 className="w-16 h-16 text-teal-500 animate-spin mb-4" />
@@ -224,6 +239,58 @@ const AppContent: React.FC = () => {
         </>
       )}
 
+      {/* بخش اختصاصی چاپ (فقط در خروجی چاپ دیده می‌شود) */}
+      <div className="print-only p-10 bg-white min-h-screen font-sans dir-rtl">
+        {chunkedPlan.map((chunk, pageIdx) => (
+          <div key={pageIdx} className={`w-full ${pageIdx < chunkedPlan.length - 1 ? 'page-break' : ''}`}>
+             <div className="print-header flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-20 h-20 object-contain" alt="Logo" />
+                  <div className="flex flex-col">
+                    <h1 className="text-3xl font-black text-slate-900">برنامه پیشنهادی نوش</h1>
+                    <p className="text-teal-600 font-bold">همراه سلامتی و آسایش شما</p>
+                  </div>
+                </div>
+                <div className="text-left font-bold text-slate-600">
+                  <div>تاریخ گزارش: {persianDate}</div>
+                  <div>صفحه: {toPersian(pageIdx + 1)} از {toPersian(chunkedPlan.length)}</div>
+                </div>
+             </div>
+
+             <table className="print-table">
+                <thead>
+                   <tr>
+                      <th className="w-12">ردیف</th>
+                      <th className="w-32">وعده / روز</th>
+                      <th>نام غذا</th>
+                      <th className="w-32">دسته‌بندی</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   {chunk.map((plan, idx) => (
+                      <tr key={idx}>
+                         <td className="text-center font-mono">{toPersian(pageIdx * 10 + idx + 1)}</td>
+                         <td className="font-bold">{plan.dayName}</td>
+                         <td className="font-black text-lg">{plan.dish.name}</td>
+                         <td>{CATEGORY_LABELS[plan.dish.category]}</td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+             
+             {pageIdx === chunkedPlan.length - 1 && (
+               <div className="mt-10 text-center border-t pt-6">
+                 <p className="text-slate-400 font-bold italic">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
+               </div>
+             )}
+             
+             <div className="print-footer">
+                🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش
+             </div>
+          </div>
+        ))}
+      </div>
+
       <header className="fixed top-0 left-0 right-0 z-[1000] no-print h-16 sm:h-20 lg:h-24 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center px-4 sm:px-12 shadow-sm">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
@@ -262,7 +329,7 @@ const AppContent: React.FC = () => {
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
             <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10 border-b border-white/20">
-                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 shadow-xl shadow-slate-200/50 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
                     <div className="flex justify-center gap-8 sm:gap-16 border-b border-white/40 pb-2 sm:pb-4">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
                          <Leaf size={24} className="sm:w-8 sm:h-8" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
