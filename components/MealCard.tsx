@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock } from 'lucide-react';
+import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock, RefreshCw } from 'lucide-react';
 import { DayPlan, UserProfile } from '../types';
 import RecipeModal from './RecipeModal';
 import DishVisual from './DishVisual';
@@ -12,10 +12,12 @@ interface MealCardProps {
   plan: DayPlan;
   user: UserProfile;
   onUpdateUser?: (user: UserProfile) => void;
+  onRefresh?: () => void;
 }
 
-const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
+const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser, onRefresh }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [localFavorite, setLocalFavorite] = useState(user?.favoriteDishIds?.includes(plan.dish.id));
   const [localBlacklisted, setLocalBlacklisted] = useState(user?.blacklistedDishIds?.includes(plan.dish.id));
@@ -62,6 +64,15 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
     }
   };
 
+  const handleRefreshClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isRefreshing || !onRefresh) return;
+      setIsRefreshing(true);
+      onRefresh();
+      // انیمیشن کوچک برای تجربه کاربری بهتر
+      setTimeout(() => setIsRefreshing(false), 800);
+  };
+
   const handleCardClick = () => {
     if (isLocked) {
       alert("مشترک گرامی، دسترسی به این غذا نیازمند تایید حساب توسط مدیریت می‌باشد.");
@@ -73,7 +84,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
   return (
     <>
       <div 
-        className={`group bg-white rounded-[2.5rem] shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] hover:scale-[1.1] hover:z-[60] transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
+        className={`group bg-white rounded-[2.5rem] shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.3)] hover:scale-[1.05] hover:z-[60] transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
         <div className="relative h-60 overflow-hidden">
@@ -90,8 +101,19 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
 
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-black text-gray-800 shadow-md z-10 border border-gray-100">{plan.dayName}</div>
           
+          {/* کلید تعویض اختصاصی غذا */}
+          {!isLocked && onRefresh && (
+              <button 
+                onClick={handleRefreshClick}
+                className={`absolute top-4 left-4 z-20 p-2.5 bg-emerald-600/90 hover:bg-emerald-700 backdrop-blur-md text-white rounded-xl shadow-lg transition-all active:scale-90 ${isRefreshing ? 'animate-spin' : ''}`}
+                title="تعویض این غذا"
+              >
+                  <RefreshCw size={18} strokeWidth={3} />
+              </button>
+          )}
+
           {!isLocked && (
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-4 left-4 right-4 flex justify-end items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                <div className="flex gap-2">
                   <button onClick={handleToggleFavorite} className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-xl ring-2 ring-white active:scale-90 ${localFavorite ? 'bg-rose-500 text-white' : 'bg-white/90 backdrop-blur-md text-slate-500 hover:text-rose-500'}`}>
                     <Heart size={22} fill={localFavorite ? "currentColor" : "none"} />
@@ -103,8 +125,9 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser }) => {
             </div>
           )}
 
-          <div className="absolute top-4 left-4 z-10">
-            <div className={`px-3 py-1 rounded-xl text-[10px] font-black shadow-md border ${
+          {/* تگ طبع در پایین سمت راست کادر تصویر */}
+          <div className="absolute bottom-4 right-4 z-10 opacity-90">
+            <div className={`px-3 py-1 rounded-xl text-[9px] font-black shadow-md border ${
               natureInfo.type === 'hot' ? 'bg-orange-500 text-white border-orange-400' : 
               natureInfo.type === 'cold' ? 'bg-blue-500 text-white border-blue-400' : 'bg-emerald-500 text-white border-emerald-400'
             }`}>طبع {natureInfo.label}</div>

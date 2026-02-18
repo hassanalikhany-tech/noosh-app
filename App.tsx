@@ -13,7 +13,7 @@ import NotificationCenter from './components/NotificationCenter';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory } from './types';
-import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan } from './utils/planner';
+import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -136,12 +136,35 @@ const AppContent: React.FC = () => {
     } finally { setPlanLoading(null); }
   };
 
+  const handleRefreshSingleMeal = async (index: number) => {
+      if (!currentUser) return;
+      try {
+          const currentDishIds = displayPlan.map(p => p.dish.id);
+          const newDish = await generateSingleReplacement(currentUser, currentDishIds);
+          
+          const newPlan = [...displayPlan];
+          newPlan[index] = { ...newPlan[index], dish: newDish };
+          
+          setDisplayPlan(newPlan);
+          const updatedUser = await UserService.updateProfile(currentUser.username, { weeklyPlan: newPlan });
+          setCurrentUser(updatedUser);
+      } catch (err: any) {
+          alert(err.message);
+      }
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try { await UserService.logout(); setCurrentUser(null); }
     catch (error) { console.error(error); }
     finally { setIsLoggingOut(false); }
   };
+
+  const footerMessage = useMemo(() => {
+    if (planLoading) return "در حال تنظیم هوشمند برنامه غذایی شما...";
+    if (RecipeService.getLocalCount() === 0) return "در حال بارگذاری بانک اطلاعات پخت‌ها...";
+    return "دستیار هوشمند نوش آماده به کار است";
+  }, [planLoading, RecipeService.getLocalCount()]);
 
   if (isInitializing || !currentUser) return (
     <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl overflow-hidden">
@@ -165,7 +188,6 @@ const AppContent: React.FC = () => {
   return (
     <div className="h-[100dvh] w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
       
-      {/* اعلان شیشه‌ای هوشمند */}
       {filterNotif.show && (
         <>
           <div className="fixed inset-0 z-[4999] bg-slate-900/60 backdrop-blur-md animate-enter"></div>
@@ -202,7 +224,6 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* هدر کاملا قفل شده - FIXED TOP */}
       <header className="fixed top-0 left-0 right-0 z-[1000] no-print h-16 sm:h-20 lg:h-24 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center px-4 sm:px-12 shadow-sm">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
@@ -237,14 +258,12 @@ const AppContent: React.FC = () => {
 
       <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => setIsNotificationCenterOpen(false)} user={currentUser!} />
 
-      {/* محفظه اصلی - ارتفاع داینامیک بر اساس هدر و فوتر */}
       <main className="flex-grow pt-16 sm:pt-20 lg:pt-24 pb-16 sm:pb-0 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
-            {/* کادر دوم قفل شده - Sub Header */}
-            <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
-                <div className="bg-white border border-slate-100 shadow-xl rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
-                    <div className="flex justify-center gap-8 sm:gap-16 border-b border-slate-50 pb-2 sm:pb-4">
+            <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10 border-b border-white/20">
+                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 shadow-xl shadow-slate-200/50 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
+                    <div className="flex justify-center gap-8 sm:gap-16 border-b border-white/40 pb-2 sm:pb-4">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
                          <Leaf size={24} className="sm:w-8 sm:h-8" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
                        </button>
@@ -256,8 +275,8 @@ const AppContent: React.FC = () => {
                        </button>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-                       <div className="flex-grow grid grid-cols-3 gap-2 sm:gap-3 w-full">
-                          <button onClick={() => handleGeneratePlan('daily')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm transition-all shadow-sm active:scale-95 ${planLoading === 'daily' ? 'bg-teal-50 text-teal-600' : 'bg-slate-50 text-slate-800 hover:bg-teal-50'}`}>
+                       <div className="flex-grow grid grid-cols-4 gap-2 sm:gap-3 w-full">
+                          <button onClick={() => handleGeneratePlan('daily')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm transition-all shadow-sm active:scale-95 ${planLoading === 'daily' ? 'bg-teal-50 text-teal-600' : 'bg-white/80 text-slate-800 hover:bg-teal-50'}`}>
                              {planLoading === 'daily' ? <Loader2 size={14} className="animate-spin" /> : <Utensils size={14} className="sm:w-[18px]" />} <span>امروز</span>
                           </button>
                           <button onClick={() => handleGeneratePlan('weekly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm shadow-md transition-all active:scale-95 ${planLoading === 'weekly' ? 'bg-slate-800' : 'bg-slate-900 text-white'}`}>
@@ -266,18 +285,28 @@ const AppContent: React.FC = () => {
                           <button onClick={() => handleGeneratePlan('monthly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm shadow-md transition-all active:scale-95 ${planLoading === 'monthly' ? 'bg-emerald-700' : 'bg-emerald-600 text-white'}`}>
                              {planLoading === 'monthly' ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} className="sm:w-[18px]" />} <span>ماهانه</span>
                           </button>
+                          <button onClick={() => window.print()} className="flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm bg-white/80 text-slate-500 hover:text-indigo-600 transition-all shadow-sm active:scale-95 border border-white/60">
+                             <Printer size={14} className="sm:w-[18px]" /> <span>چاپ</span>
+                          </button>
                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* فاصله ۳ خطی + اسکرول */}
             <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-                <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
+                <div className="h-10 sm:h-12 w-full"></div>
                 <div className="max-w-7xl mx-auto py-4 sm:py-6">
                     {displayPlan.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-                        {displayPlan.map((plan, idx) => <MealCard key={idx} plan={plan} user={currentUser!} onUpdateUser={setCurrentUser} />)}
+                        {displayPlan.map((plan, idx) => (
+                           <MealCard 
+                            key={idx} 
+                            plan={plan} 
+                            user={currentUser!} 
+                            onUpdateUser={setCurrentUser} 
+                            onRefresh={() => handleRefreshSingleMeal(idx)}
+                           />
+                        ))}
                       </div>
                     ) : (
                       <div className="py-24 sm:py-32 text-center">
@@ -295,7 +324,6 @@ const AppContent: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser!} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      {/* فوتر کاملا قفل شده - FIXED BOTTOM */}
       <div className="fixed bottom-0 left-0 right-0 z-[1000] no-print h-16 sm:h-auto">
         <div className="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around h-16 px-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)]">
            {navItems.map(nav => (
@@ -317,7 +345,7 @@ const AppContent: React.FC = () => {
             </button>
             <div className="flex-grow flex items-center justify-center gap-4 text-slate-500 font-black italic">
                <Sparkles size={24} className="text-amber-400 animate-pulse" />
-               <span className="text-lg">دستیار هوشمند نوش آماده به کار است</span>
+               <span className="text-lg">{footerMessage}</span>
             </div>
             <div className="flex items-center gap-6">
               <div className="w-12 h-12 bg-teal-500/10 text-teal-600 rounded-2xl flex items-center justify-center">

@@ -56,7 +56,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     onUpdateUser(prev => {
       let current = [...(prev.dislikedIngredients || [])];
       if (current.includes(ing)) {
-        // Fix: Changed 'item' to 'ing' which is defined in the outer scope
         current = current.filter(i => i !== ing);
       } else {
         current = [...current, ing];
@@ -82,20 +81,20 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
 
   return (
     <div className="flex flex-col h-full animate-enter">
-      {/* پنل پروفایل قفل شده */}
-      <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
-          <div className="metallic-navy rounded-2xl sm:rounded-[3.5rem] p-4 sm:p-12 shadow-2xl border border-white/5 max-w-5xl mx-auto">
+      {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
+      <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
+          <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[3.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-3 sm:gap-6 text-right w-full sm:w-auto">
-                <div className="w-12 h-12 sm:w-24 sm:h-24 bg-teal-500 text-white rounded-xl sm:rounded-[2.5rem] flex items-center justify-center shadow-2xl shrink-0"><User size={24} className="sm:w-10" /></div>
+                <div className="w-12 h-12 sm:w-20 sm:h-20 bg-teal-500 text-white rounded-xl sm:rounded-[2rem] flex items-center justify-center shadow-lg shrink-0"><User size={24} className="sm:w-10" /></div>
                 <div>
-                  <h2 className="text-base sm:text-4xl font-black text-white leading-none">{user.fullName || "کاربر نـوش"}</h2>
-                  <p className="text-teal-400 text-[8px] sm:text-sm font-bold mt-1 sm:mt-3 uppercase tracking-widest sm:tracking-[0.3em]">{user.role === 'admin' ? 'مدیریت کل سیستم' : 'عضویت ویژه طلایی'}</p>
+                  <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-none">{user.fullName || "کاربر نـوش"}</h2>
+                  <p className="text-teal-600 text-[8px] sm:text-xs font-black mt-1 sm:mt-2 uppercase tracking-widest">{user.role === 'admin' ? 'مدیریت کل سیستم' : 'عضویت ویژه طلایی'}</p>
                 </div>
               </div>
               <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
-                 <button onClick={() => setIsFeedbackOpen(true)} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-5 bg-white/10 hover:bg-white/20 text-white rounded-xl sm:rounded-[1.75rem] font-black border border-white/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm"><MessageSquare size={16} className="sm:w-5" /> ارسال نظر</button>
-                 <button onClick={onLogout} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-5 bg-rose-600 text-white rounded-xl sm:rounded-[1.75rem] font-black shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm"><LogOut size={16} className="sm:w-5" /> خروج</button>
+                 <button onClick={() => setIsFeedbackOpen(true)} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl sm:rounded-[1.5rem] font-black flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm shadow-sm"><MessageSquare size={16} className="sm:w-5" /> ارسال نظر</button>
+                 <button onClick={onLogout} className="flex-1 sm:flex-none px-3 py-2.5 sm:px-8 sm:py-4 bg-rose-600 text-white rounded-xl sm:rounded-[1.5rem] font-black shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 text-[10px] sm:text-sm"><LogOut size={16} className="sm:w-5" /> خروج</button>
               </div>
             </div>
           </div>
@@ -103,11 +102,9 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
 
-      {/* بخش اسکرول با فاصله ۳ خطی */}
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-          <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
+          <div className="h-10 sm:h-12 w-full"></div>
           <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
-              {/* طبع غذاها */}
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
@@ -124,7 +121,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
                  </div>
               </div>
 
-              {/* حساسیت غذایی */}
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><UserX size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">مواد غذایی ممنوعه</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">غذاهای حاوی این مواد هرگز پیشنهاد نمی‌شوند</p></div></div>
                 <div className="relative">
@@ -140,7 +136,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
                 </div>
               </div>
 
-              {/* محبوب‌ها و لیست سیاه */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                   <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                     <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><Heart size={22} fill="currentColor"/></div><h2 className="text-sm sm:text-xl font-black text-slate-800">غذاهای محبوب من</h2></div>
@@ -166,7 +161,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
                   </div>
               </div>
 
-              {/* دسته‌بندی‌ها */}
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-10"><div className="p-3 sm:p-4 bg-indigo-50 text-indigo-600 rounded-xl sm:rounded-[1.5rem]"><FilterX size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر هوشمند دسته‌ها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">دسته‌های انتخابی از برنامه حذف می‌شوند</p></div></div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">

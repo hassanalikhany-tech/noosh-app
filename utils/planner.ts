@@ -14,7 +14,10 @@ const shuffleArray = <T>(array: T[]): T[] => {
 
 const toPersianDigits = (num: number | string) => num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
-const filterDishes = (user: UserProfile) => {
+/**
+ * فیلتر کردن غذاها بر اساس تنظیمات کاربر
+ */
+export const filterDishes = (user: UserProfile) => {
   let pool = RecipeService.getAllDishes();
   
   if (pool.length === 0) return [];
@@ -63,17 +66,12 @@ const filterDishes = (user: UserProfile) => {
       ];
       
       pool = pool.filter(dish => {
-          // بررسی نام غذا
           const nameHasMeat = meatKeywords.some(k => dish.name.includes(k));
-          // بررسی توضیحات غذا
           const descHasMeat = meatKeywords.some(k => (dish.description || "").includes(k));
-          // بررسی تک‌تک مواد اولیه (بسیار مهم)
           const ingredientsHaveMeat = dish.ingredients.some(ing => 
             meatKeywords.some(k => ing.item.includes(k))
           );
-          // کباب‌ها معمولاً گیاهی نیستند مگر اینکه در نام ذکر شده باشد
           const isKababCategory = dish.category === 'kabab' && !dish.name.includes('گیاهی');
-
           return !nameHasMeat && !descHasMeat && !ingredientsHaveMeat && !isKababCategory;
       });
   }
@@ -86,12 +84,24 @@ const filterDishes = (user: UserProfile) => {
   return pool;
 };
 
+/**
+ * تولید یک جایگزین تکی برای یک وعده
+ */
+export const generateSingleReplacement = async (user: UserProfile, currentIds: string[]): Promise<Dish> => {
+    const pool = filterDishes(user);
+    if (pool.length === 0) throw new Error("غذای جایگزین با این فیلترها یافت نشد.");
+    
+    // فیلتر کردن غذاهایی که همین الان در لیست هستند برای جلوگیری از تکرار
+    const uniquePool = pool.filter(d => !currentIds.includes(d.id));
+    const finalPool = uniquePool.length > 0 ? uniquePool : pool;
+    
+    return finalPool[Math.floor(Math.random() * finalPool.length)];
+};
+
 export const generateDailyPlan = async (user: UserProfile): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
   if (RecipeService.getLocalCount() === 0) throw new Error("دیتابیس خالی است یا در حال بارگذاری می‌باشد.");
-  
   const pool = filterDishes(user);
   if (pool.length === 0) throw new Error("موردی با فیلترهای شما یافت نشد.");
-  
   const selected = shuffleArray(pool).slice(0, 3);
   const plan = selected.map((dish, idx) => ({ dayName: idx === 0 ? 'پیشنهاد اصلی' : `جایگزین ${idx}`, dish }));
   const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: plan });
@@ -100,35 +110,23 @@ export const generateDailyPlan = async (user: UserProfile): Promise<{ plan: DayP
 
 export const generateWeeklyPlan = async (user: UserProfile): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
   if (RecipeService.getLocalCount() === 0) throw new Error("دیتابیس در حال بارگذاری است.");
-
   const pool = filterDishes(user);
   if (pool.length === 0) throw new Error("موردی با فیلترهای شما یافت نشد.");
-  
   const days = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
   const shuffled = shuffleArray(pool);
-  
-  const plan = days.map((day, idx) => ({ 
-    dayName: day, 
-    dish: shuffled[idx % shuffled.length] 
-  }));
-
+  const plan = days.map((day, idx) => ({ dayName: day, dish: shuffled[idx % shuffled.length] }));
   const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: plan });
   return { plan, updatedUser };
 };
 
 export const generateMonthlyPlan = async (user: UserProfile): Promise<{ plan: DayPlan[], updatedUser: UserProfile }> => {
   if (RecipeService.getLocalCount() === 0) throw new Error("دیتابیس در حال بارگذاری است.");
-
   const pool = filterDishes(user);
   if (pool.length === 0) throw new Error("موردی با فیلترهای شما یافت نشد.");
-  
   const shuffled = shuffleArray(pool);
   const plan: DayPlan[] = [];
   for (let i = 1; i <= 31; i++) {
-    plan.push({ 
-      dayName: `روز ${toPersianDigits(i)}`, 
-      dish: shuffled[(i - 1) % shuffled.length] 
-    });
+    plan.push({ dayName: `روز ${toPersianDigits(i)}`, dish: shuffled[(i - 1) % shuffled.length] });
   }
   const updatedUser = await UserService.updateProfile(user.username, { weeklyPlan: plan });
   return { plan, updatedUser };

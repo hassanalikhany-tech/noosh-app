@@ -103,18 +103,18 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
 
   return (
     <div className="flex flex-col h-full animate-enter">
-      {/* کادر جستجو قفل شده */}
-      <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
-        <div className="bg-white rounded-2xl sm:rounded-[2.5rem] p-3 sm:p-6 shadow-xl border border-slate-100 max-w-7xl mx-auto space-y-3 sm:space-y-5">
+      {/* کادر جستجو قفل شده - شیشه‌ای دقیق */}
+      <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10 border-b border-white/20">
+        <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 shadow-xl shadow-slate-200/50 max-w-7xl mx-auto space-y-3 sm:space-y-5">
            <div className="relative group">
               <input 
                 type="text" 
                 placeholder="جستجو در نام غذاها..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full px-10 sm:px-16 py-2.5 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-[1.75rem] outline-none focus:border-teal-500 focus:bg-white transition-all font-black text-xs sm:text-lg text-slate-800 shadow-inner"
+                className="w-full px-10 sm:px-16 py-2.5 sm:py-5 bg-white border-2 border-slate-300 rounded-xl sm:rounded-[1.75rem] outline-none focus:border-teal-500 transition-all font-black text-xs sm:text-lg text-slate-800 shadow-md"
               />
-              <Search className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-teal-500" size={18} sm:size={28} />
+              <Search className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-500" size={18} sm:size={28} />
               {searchTerm && (
                 <button onClick={() => { setSearchTerm(''); setCurrentPage(1); }} className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 p-1.5 sm:p-2 bg-slate-200 text-slate-500 rounded-full hover:bg-rose-100 hover:text-rose-500 transition-all"><X size={14} sm:size={20}/></button>
               )}
@@ -123,7 +123,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
            <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center overflow-x-auto no-scrollbar pb-1">
               <button 
                 onClick={() => { setSelectedCategory('all'); setSelectedCountryId('all'); setCurrentPage(1); }} 
-                className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-[14px] font-black border transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-transparent hover:border-slate-200'}`}
+                className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-sm font-black border transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white/80 text-slate-500 border-transparent hover:border-slate-200'}`}
               >
                  همه غذاها
               </button>
@@ -131,7 +131,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
                 <button 
                   key={cat} 
                   onClick={() => { setSelectedCategory(cat); setSelectedCountryId('all'); setCurrentPage(1); }} 
-                  className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-[14px] font-black border transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-50 text-slate-500 border-transparent hover:border-slate-200'}`}
+                  className={`px-3 py-2 sm:px-6 sm:py-3.5 rounded-lg sm:rounded-2xl text-[9px] sm:text-sm font-black border transition-all whitespace-nowrap ${selectedCategory === cat ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white/80 text-slate-500 border-transparent hover:border-slate-200'}`}
                 >
                   {CATEGORY_LABELS[cat]}
                 </button>
@@ -151,7 +151,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
             </div>
 
             {selectedCategory === 'international' && (
-              <div className="relative pt-2 sm:pt-4 border-t border-slate-50 animate-enter flex items-center group/flags">
+              <div className="relative pt-2 sm:pt-4 border-t border-white/40 animate-enter flex items-center group/flags">
                 <button 
                   onClick={() => scrollFlags('right')}
                   className="absolute right-0 z-20 p-2 sm:p-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-lg border border-slate-100 text-indigo-600 hover:bg-white transition-all flex items-center justify-center"
@@ -165,7 +165,7 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
                 >
                   <button 
                     onClick={() => { setSelectedCountryId('all'); setCurrentPage(1); }} 
-                    className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-[9px] sm:text-xs font-black border-2 transition-all shrink-0 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-slate-50 text-slate-600 border-transparent hover:border-slate-200'}`}
+                    className={`px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-[9px] sm:text-sm font-black border-2 transition-all shrink-0 ${selectedCountryId === 'all' ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-white/80 text-slate-600 border-transparent hover:border-slate-200'}`}
                   >
                     همه ملل
                   </button>
@@ -192,9 +192,8 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
         </div>
       </div>
 
-      {/* بخش اسکرول با فاصله ۳ خطی */}
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-          <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
+          <div className="h-10 sm:h-12 w-full"></div>
           <div className="max-w-7xl mx-auto py-4 sm:py-6 space-y-6 sm:space-y-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
                 {paginatedDishes.map(dish => <MealCard key={dish.id} plan={{ dayName: CATEGORY_LABELS[dish.category] || 'غذای برتر', dish }} user={user} onUpdateUser={onUpdateUser} />)}

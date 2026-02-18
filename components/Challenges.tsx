@@ -44,29 +44,27 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
 
   return (
     <div className="flex flex-col h-full animate-enter">
-      {/* هدر ثابت چالش‌ها */}
-      <div className="sticky top-0 z-[900] bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 sm:py-6 sm:px-10">
-          <div className="metallic-navy rounded-2xl sm:rounded-[3.5rem] p-5 sm:p-12 text-white shadow-2xl relative overflow-hidden max-w-7xl mx-auto">
-            <div className="absolute top-0 right-0 w-32 h-32 sm:w-96 sm:h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-[40px] sm:blur-[100px]"></div>
-            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-              <div className="p-3 sm:p-6 bg-white/20 backdrop-blur-xl rounded-xl sm:rounded-[2rem] shadow-xl border border-white/10">
-                 <Trophy size={30} className="text-yellow-300 sm:w-16 sm:h-16" />
+      {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
+      <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-2 sm:py-4 sm:px-10">
+          <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-6 shadow-xl shadow-slate-200/50 relative overflow-hidden max-w-7xl mx-auto">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+              <div className="p-2 sm:p-4 bg-yellow-400 rounded-lg sm:rounded-[1.5rem] shadow-xl">
+                 <Trophy size={24} className="text-white sm:w-10 sm:h-10" />
               </div>
               <div className="text-center sm:text-right">
-                  <h2 className="text-lg sm:text-5xl font-black mb-1 sm:mb-4 leading-tight">چالش‌های هفتگی غذا</h2>
-                  <p className="text-indigo-100 max-w-2xl text-[10px] sm:text-xl opacity-90 font-medium leading-relaxed">
-                    با شرکت در چالش‌های هفتگی نوش، عادت‌های غذایی سالم‌تری بسازید و تنوع غذاهای سفره خود را افزایش دهید.
+                  <h2 className="text-lg sm:text-2xl font-black mb-0.5 leading-tight text-slate-800">چالش‌های هفتگی غذا</h2>
+                  <p className="text-slate-500 max-w-2xl text-[9px] sm:text-sm font-black leading-relaxed">
+                    با شرکت در چالش‌های هفتگی نوش، عادت‌های غذایی سالم‌تری بسازید و تنوع غذاهای سفره را افزایش دهید.
                   </p>
               </div>
             </div>
           </div>
       </div>
 
-      {/* بخش اسکرول با فاصله ۳ خطی */}
-      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-          <div className="h-10 sm:h-12 w-full"></div> {/* ۳ خط فاصله خالی */}
-          <div className="max-w-7xl mx-auto py-4 sm:py-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-24 no-scrollbar">
+          <div className="h-6 sm:h-10 w-full"></div>
+          <div className="max-w-7xl mx-auto py-2 sm:py-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {CHALLENGES.map((challenge) => {
                   const isActive = user.activeChallengeId === challenge.id;
                   const Icon = challenge.icon;
@@ -75,35 +73,35 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
                     <div 
                       key={challenge.id}
                       className={`
-                        group relative bg-white rounded-[1.75rem] sm:rounded-[2.5rem] p-6 sm:p-8 border-2 transition-all duration-500 cursor-pointer overflow-hidden
+                        group relative bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border-2 transition-all duration-500 cursor-pointer overflow-hidden
                         ${isActive 
-                          ? 'border-violet-500 shadow-2xl shadow-violet-100 transform -translate-y-1 sm:-translate-y-2 ring-4 sm:ring-8 ring-violet-50' 
-                          : 'border-slate-50 hover:border-violet-200 hover:shadow-xl hover:-translate-y-1 sm:hover:-translate-y-2'
+                          ? 'border-violet-500 shadow-2xl shadow-violet-100 transform -translate-y-1 ring-4 ring-violet-50' 
+                          : 'border-slate-50 hover:border-violet-200 hover:shadow-xl hover:-translate-y-1'
                         }
                       `}
                       onClick={() => toggleChallenge(challenge.id)}
                     >
-                      <div className={`w-14 h-14 sm:w-20 sm:h-20 ${challenge.color} rounded-2xl sm:rounded-3xl flex items-center justify-center text-white mb-4 sm:mb-8 shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                        <Icon size={28} className="sm:w-10 sm:h-10" strokeWidth={2.5} />
+                      <div className={`w-10 h-10 sm:w-14 sm:h-14 ${challenge.color} rounded-xl sm:rounded-2xl flex items-center justify-center text-white mb-2 sm:mb-4 shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+                        <Icon size={20} className="sm:w-8 sm:h-8" strokeWidth={2.5} />
                       </div>
-                      <h3 className="text-lg sm:text-2xl font-black text-slate-800 mb-2 sm:mb-4">{challenge.title}</h3>
-                      <p className="text-slate-500 text-xs sm:text-base leading-relaxed mb-10 h-12 sm:h-16">
+                      <h3 className="text-base sm:text-lg font-black text-slate-800 mb-1 sm:mb-2">{challenge.title}</h3>
+                      <p className="text-slate-500 text-[10px] sm:text-xs leading-relaxed mb-8 h-8 sm:h-10 font-bold overflow-hidden">
                         {challenge.description}
                       </p>
                       <div className={`
-                        absolute bottom-0 left-0 w-full p-4 sm:p-5 transition-colors duration-500
+                        absolute bottom-0 left-0 w-full p-2.5 sm:p-4 transition-colors duration-500
                         ${isActive ? 'bg-violet-600 text-white' : 'bg-slate-50 group-hover:bg-slate-100 text-slate-600'}
                       `}>
-                        <div className="flex items-center justify-center gap-2 sm:gap-3 font-black text-[10px] sm:text-sm">
+                        <div className="flex items-center justify-center gap-1.5 sm:gap-2 font-black text-[9px] sm:text-xs">
                           {isActive ? (
                             <>
-                              <CheckCircle2 size={16} className="animate-pulse sm:w-6" />
+                              <CheckCircle2 size={14} className="animate-pulse" />
                               لغو چالش فعال
                             </>
                           ) : (
                             <>
-                              <Circle size={16} className="sm:w-6" />
-                              پذیرش این چالش غذا
+                              <Circle size={14} />
+                              پذیرش چالش
                             </>
                           )}
                         </div>
