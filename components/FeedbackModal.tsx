@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-// Added Tag to imports
 import { X, Send, MessageSquare, AlertCircle, CheckCircle, HelpCircle, User, Zap, Info, Loader2, Tag } from 'lucide-react';
 import { FeedbackService } from '../services/feedbackService';
 import { UserProfile, FeedbackCategory } from '../types';
@@ -22,7 +21,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, user }) 
     if (!message.trim()) return;
     setIsSending(true);
     try {
-      await FeedbackService.submitFeedback(user.uid, user.fullName, user.uid, category, message);
+      // Ensure we pass mobile and full name from user profile
+      const userMobile = user.phoneNumber || user.uid || user.username || "نامشخص";
+      const userName = user.fullName || user.firstName + " " + user.lastName || "کاربر ناشناس";
+      
+      await FeedbackService.submitFeedback(
+        user.uid, 
+        userName, 
+        userMobile, 
+        category, 
+        message.trim()
+      );
+      
       setIsSuccess(true);
       setTimeout(() => {
         onClose();
@@ -30,7 +40,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, user }) 
         setMessage('');
       }, 2500);
     } catch (err) {
-      alert("خطا در ارسال بازخورد.");
+      console.error("Feedback Error Details:", err);
+      alert("متأسفانه خطایی در ارسال بازخورد رخ داد. لطفاً اتصال اینترنت خود را بررسی کرده و مجدداً تلاش کنید.");
     } finally {
       setIsSending(false);
     }

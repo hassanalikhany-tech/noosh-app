@@ -276,7 +276,8 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  target_group: 'all' | 'active' | 'visitors';
+  target_group: 'all' | 'active' | 'visitors' | 'specific';
+  target_uid?: string;
   send_time: number;
   status: 'pending' | 'sent';
   created_by: string;

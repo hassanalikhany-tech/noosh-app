@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, Send, Users, Clock, History, Loader2, CheckCircle, Info, ShieldAlert, MessageSquare } from 'lucide-react';
+import { Bell, Send, Users, Clock, History, Loader2, CheckCircle, Info, ShieldAlert, MessageSquare, User } from 'lucide-react';
 import { NotificationService } from '../../services/notificationService';
 import { Notification } from '../../types';
 
@@ -8,7 +8,12 @@ const NotificationManager: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [formData, setFormData] = useState({ title: '', message: '', target: 'all' as 'all' | 'active' | 'visitors' });
+  const [formData, setFormData] = useState({ 
+    title: '', 
+    message: '', 
+    target: 'all' as 'all' | 'active' | 'visitors' | 'specific',
+    targetUid: ''
+  });
 
   const loadNotifications = async () => {
     setLoading(true);
@@ -22,14 +27,24 @@ const NotificationManager: React.FC = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.message) return;
+    if (formData.target === 'specific' && !formData.targetUid) {
+      alert("لطفاً شماره موبایل یا UID کاربر را وارد کنید.");
+      return;
+    }
     setSending(true);
     try {
-      await NotificationService.createNotification(formData.title, formData.message, formData.target, "ADMIN");
-      setFormData({ title: '', message: '', target: 'all' });
+      await NotificationService.createNotification(
+        formData.title, 
+        formData.message, 
+        formData.target, 
+        "ADMIN",
+        formData.target === 'specific' ? formData.targetUid : undefined
+      );
+      setFormData({ title: '', message: '', target: 'all', targetUid: '' });
       await loadNotifications();
       alert("اعلان با موفقیت ارسال شد.");
     } finally {
-      setSending(true);
+      setSending(false);
     }
   };
 
@@ -67,9 +82,26 @@ const NotificationManager: React.FC = () => {
                     <option value="all">همه کاربران</option>
                     <option value="active">فقط کاربران فعال (دارای اشتراک)</option>
                     <option value="visitors">فقط ویزیتورها</option>
+                    <option value="specific">کاربر گزینش شده (شماره موبایل)</option>
                  </select>
               </div>
            </div>
+
+           {formData.target === 'specific' && (
+              <div className="space-y-2 animate-enter">
+                 <label className="text-xs font-black text-slate-500 pr-2 flex items-center gap-2">
+                    <User size={14}/> موبایل یا UID کاربر مقصد
+                 </label>
+                 <input 
+                    placeholder="0914xxxxxxx" 
+                    value={formData.targetUid}
+                    onChange={e => setFormData({...formData, targetUid: e.target.value})}
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 font-bold text-sm text-left"
+                    dir="ltr"
+                 />
+              </div>
+           )}
+
            <div className="space-y-2">
               <label className="text-xs font-black text-slate-500 pr-2">متن پیام</label>
               <textarea 
@@ -101,7 +133,9 @@ const NotificationManager: React.FC = () => {
                          <h4 className="font-black text-slate-800">{n.title}</h4>
                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{n.message}</p>
                          <div className="flex gap-2 mt-3">
-                            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-indigo-600">{n.target_group === 'all' ? 'همه' : n.target_group === 'active' ? 'فعال' : 'ویزیتور'}</span>
+                            <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-indigo-600">
+                                {n.target_group === 'all' ? 'همه' : n.target_group === 'active' ? 'فعال' : n.target_group === 'visitors' ? 'ویزیتور' : `کاربر: ${n.target_uid}`}
+                            </span>
                             <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-black text-slate-400">{new Intl.DateTimeFormat('fa-IR', {timeStyle: 'short', dateStyle: 'medium'}).format(new Date(n.send_time))}</span>
                          </div>
                       </div>

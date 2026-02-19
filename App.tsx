@@ -12,7 +12,8 @@ import AuthGate from './components/auth/AuthGate';
 import NotificationCenter from './components/NotificationCenter';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
-import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory } from './types';
+import { NotificationService } from './services/notificationService';
+import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
 import { CHALLENGES } from './data/challenges';
 
@@ -40,13 +41,29 @@ const AppContent: React.FC = () => {
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [appVersion, setAppVersion] = useState("V19.6");
+  const [appVersion, setAppVersion] = useState("V15.95");
   const [planLoading, setPlanLoading] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   
   const [filterNotif, setFilterNotif] = useState<FilterNotif>({ 
     show: false, message: '', active: false, icon: Info, color: 'teal', exiting: false, filterKey: ''
   });
+
+  const checkUnreadNotifications = async (user: UserProfile) => {
+    try {
+      const notifs = await NotificationService.getUserNotifications(
+        user.uid, 
+        user.role || 'user', 
+        user.subscriptionExpiry > Date.now()
+      );
+      const readIds = JSON.parse(localStorage.getItem('noosh_read_notifs') || '[]');
+      const unread = notifs.filter(n => !readIds.includes(n.id)).length;
+      setUnreadNotifCount(unread);
+    } catch (e) {
+      console.error("Failed to fetch unread count");
+    }
+  };
 
   useEffect(() => {
     const initApp = async () => {
@@ -54,13 +71,14 @@ const AppContent: React.FC = () => {
         const metaRes = await fetch('/metadata.json');
         if (metaRes.ok) {
           const metaData = await metaRes.json();
-          if (metaData.name) setAppVersion(metaData.name.split(' ').pop() || "V19.6");
+          if (metaData.name) setAppVersion(metaData.name.split(' ').pop() || "V15.95");
         }
         await RecipeService.initialize();
         const user = await UserService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
           if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
+          await checkUnreadNotifications(user);
         }
         if (RecipeService.getLocalCount() === 0) await RecipeService.syncFromCloud();
       } catch (err) { console.error(err); }
@@ -196,8 +214,8 @@ const AppContent: React.FC = () => {
     return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date());
   }, []);
 
-  const planRowsPerPage = 13; // تعداد ردیف برنامه در هر صفحه برای جا شدن فوتر
-  const shopRowsPerPage = 20; // تعداد ردیف خرید در هر صفحه برای جا شدن فوتر
+  const planRowsPerPage = 13;
+  const shopRowsPerPage = 20;
 
   const chunkedPlan = useMemo(() => {
     const chunks = [];
@@ -281,9 +299,7 @@ const AppContent: React.FC = () => {
         </>
       )}
 
-      {/* بخش اختصاصی چاپ با هدر و فوتر تکرار شونده در تمامی صفحات */}
       <div className="print-only">
-        {/* ۱. چاپ برنامه غذایی */}
         {!isShoppingListOpen && chunkedPlan.map((chunk, pageIdx) => (
           <div key={`plan-page-${pageIdx}`} className="print-page-container">
              <div className="print-header flex items-center justify-between">
@@ -319,16 +335,10 @@ const AppContent: React.FC = () => {
                    ))}
                 </tbody>
              </table>
-             {pageIdx === chunkedPlan.length - 1 && (
-               <div className="mt-4 text-center">
-                 <p className="text-slate-400 font-bold italic text-sm">نوش جان! امیدواریم از این برنامه غذایی لذت ببرید.</p>
-               </div>
-             )}
              <div className="print-footer">🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش</div>
           </div>
         ))}
 
-        {/* ۲. چاپ لیست خرید */}
         {isShoppingListOpen && chunkedShoppingList.map((chunk, pageIdx) => (
           <div key={`shop-page-${pageIdx}`} className="print-page-container">
              <div className="print-header flex items-center justify-between">
@@ -366,12 +376,6 @@ const AppContent: React.FC = () => {
                    ))}
                 </tbody>
              </table>
-             {pageIdx === chunkedShoppingList.length - 1 && (
-               <div className="mt-8 border-2 border-dashed border-slate-200 p-4 rounded-2xl flex items-center justify-center gap-4 opacity-50">
-                  <ShoppingCart size={24} className="text-slate-300" />
-                  <p className="text-slate-400 font-black text-sm">مجموع اقلام خرید: {toPersian(shoppingItemsToPrint.length)} مورد</p>
-               </div>
-             )}
              <div className="print-footer">🌐 www.nooshapp.ir | لیست خرید هوشمند اپلیکیشن نوش</div>
           </div>
         ))}
@@ -400,7 +404,14 @@ const AppContent: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-             <button onClick={() => setIsNotificationCenterOpen(true)} className="p-2 sm:p-3.5 bg-white border border-slate-100 text-indigo-600 rounded-xl sm:rounded-2xl shadow-sm relative"><Bell size={18} className="sm:w-6 sm:h-6" /></button>
+             <button onClick={() => { setIsNotificationCenterOpen(true); setUnreadNotifCount(0); }} className="p-2 sm:p-3.5 bg-white border border-slate-100 text-indigo-600 rounded-xl sm:rounded-2xl shadow-sm relative">
+                <Bell size={18} className="sm:w-6 sm:h-6" />
+                {unreadNotifCount > 0 && (
+                   <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-600 text-white text-[8px] sm:text-[10px] font-black w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg animate-bounce">
+                      {toPersian(unreadNotifCount)}
+                   </div>
+                )}
+             </button>
              {isAdmin && <button onClick={() => setIsAdminMode(true)} className="p-2 sm:p-3.5 bg-slate-900 text-teal-400 rounded-xl sm:rounded-2xl shadow-lg border border-white/10"><ShieldAlert size={18} className="sm:w-6 sm:h-6" /></button>}
              <button onClick={() => setIsShoppingListOpen(true)} className="relative p-2 sm:p-3.5 bg-emerald-600 text-white rounded-xl sm:rounded-2xl shadow-lg">
               <ShoppingCart size={18} className="sm:w-6 sm:h-6" />
@@ -414,7 +425,7 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => setIsNotificationCenterOpen(false)} user={currentUser!} />
+      <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => { setIsNotificationCenterOpen(false); checkUnreadNotifications(currentUser!); }} user={currentUser!} />
 
       <main className="flex-grow pt-16 sm:pt-20 lg:pt-24 pb-16 sm:pb-0 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
