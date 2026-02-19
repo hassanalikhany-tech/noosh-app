@@ -5,24 +5,23 @@ import { UserFeedback, FeedbackCategory } from "../types";
 
 export const FeedbackService = {
   /**
-   * Submit feedback using the same simple logic as notifications
+   * Submit feedback using the exact same simple logic as NotificationService
    */
-  submitFeedback: async (userId: string, userName: string, mobile: string, category: FeedbackCategory, message: string, imageUrl?: string) => {
-    // Sanitize data to prevent Firebase errors (No undefined values allowed)
-    const feedbackData = {
-      user_id: String(userId || "unknown"),
-      user_name: String(userName || "کاربر نوش"),
-      user_mobile: String(mobile || "بدون شماره"),
-      category: String(category || "suggestion"),
-      message: String(message || ""),
-      image_url: String(imageUrl || ""),
+  submitFeedback: async (userId: string, userName: string, mobile: string, category: FeedbackCategory, message: string) => {
+    const feedback = {
+      user_id: userId,
+      user_name: userName,
+      user_mobile: mobile,
+      category: category,
+      message: message,
       status: 'new',
       created_at: Date.now(),
-      device: String(navigator.userAgent || "Web Browser")
+      device: navigator.userAgent
     };
-
-    const docRef = await addDoc(collection(db, "user_feedback"), feedbackData);
-    return { id: docRef.id, ...feedbackData };
+    
+    // Using simple addDoc just like notifications
+    const docRef = await addDoc(collection(db, "user_feedback"), feedback);
+    return { id: docRef.id, ...feedback };
   },
 
   /**

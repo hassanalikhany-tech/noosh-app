@@ -54,15 +54,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 no-print animate-enter" onClick={onClose}>
-      <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm"></div>
+    <div className="fixed inset-0 z-[2000] flex items-start justify-center p-4 no-print animate-enter">
+      <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose}></div>
       
       <div 
-        className="relative w-full max-w-lg bg-white rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white/20 flex flex-col transition-all duration-500" 
+        className="relative w-full max-w-2xl bg-white rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/20 flex flex-col transition-all duration-300" 
         style={{ 
-          marginTop: '80px', // فاصله از هدر
-          marginBottom: '100px', // فاصله از فوتر (جلوگیری از رفتن زیر فوتر)
-          maxHeight: 'calc(100vh - 200px)' 
+          marginTop: '100px',
+          marginBottom: '160px',
+          maxHeight: 'calc(100vh - 260px)' 
         }}
         onClick={e => e.stopPropagation()}
       >
