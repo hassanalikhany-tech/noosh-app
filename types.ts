@@ -277,7 +277,7 @@ export interface Notification {
   title: string;
   message: string;
   target_group: 'all' | 'active' | 'visitors' | 'specific';
-  target_uid?: string;
+  target_uids?: string[];
   send_time: number;
   status: 'pending' | 'sent';
   created_by: string;
@@ -297,8 +297,8 @@ export type FeedbackCategory = 'suggestion' | 'issue' | 'criticism' | 'feature_r
 export interface UserFeedback {
   id: string;
   user_id: string;
-  user_name?: string;
-  user_mobile?: string;
+  user_name: string;
+  user_mobile: string;
   category: FeedbackCategory;
   message: string;
   image_url?: string;
