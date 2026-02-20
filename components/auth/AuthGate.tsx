@@ -136,15 +136,15 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   if (!isAuthenticated) return (
     <div className="h-screen w-full flex items-center justify-center metallic-navy p-4 dir-rtl overflow-hidden">
-      <div className="w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 sm:p-12 animate-enter">
-        <div className="flex flex-col items-center mb-10">
-          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-20 h-20 animate-float" />
-          <div className="mt-4 text-center">
-             <div className="flex items-baseline gap-1" style={{ direction: 'ltr' }}>
+      <div className="w-full max-w-md h-[620px] bg-white rounded-[3.5rem] shadow-2xl p-8 sm:p-10 animate-enter overflow-hidden transition-all duration-500 border border-white/20 flex flex-col justify-center">
+        <div className="flex flex-col items-center mb-6 shrink-0">
+          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-20 h-20 animate-float drop-shadow-xl" />
+          <div className="mt-3 text-center">
+             <div className="flex items-baseline gap-1 justify-center" style={{ direction: 'ltr' }}>
                 <span className="text-4xl font-black italic text-slate-900">NOOSH</span>
                 <span className="text-xl font-black text-teal-600">APP</span>
              </div>
-             <p className="text-[10px] font-black text-slate-400 uppercase mt-1">همراه سلامت و آسایش شما</p>
+             <p className="text-[10px] font-black text-slate-400 uppercase mt-1 tracking-widest">همراه سلامت و آسایش شما</p>
           </div>
         </div>
 
@@ -163,55 +163,55 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
         )}
 
         {step === 'registration' && (
-          <form onSubmit={handleRegistrationSubmit} className="space-y-6 animate-enter">
-            <div className="text-center mb-4"><h2 className="text-2xl font-black text-slate-800">خوش آمدید!</h2></div>
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex gap-3 items-start">
-              <Info size={16} className="text-blue-500 shrink-0" />
-              <p className="text-[11px] text-blue-800 font-bold">نام و فامیل خود را به <span className="underline">فارسی و واقعی</span> بنویسید (جهت تطبیق با واریزی‌ها).</p>
+          <form onSubmit={handleRegistrationSubmit} className="space-y-4">
+            <div className="text-center mb-2"><h2 className="text-xl font-black text-slate-800">خوش آمدید!</h2></div>
+            <div className="bg-blue-50 border border-blue-100 p-3 rounded-2xl flex gap-2 items-start">
+              <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-blue-800 font-bold leading-tight">نام و فامیل خود را به <span className="underline">فارسی و واقعی</span> بنویسید (جهت تطبیق با واریزی‌ها).</p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="relative group">
-                <input type="text" placeholder="نام (فارسی)" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full px-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-teal-500 transition-all" required />
-                <UserPlus className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <input type="text" placeholder="نام (فارسی)" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full px-6 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-teal-500 transition-all text-sm" required />
+                <UserPlus className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               </div>
               <div className="relative group">
-                <input type="text" placeholder="نام خانوادگی (فارسی)" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full px-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-teal-500 transition-all" required />
-                <User className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <input type="text" placeholder="نام خانوادگی (فارسی)" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full px-6 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-teal-500 transition-all text-sm" required />
+                <User className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               </div>
               <div className="relative group">
-                <input type="text" placeholder="کد معرف (اختیاری)" value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} className="w-full px-8 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-emerald-500 transition-all" />
-                <Ticket className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <input type="text" placeholder="کد معرف (اختیاری)" value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} className="w-full px-6 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-black text-center focus:border-emerald-500 transition-all text-sm" />
+                <Ticket className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               </div>
             </div>
-            {error && <div className="p-4 bg-rose-50 text-rose-500 text-[11px] font-black rounded-2xl text-center border border-rose-100">{error}</div>}
-            <button className="w-full py-5 bg-teal-600 text-white rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 transition-all">دریافت کد تایید <ArrowRight size={22} /></button>
-            <button type="button" onClick={() => setStep('mobile')} className="w-full text-slate-400 font-bold text-xs py-2">اصلاح شماره موبایل</button>
+            {error && <div className="p-3 bg-rose-50 text-rose-500 text-[10px] font-black rounded-xl text-center border border-rose-100">{error}</div>}
+            <button className="w-full py-4 bg-teal-600 text-white rounded-[1.5rem] font-black text-base flex items-center justify-center gap-3 transition-all">دریافت کد تایید <ArrowRight size={20} /></button>
+            <button type="button" onClick={() => setStep('mobile')} className="w-full text-slate-400 font-bold text-[10px] py-1">اصلاح شماره موبایل</button>
           </form>
         )}
 
         {step === 'otp' && (
-          <form onSubmit={handleVerify} className="space-y-8 animate-enter">
-            <div className="text-center"><h2 className="text-3xl font-black text-slate-800">کد تایید</h2><p className="text-slate-500 font-bold text-sm">کد ۵ رقمی ارسال شده به {mobile} را وارد کنید</p></div>
-            <div className="flex justify-center gap-3" style={{ direction: 'ltr' }}>
+          <form onSubmit={handleVerify} className="space-y-6">
+            <div className="text-center"><h2 className="text-2xl font-black text-slate-800">کد تایید</h2><p className="text-slate-500 font-bold text-xs">کد ۵ رقمی ارسال شده به {mobile} را وارد کنید</p></div>
+            <div className="flex justify-center gap-2" style={{ direction: 'ltr' }}>
               {otp.map((digit, idx) => (
-                <input key={idx} id={`otp-input-${idx}`} type="tel" maxLength={1} value={digit} onChange={e => handleOtpChange(idx, e.target.value)} onKeyDown={e => e.key === 'Backspace' && !otp[idx] && idx > 0 && document.getElementById(`otp-input-${idx - 1}`)?.focus()} className="w-12 h-16 sm:w-14 sm:h-20 bg-slate-50 border-2 border-slate-200 rounded-2xl text-3xl font-black text-center outline-none focus:border-teal-500 shadow-sm" />
+                <input key={idx} id={`otp-input-${idx}`} type="tel" maxLength={1} value={digit} onChange={e => handleOtpChange(idx, e.target.value)} onKeyDown={e => e.key === 'Backspace' && !otp[idx] && idx > 0 && document.getElementById(`otp-input-${idx - 1}`)?.focus()} className="w-11 h-16 bg-slate-50 border-2 border-slate-200 rounded-2xl text-2xl font-black text-center outline-none focus:border-teal-500 shadow-sm" />
               ))}
             </div>
-            {error && <div className="p-4 bg-rose-50 text-rose-500 text-[11px] font-black rounded-2xl text-center border border-rose-100">{error}</div>}
-            <button disabled={isLoading} className="w-full py-5 bg-teal-600 text-white rounded-[2rem] font-black text-lg flex items-center justify-center gap-4 active:scale-95 transition-all">
-              {isLoading ? <Loader2 className="animate-spin" /> : 'ورود به سامانه'} <ShieldCheck size={22} />
+            {error && <div className="p-3 bg-rose-50 text-rose-500 text-[10px] font-black rounded-xl text-center border border-rose-100">{error}</div>}
+            <button disabled={isLoading} className="w-full py-4 bg-teal-600 text-white rounded-[1.5rem] font-black text-base flex items-center justify-center gap-3 active:scale-95 transition-all">
+              {isLoading ? <Loader2 className="animate-spin" /> : 'ورود به سامانه'} <ShieldCheck size={20} />
             </button>
-            <div className="flex flex-col items-center gap-4">
-              <button type="button" disabled={resendTimer > 0} onClick={handleMobileSubmit} className={`text-sm font-black transition-all ${resendTimer > 0 ? 'text-slate-300' : 'text-teal-600 hover:text-teal-800'}`}>
+            <div className="flex flex-col items-center gap-3">
+              <button type="button" disabled={resendTimer > 0} onClick={handleMobileSubmit} className={`text-xs font-black transition-all ${resendTimer > 0 ? 'text-slate-300' : 'text-teal-600 hover:text-teal-800'}`}>
                 {resendTimer > 0 ? `ارسال مجدد کد تا ${resendTimer.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[+d])} ثانیه` : 'دریافت مجدد کد تایید'}
               </button>
-              <button type="button" onClick={() => { setStep('mobile'); setError(''); setOtp(['','','','','']); }} className="text-slate-400 font-bold text-sm flex items-center justify-center gap-2"><ArrowLeft size={16} /> اصلاح شماره موبایل</button>
+              <button type="button" onClick={() => { setStep('mobile'); setError(''); setOtp(['','','','','']); }} className="text-slate-400 font-bold text-xs flex items-center justify-center gap-2"><ArrowLeft size={14} /> اصلاح شماره موبایل</button>
             </div>
           </form>
         )}
 
         {step === 'device_check' && (
-          <div className="space-y-8 animate-enter text-center">
+          <div className="space-y-8 text-center">
             <div className="p-6 bg-rose-50 rounded-[2.5rem] border border-rose-100 flex flex-col items-center gap-4">
                 <div className="w-16 h-16 bg-rose-500 text-white rounded-2xl flex items-center justify-center shadow-lg"><MonitorOff size={32}/></div>
                 <h2 className="text-2xl font-black text-rose-900">حساب روی دستگاه دیگری فعال است</h2>

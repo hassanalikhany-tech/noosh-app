@@ -12,7 +12,7 @@ export const NotificationService = {
       title,
       message,
       target_group: targetGroup,
-      target_uids: targetGroup === 'specific' ? (targetUids || []) : undefined,
+      target_uids: targetGroup === 'specific' ? (targetUids || []) : [],
       send_time: Date.now(),
       status: 'sent',
       created_by: adminId

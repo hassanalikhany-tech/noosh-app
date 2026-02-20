@@ -47,7 +47,7 @@ const NotificationManager: React.FC = () => {
         formData.message, 
         formData.target, 
         "ADMIN",
-        formData.target === 'specific' ? selectedUids : undefined
+        formData.target === 'specific' ? selectedUids : []
       );
       setFormData({ title: '', message: '', target: 'all' });
       setSelectedUids([]);
@@ -157,7 +157,7 @@ const NotificationManager: React.FC = () => {
              className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black text-lg shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 active:scale-95 transition-all"
            >
              {sending ? <Loader2 size={24} className="animate-spin"/> : <Send size={24}/>}
-             ارسال نهایی اعلان برای {formData.target === 'specific' ? toPersian(selectedUids.length) : 'گروه هدف'} گیرنده
+             ارسال
            </button>
         </form>
       </div>

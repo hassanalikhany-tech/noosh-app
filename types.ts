@@ -302,7 +302,7 @@ export interface UserFeedback {
   category: FeedbackCategory;
   message: string;
   image_url?: string;
-  status: 'new' | 'reviewed';
+  status: 'new' | 'reviewed' | 'to_be_reviewed' | 'to_be_followed_up' | 'handled' | 'informed' | 'referred';
   created_at: number;
   device: string;
 }

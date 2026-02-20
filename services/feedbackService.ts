@@ -34,10 +34,10 @@ export const FeedbackService = {
   },
 
   /**
-   * Mark feedback as reviewed
+   * Update feedback status
    */
-  markAsReviewed: async (feedbackId: string) => {
+  updateFeedbackStatus: async (feedbackId: string, status: UserFeedback['status']) => {
     const ref = doc(db, "user_feedback", feedbackId);
-    await updateDoc(ref, { status: 'reviewed' });
+    await updateDoc(ref, { status });
   }
 };
