@@ -89,6 +89,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
                   return (
                     <div 
                       key={challenge.id}
+                      role="button"
                       className={`
                         group relative bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border-2 transition-all duration-500 cursor-pointer overflow-hidden
                         ${isActive 

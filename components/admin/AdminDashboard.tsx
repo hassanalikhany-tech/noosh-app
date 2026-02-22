@@ -151,27 +151,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
                   <table className="w-full text-right text-sm">
                     <thead className="bg-slate-50 font-black text-[10px] uppercase opacity-60"><tr><th className="p-5">اطلاوات کاربر</th><th className="p-5 text-center">نوع حساب</th><th className="p-5 text-center">وضعیت تایید</th><th className="p-5 text-left">عملیات ادمین</th></tr></thead>
                     <tbody className="divide-y divide-slate-100">
-                      {processedUsers.map(user => (
-                        <tr key={user.uid} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-5"><div className="flex items-center gap-4"><div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 text-lg border">{user.fullName?.[0]}</div><div className="flex flex-col"><span className="font-black text-slate-800">{user.fullName}</span><span className="text-[10px] text-slate-400 font-bold">{user.mobileNumber}</span></div></div></td>
-                          <td className="p-5 text-center"><span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${user.role === 'visitor' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{user.role || 'user'}</span></td>
-                          <td className="p-5 text-center"><span className={`px-4 py-1.5 rounded-xl font-black text-[10px] border ${user.isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{user.isApproved ? 'فعال و تایید شده' : 'در انتظار تایید'}</span></td>
-                          <td className="p-5 text-left"><div className="flex justify-end gap-2">
-                             <button onClick={() => UserService.toggleUserApproval(user.uid, !!user.isApproved).then(loadInitialData)} className="p-2.5 bg-white border rounded-xl hover:bg-slate-50 transition-all shadow-sm" title={user.isApproved ? 'تعلیق' : 'تایید'}>{user.isApproved ? <UserX size={18} className="text-amber-500"/> : <UserCheck size={18} className="text-emerald-500"/>}</button>
-                             
-                             <button 
-                                onClick={() => handleToggleVisitorRole(user)} 
-                                disabled={processingAction?.uid === user.uid}
-                                className={`p-2.5 rounded-xl transition-all shadow-sm ${user.role === 'visitor' ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`} 
-                                title={user.role === 'visitor' ? 'حذف ویزیتوری' : 'ارتقا به ویزیتور'}
-                             >
-                                {processingAction?.uid === user.uid && processingAction.action === 'role' ? <Loader2 size={18} className="animate-spin"/> : user.role === 'visitor' ? <TicketMinus size={18}/> : <Award size={18}/>}
-                             </button>
-
-                             <button onClick={() => { if(confirm("حذف دائمی کاربر؟")) UserService.deleteUser(user.uid).then(loadInitialData); }} className="p-2.5 text-rose-400 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18}/></button>
-                          </div></td>
-                        </tr>
-                      ))}
+                      {processedUsers.map(user => {
+                        const isOnline = user.lastActiveAt && (Date.now() - user.lastActiveAt < 1000 * 60 * 5);
+                        return (
+                          <tr key={user.uid} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-5">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center font-black text-slate-400 text-lg border">
+                                    {user.fullName?.[0] || user.username?.[0] || '?'}
+                                  </div>
+                                  {isOnline && (
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-sm animate-pulse"></div>
+                                  )}
+                                </div>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-slate-800">{user.fullName || user.username}</span>
+                                    {isOnline && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md uppercase">Online</span>}
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 font-bold">{user.mobileNumber || user.phoneNumber || user.username}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-5 text-center"><span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${user.role === 'visitor' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{user.role || 'user'}</span></td>
+                            <td className="p-5 text-center"><span className={`px-4 py-1.5 rounded-xl font-black text-[10px] border ${user.isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{user.isApproved ? 'فعال و تایید شده' : 'در انتظار تایید'}</span></td>
+                            <td className="p-5 text-left"><div className="flex justify-end gap-2">
+                               <button onClick={() => UserService.toggleUserApproval(user.uid, !!user.isApproved).then(loadInitialData)} className="p-2.5 bg-white border rounded-xl hover:bg-slate-50 transition-all shadow-sm" title={user.isApproved ? 'تعلیق' : 'تایید'}>{user.isApproved ? <UserX size={18} className="text-amber-500"/> : <UserCheck size={18} className="text-emerald-500"/>}</button>
+                               
+                               <button 
+                                  onClick={() => handleToggleVisitorRole(user)} 
+                                  disabled={processingAction?.uid === user.uid}
+                                  className={`p-2.5 rounded-xl transition-all shadow-sm ${user.role === 'visitor' ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`} 
+                                  title={user.role === 'visitor' ? 'حذف ویزیتوری' : 'ارتقا به ویزیتور'}
+                               >
+                                  {processingAction?.uid === user.uid && processingAction.action === 'role' ? <Loader2 size={18} className="animate-spin"/> : user.role === 'visitor' ? <TicketMinus size={18}/> : <Award size={18}/>}
+                               </button>
+  
+                               <button onClick={() => { if(confirm("حذف دائمی کاربر؟")) UserService.deleteUser(user.uid).then(loadInitialData); }} className="p-2.5 text-rose-400 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18}/></button>
+                            </div></td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                </div>

@@ -138,7 +138,7 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     <div className="h-screen w-full flex items-center justify-center metallic-navy p-4 dir-rtl overflow-hidden">
       <div className="w-full max-w-md h-[620px] bg-white rounded-[3.5rem] shadow-2xl p-8 sm:p-10 animate-enter overflow-hidden transition-all duration-500 border border-white/20 flex flex-col justify-center">
         <div className="flex flex-col items-center mb-6 shrink-0">
-          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-20 h-20 animate-float drop-shadow-xl" />
+          <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-20 h-20 animate-float drop-shadow-xl logo-animate" />
           <div className="mt-3 text-center">
              <div className="flex items-baseline gap-1 justify-center" style={{ direction: 'ltr' }}>
                 <span className="text-4xl font-black italic text-slate-900">NOOSH</span>

@@ -79,12 +79,25 @@ const AppContent: React.FC = () => {
           setCurrentUser(user);
           if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
           await checkUnreadNotifications(user);
+          
+          // Update last active immediately
+          UserService.updateProfile(user.username, { lastActiveAt: Date.now() });
         }
         if (RecipeService.getLocalCount() === 0) await RecipeService.syncFromCloud();
       } catch (err) { console.error(err); }
       finally { setIsInitializing(false); }
     };
     initApp();
+
+    // Periodically update last active
+    const interval = setInterval(() => {
+      const mobile = localStorage.getItem('noosh_auth_mobile');
+      if (mobile) {
+        UserService.updateProfile('', { lastActiveAt: Date.now() }).catch(() => {});
+      }
+    }, 1000 * 60 * 3); // Every 3 minutes
+
+    return () => clearInterval(interval);
   }, []);
 
   const closeNotif = () => {
@@ -383,7 +396,10 @@ const AppContent: React.FC = () => {
 
       <header className="fixed top-0 left-0 right-0 z-[1000] no-print h-16 sm:h-20 lg:h-24 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center px-4 sm:px-12 shadow-sm">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
+          <div 
+            onClick={() => setViewMode('plan')} 
+            className="flex items-center gap-3 cursor-pointer logo-animate transition-all"
+          >
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-8 h-8 sm:w-14 sm:h-14 object-contain" />
             <div className="flex flex-col" style={{ direction: 'ltr' }}>
               <div className="flex items-baseline gap-1">

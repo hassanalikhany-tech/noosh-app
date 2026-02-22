@@ -154,7 +154,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-none">
-                    {user.fullName || user.username || user.phoneNumber || "کاربر نـوش"}
+                    {user.fullName || user.phoneNumber || user.mobileNumber || user.username || "کاربر نـوش"}
                   </h2>
                   {user.role && user.role !== 'user' && user.role !== 'normal' && (
                     <p className="text-teal-600 text-[8px] sm:text-xs font-black mt-1 sm:mt-2 uppercase tracking-widest">

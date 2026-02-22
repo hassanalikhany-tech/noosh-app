@@ -268,6 +268,7 @@ export interface UserProfile {
   deviceId?: string;
   referredBy?: string;
   riskScore?: RiskLevel;
+  lastActiveAt?: number;
 }
 
 // --- Independent Add-on Modules: Notification & Feedback ---

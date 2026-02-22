@@ -118,7 +118,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         
         {/* بخش برندینگ (تیره) */}
         <div className="hidden lg:flex lg:w-1/2 metallic-navy relative flex-col items-center justify-center p-16 text-white overflow-hidden">
-          <div className="animate-float mb-10 relative z-10">
+          <div className="animate-float mb-10 relative z-10 logo-animate">
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-52 h-52 object-contain drop-shadow-[0_0_40px_rgba(45,212,191,0.5)]" />
           </div>
           <div className="text-center space-y-4 relative z-10">
@@ -140,7 +140,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* بخش فرم (روشن) */}
         <div className="w-full lg:w-1/2 h-full flex flex-col justify-center p-8 sm:p-20 relative bg-white overflow-y-auto no-scrollbar">
           
-          <div className="lg:hidden mb-12 flex flex-col items-center gap-3">
+          <div className="lg:hidden mb-12 flex flex-col items-center gap-3 logo-animate">
               <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-24 h-24 animate-float" alt="Logo" />
               <div className="text-center">
                  <div className="flex items-baseline justify-center gap-1" style={{ direction: 'ltr' }}>
