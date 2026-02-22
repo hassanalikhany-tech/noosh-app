@@ -4,6 +4,7 @@ import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed
 import { PANTRY_ITEMS } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { Dish, UserProfile } from '../types';
+import { isIngredientMatch } from '../utils/recipeHelpers';
 import RecipeModal from './RecipeModal';
 import MealCard from './MealCard';
 
@@ -74,7 +75,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
       const all = RecipeService.getAllDishes();
       const processed: ProcessedResult[] = all.map(dish => {
         const matched = dish.ingredients.filter(ing => 
-          selectedItems.some(s => ing.item.includes(s) || s.includes(ing.item))
+          selectedItems.some(s => isIngredientMatch(s, ing.item))
         ).map(i => i.item);
         const missing = dish.ingredients.filter(ing => !matched.includes(ing.item)).map(i => i.item);
         return { dish, matchedItems: matched, missingItems: missing, isPerfect: missing.length === 0, missingCount: missing.length };

@@ -84,7 +84,15 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end">
               <h2 className="text-white text-2xl sm:text-3xl font-black p-6 sm:p-8 drop-shadow-lg">{dish.name}</h2>
             </div>
-            <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white transition-all shadow-lg"><X size={24} /></button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }} 
+              className="absolute top-4 right-4 z-[60] p-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-full text-white transition-all shadow-lg active:scale-90"
+            >
+              <X size={24} />
+            </button>
           </div>
         </div>
         

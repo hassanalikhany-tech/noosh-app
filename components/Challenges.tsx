@@ -12,33 +12,50 @@ interface ChallengesProps {
 }
 
 const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify }) => {
+  const [localActiveId, setLocalActiveId] = React.useState<string | null>(user.activeChallengeId || null);
+
+  React.useEffect(() => {
+    setLocalActiveId(user.activeChallengeId || null);
+  }, [user.activeChallengeId]);
   
   const toggleChallenge = async (id: string) => {
     const selectedChallenge = CHALLENGES.find(c => c.id === id);
     if (!selectedChallenge) return;
 
-    if (user.activeChallengeId === id) {
-      const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: null });
-      onUpdateUser(updatedUser);
-      onNotify(
-        'چالش غیرفعال شد',
-        'برنامه غذایی شما به حالت عادی بازگشت.',
-        'bg-slate-600',
-        Trophy
-      );
-    } else {
-      const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: id });
-      onUpdateUser(updatedUser);
-      onNotify(
-        `چالش ${selectedChallenge.title} فعال شد`,
-        selectedChallenge.description,
-        selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'blue' ? 'bg-blue-600' : 
-        selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'green' ? 'bg-green-600' :
-        selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'emerald' ? 'bg-emerald-600' :
-        selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'red' ? 'bg-red-600' : 
-        selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'rose' ? 'bg-rose-600' : 'bg-purple-600',
-        selectedChallenge.icon
-      );
+    const isCurrentlyActive = localActiveId === id;
+    const nextActiveId = isCurrentlyActive ? null : id;
+    
+    // Optimistic update
+    setLocalActiveId(nextActiveId);
+
+    try {
+      if (isCurrentlyActive) {
+        const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: null });
+        onUpdateUser(updatedUser);
+        onNotify(
+          'چالش غیرفعال شد',
+          'برنامه غذایی شما به حالت عادی بازگشت.',
+          'bg-slate-600',
+          Trophy
+        );
+      } else {
+        const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: id });
+        onUpdateUser(updatedUser);
+        onNotify(
+          `چالش ${selectedChallenge.title} فعال شد`,
+          selectedChallenge.description,
+          selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'blue' ? 'bg-blue-600' : 
+          selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'green' ? 'bg-green-600' :
+          selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'emerald' ? 'bg-emerald-600' :
+          selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'red' ? 'bg-red-600' : 
+          selectedChallenge.color.replace('bg-', 'bg-').split('-')[1] === 'rose' ? 'bg-rose-600' : 'bg-purple-600',
+          selectedChallenge.icon
+        );
+      }
+    } catch (error) {
+      // Rollback on error
+      setLocalActiveId(user.activeChallengeId || null);
+      onNotify('خطا', 'مشکلی در بروزرسانی چالش پیش آمد.', 'bg-rose-600', Trophy);
     }
   };
 
@@ -66,7 +83,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
           <div className="max-w-7xl mx-auto py-2 sm:py-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {CHALLENGES.map((challenge) => {
-                  const isActive = user.activeChallengeId === challenge.id;
+                  const isActive = localActiveId === challenge.id;
                   const Icon = challenge.icon;
                   
                   return (

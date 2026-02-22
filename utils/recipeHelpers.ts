@@ -33,3 +33,26 @@ export const getDifficulty = (dish: Dish): 'آسان' | 'متوسط' | 'سخت' 
 export const getDishNature = (dish: Dish): { type: NatureType; label: string; mosleh: string } => {
   return { type: 'balanced', label: 'معتدل', mosleh: 'نیاز به مصلح خاصی ندارد' };
 };
+
+export const isIngredientMatch = (selected: string, ingredient: string): boolean => {
+  const s = selected.trim();
+  const i = ingredient.trim();
+  
+  // Basic match (case insensitive-ish for Persian)
+  if (i.includes(s) || s.includes(i)) return true;
+  
+  // Special case for Chicken (مرغ) and Joojeh (جوجه)
+  // If user selects "مرغ", it should match "جوجه", "سینه مرغ", "ران مرغ", etc.
+  if (s === 'مرغ') {
+    if (i.includes('جوجه') || i.includes('سینه') || i.includes('ران') || i.includes('بال') || i.includes('کتف')) {
+      return true;
+    }
+  }
+
+  // If user selects "گوشت سینه مرغ", it should also match "مرغ" or "جوجه"
+  if (s.includes('مرغ') && (i === 'مرغ' || i.includes('جوجه'))) {
+    return true;
+  }
+
+  return false;
+};

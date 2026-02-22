@@ -1,8 +1,8 @@
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, VisitorProfile } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import { PANTRY_ITEMS } from '../data/pantry';
 import DishVisual from './DishVisual';
@@ -18,6 +18,34 @@ interface PreferencesProps {
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout, onNotify }) => {
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) { // 1MB limit
+      if (onNotify) onNotify('خطای تصویر', 'حجم تصویر باید کمتر از ۱ مگابایت باشد.', AlertTriangle, 'rose');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string;
+      try {
+        const updatedUser = await UserService.updateProfile(user.username, { avatar: base64 });
+        onUpdateUser(updatedUser);
+        if (onNotify) onNotify('بروزرسانی موفق', 'تصویر پروفایل شما با موفقیت تغییر کرد.', CheckCircle, 'emerald');
+      } catch (err) {
+        if (onNotify) onNotify('خطا', 'مشکلی در ذخیره تصویر پیش آمد.', AlertTriangle, 'rose');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const toggleCategory = (cat: DishCategory) => {
     onUpdateUser(prev => {
@@ -102,10 +130,37 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[3.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-3 sm:gap-6 text-right w-full sm:w-auto">
-                <div className="w-12 h-12 sm:w-20 sm:h-20 bg-teal-500 text-white rounded-xl sm:rounded-[2rem] flex items-center justify-center shadow-lg shrink-0"><User size={24} className="sm:w-10" /></div>
+                <div 
+                  className="relative group cursor-pointer"
+                  onClick={handleAvatarClick}
+                >
+                  <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-100 rounded-2xl sm:rounded-[2.5rem] flex items-center justify-center shadow-inner overflow-hidden border-2 border-white ring-4 ring-slate-50">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={32} className="text-slate-300 sm:w-12 sm:h-12" />
+                    )}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 sm:bottom-1 sm:right-1 w-6 h-6 sm:w-8 sm:h-8 bg-teal-500 text-white rounded-lg flex items-center justify-center shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
+                    <Camera size={14} className="sm:w-5 sm:h-5" />
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleAvatarChange} 
+                  />
+                </div>
                 <div>
-                  <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-none">{user.fullName || "کاربر نـوش"}</h2>
-                  <p className="text-teal-600 text-[8px] sm:text-xs font-black mt-1 sm:mt-2 uppercase tracking-widest">{user.role === 'admin' ? 'مدیریت کل سیستم' : 'عضویت ویژه طلایی'}</p>
+                  <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-none">
+                    {user.fullName || user.username || user.phoneNumber || "کاربر نـوش"}
+                  </h2>
+                  {user.role && user.role !== 'user' && user.role !== 'normal' && (
+                    <p className="text-teal-600 text-[8px] sm:text-xs font-black mt-1 sm:mt-2 uppercase tracking-widest">
+                      {user.role === 'admin' ? 'ادمین' : user.role === 'visitor' ? 'ویزیتور' : ''}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
