@@ -13,17 +13,14 @@ interface NotificationCenterProps {
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose, user }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [readIds, setReadIds] = useState<string[]>([]);
-  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(user.readNotificationIds || []);
+  const [deletedIds, setDeletedIds] = useState<string[]>(user.deletedNotificationIds || []);
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
 
   useEffect(() => {
-    const storedRead = localStorage.getItem('noosh_read_notifs');
-    if (storedRead) setReadIds(JSON.parse(storedRead));
-    
-    const storedDeleted = localStorage.getItem('noosh_deleted_notifs');
-    if (storedDeleted) setDeletedIds(JSON.parse(storedDeleted));
-  }, [isOpen]);
+    setReadIds(user.readNotificationIds || []);
+    setDeletedIds(user.deletedNotificationIds || []);
+  }, [user]);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,20 +39,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     }
   }, [isOpen, user]);
 
-  const markAsRead = (id: string) => {
-    const storedRead = JSON.parse(localStorage.getItem('noosh_read_notifs') || '[]');
-    if (!storedRead.includes(id)) {
-      const next = [...storedRead, id];
+  const markAsRead = async (id: string) => {
+    if (!readIds.includes(id)) {
+      const next = [...readIds, id];
       setReadIds(next);
-      localStorage.setItem('noosh_read_notifs', JSON.stringify(next));
+      await NotificationService.markAsRead(user.uid, id, user.readNotificationIds || []);
     }
   };
 
-  const deleteNotif = (e: React.MouseEvent, id: string) => {
+  const deleteNotif = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     const next = [...deletedIds, id];
     setDeletedIds(next);
-    localStorage.setItem('noosh_deleted_notifs', JSON.stringify(next));
+    await NotificationService.deleteNotificationForUser(user.uid, id, user.deletedNotificationIds || []);
     if (selectedNotif?.id === id) setSelectedNotif(null);
   };
 

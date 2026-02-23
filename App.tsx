@@ -57,8 +57,8 @@ const AppContent: React.FC = () => {
         user.role || 'user', 
         user.subscriptionExpiry > Date.now()
       );
-      const readIds = JSON.parse(localStorage.getItem('noosh_read_notifs') || '[]');
-      const deletedIds = JSON.parse(localStorage.getItem('noosh_deleted_notifs') || '[]');
+      const readIds = user.readNotificationIds || [];
+      const deletedIds = user.deletedNotificationIds || [];
       const unread = notifs.filter(n => !readIds.includes(n.id) && !deletedIds.includes(n.id)).length;
       setUnreadNotifCount(unread);
     } catch (e) {
@@ -101,9 +101,15 @@ const AppContent: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const closeNotif = () => {
-    if (dontShowAgain && filterNotif.filterKey) {
-      localStorage.setItem(`noosh_hide_notif_${filterNotif.filterKey}`, 'true');
+  const closeNotif = async () => {
+    if (dontShowAgain && filterNotif.filterKey && currentUser) {
+      const currentKeys = currentUser.hiddenGuidanceKeys || [];
+      if (!currentKeys.includes(filterNotif.filterKey)) {
+        const updatedUser = await UserService.updateProfile(currentUser.username, { 
+          hiddenGuidanceKeys: [...currentKeys, filterNotif.filterKey] 
+        });
+        setCurrentUser(updatedUser);
+      }
     }
     setFilterNotif(prev => ({ ...prev, exiting: true }));
     setTimeout(() => setFilterNotif(prev => ({ ...prev, show: false, exiting: false })), 800);
@@ -113,9 +119,8 @@ const AppContent: React.FC = () => {
   const handleToggleFilter = async (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => {
     if (!currentUser) return;
     const newVal = !currentUser[filter];
-    setCurrentUser({ ...currentUser, [filter]: newVal });
     
-    const isHidden = localStorage.getItem(`noosh_hide_notif_${filter}`) === 'true';
+    const isHidden = currentUser.hiddenGuidanceKeys?.includes(filter);
     
     if (!isHidden) {
       let msg = "";
@@ -136,11 +141,13 @@ const AppContent: React.FC = () => {
       setFilterNotif({ show: true, message: msg, active: newVal, icon, color, exiting: false, filterKey: filter });
     }
 
-    await UserService.updateProfile(currentUser.username, { [filter]: newVal });
+    const updatedUser = await UserService.updateProfile(currentUser.username, { [filter]: newVal });
+    setCurrentUser(updatedUser);
   };
 
   const handleChallengeNotify = (title: string, message: string, colorClass: string, icon: any) => {
-    const isHidden = localStorage.getItem(`noosh_hide_notif_challenge`) === 'true';
+    if (!currentUser) return;
+    const isHidden = currentUser.hiddenGuidanceKeys?.includes('challenge');
     if (isHidden) return;
 
     setFilterNotif({
@@ -156,6 +163,24 @@ const AppContent: React.FC = () => {
 
   const handleGeneratePlan = async (type: 'daily' | 'weekly' | 'monthly') => {
     if (!currentUser) return;
+
+    const isHidden = currentUser.hiddenGuidanceKeys?.includes(`plan_${type}`);
+    if (!isHidden) {
+      let msg = "";
+      let icon = Info;
+      if (type === 'daily') {
+        msg = "برنامه امروز بر اساس ذائقه و موجودی فعلی شما تنظیم می‌شود.";
+        icon = Utensils;
+      } else if (type === 'weekly') {
+        msg = "برنامه هفتگی شامل ۷ پخت متنوع برای کل هفته شماست.";
+        icon = Calendar;
+      } else {
+        msg = "برنامه ماهانه یک لیست کامل ۳۰ روزه برای مدیریت بلندمدت است.";
+        icon = CalendarDays;
+      }
+      setFilterNotif({ show: true, message: msg, active: true, icon, color: 'indigo', exiting: false, filterKey: `plan_${type}` });
+    }
+
     setPlanLoading(type);
     try {
       let result;

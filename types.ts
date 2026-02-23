@@ -269,6 +269,9 @@ export interface UserProfile {
   referredBy?: string;
   riskScore?: RiskLevel;
   lastActiveAt?: number;
+  readNotificationIds?: string[];
+  deletedNotificationIds?: string[];
+  hiddenGuidanceKeys?: string[];
 }
 
 // --- Independent Add-on Modules: Notification & Feedback ---
