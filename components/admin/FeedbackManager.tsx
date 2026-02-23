@@ -73,8 +73,15 @@ const FeedbackManager: React.FC = () => {
     if (!selectedFeedback || !selectedAdminId) return;
     setProcessingId(selectedFeedback.id);
     try {
-      await FeedbackService.updateFeedbackStatus(selectedFeedback.id, 'referred');
-      // In a real app, we might also create a notification for the referred admin
+      const assignedAdmin = admins.find(a => a.uid === selectedAdminId);
+      const assignedToName = assignedAdmin ? (assignedAdmin.fullName || assignedAdmin.username) : "نامشخص";
+      const assignedAt = Date.now();
+
+      await FeedbackService.updateFeedbackStatus(selectedFeedback.id, 'referred', {
+        assigned_to_name: assignedToName,
+        assigned_at: assignedAt
+      });
+      
       await NotificationService.createNotification(
         "ارجاع بازخورد کاربر",
         `بازخورد از ${selectedFeedback.user_name} به شما ارجاع شد: ${selectedFeedback.message.substring(0, 50)}...`,
@@ -85,6 +92,7 @@ const FeedbackManager: React.FC = () => {
       await loadData();
       alert("بازخورد با موفقیت ارجاع داده شد.");
       setIsReferralOpen(false);
+      setSelectedFeedback(prev => prev ? { ...prev, status: 'referred', assigned_to_name: assignedToName, assigned_at: assignedAt } : null);
     } catch (e) {
       alert("خطا در ارجاع");
     } finally {
@@ -252,6 +260,21 @@ const FeedbackManager: React.FC = () => {
                        </div>
                     </div>
                  </div>
+
+                 {selectedFeedback.status === 'referred' && selectedFeedback.assigned_to_name && (
+                   <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center gap-4 animate-enter">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-purple-600 shadow-sm"><Share2 size={24}/></div>
+                      <div>
+                         <p className="text-[10px] text-purple-400 font-black">ارجاع شده به</p>
+                         <p className="font-black text-purple-800">{selectedFeedback.assigned_to_name}</p>
+                         {selectedFeedback.assigned_at && (
+                           <p className="text-[8px] text-purple-300 font-bold mt-0.5">
+                             در تاریخ: {new Intl.DateTimeFormat('fa-IR', {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(selectedFeedback.assigned_at))}
+                           </p>
+                         )}
+                      </div>
+                   </div>
+                 )}
 
                  <div className="space-y-4">
                     <h4 className="text-sm font-black text-slate-800 flex items-center gap-2"><CheckSquare size={18} className="text-emerald-600"/> تعیین وضعیت و اقدامات</h4>

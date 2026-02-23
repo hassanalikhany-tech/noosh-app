@@ -34,10 +34,10 @@ export const FeedbackService = {
   },
 
   /**
-   * Update feedback status
+   * Update feedback status and optional fields
    */
-  updateFeedbackStatus: async (feedbackId: string, status: UserFeedback['status']) => {
+  updateFeedbackStatus: async (feedbackId: string, status: UserFeedback['status'], extraFields: Partial<UserFeedback> = {}) => {
     const ref = doc(db, "user_feedback", feedbackId);
-    await updateDoc(ref, { status });
+    await updateDoc(ref, { status, ...extraFields });
   }
 };

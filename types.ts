@@ -306,4 +306,6 @@ export interface UserFeedback {
   status: 'new' | 'reviewed' | 'to_be_reviewed' | 'to_be_followed_up' | 'handled' | 'informed' | 'referred';
   created_at: number;
   device: string;
+  assigned_to_name?: string;
+  assigned_at?: number;
 }

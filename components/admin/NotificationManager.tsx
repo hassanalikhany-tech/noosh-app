@@ -12,6 +12,7 @@ const NotificationManager: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [isUserSelectorOpen, setIsUserSelectorOpen] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
   const [selectedUids, setSelectedUids] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({ 
@@ -229,9 +230,22 @@ const NotificationManager: React.FC = () => {
       )}
 
       <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-slate-200">
-         <h3 className="text-lg font-black text-slate-800 mb-8 flex items-center gap-3"><History className="text-indigo-600"/> تاریخچه ارسال‌ها</h3>
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <h3 className="text-lg font-black text-slate-800 flex items-center gap-3"><History className="text-indigo-600"/> تاریخچه ارسال‌ها</h3>
+            <div className="relative w-full md:w-72">
+               <input 
+                  placeholder="جستجو در عنوان یا متن..."
+                  value={historySearchTerm}
+                  onChange={e => setHistorySearchTerm(e.target.value)}
+                  className="w-full pr-10 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-xs"
+               />
+               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16}/>
+            </div>
+         </div>
          <div className="space-y-4">
-            {notifications.map(n => (
+            {notifications
+              .filter(n => n.title.includes(historySearchTerm) || n.message.includes(historySearchTerm))
+              .map(n => (
                 <div key={n.id} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                    <div className="flex gap-4">
                       <div className="p-3 bg-white text-indigo-600 rounded-2xl shadow-sm h-fit"><MessageSquare size={20}/></div>

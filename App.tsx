@@ -58,7 +58,8 @@ const AppContent: React.FC = () => {
         user.subscriptionExpiry > Date.now()
       );
       const readIds = JSON.parse(localStorage.getItem('noosh_read_notifs') || '[]');
-      const unread = notifs.filter(n => !readIds.includes(n.id)).length;
+      const deletedIds = JSON.parse(localStorage.getItem('noosh_deleted_notifs') || '[]');
+      const unread = notifs.filter(n => !readIds.includes(n.id) && !deletedIds.includes(n.id)).length;
       setUnreadNotifCount(unread);
     } catch (e) {
       console.error("Failed to fetch unread count");
@@ -398,15 +399,16 @@ const AppContent: React.FC = () => {
         <div className="flex items-center justify-between w-full">
           <div 
             onClick={() => setViewMode('plan')} 
-            className="flex items-center gap-3 cursor-pointer logo-animate transition-all"
+            className="flex flex-col items-center cursor-pointer logo-animate transition-all"
           >
             <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-8 h-8 sm:w-14 sm:h-14 object-contain" />
-            <div className="flex flex-col" style={{ direction: 'ltr' }}>
-              <div className="flex items-baseline gap-1">
-                 <span className="text-lg sm:text-3xl font-black italic text-slate-900 leading-none">NOOSH</span>
-                 <span className="text-xs sm:text-xl font-black text-teal-600 leading-none">APP</span>
-              </div>
-              <span className="text-[6px] sm:text-[9px] font-black text-emerald-600 tracking-[0.2em] uppercase">{appVersion}</span>
+            <span className="text-[6px] sm:text-[10px] font-black text-emerald-600 tracking-[0.2em] uppercase mt-1">{appVersion}</span>
+          </div>
+
+          <div className="hidden lg:flex flex-col items-center" style={{ direction: 'ltr' }}>
+            <div className="flex items-baseline gap-1">
+               <span className="text-lg sm:text-3xl font-black italic text-slate-900 leading-none">NOOSH</span>
+               <span className="text-xs sm:text-xl font-black text-teal-600 leading-none">APP</span>
             </div>
           </div>
 

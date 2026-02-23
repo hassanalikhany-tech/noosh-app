@@ -111,7 +111,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
   return (
     <div className="bg-white rounded-2xl min-h-full flex flex-col relative">
       <div className="no-print p-6 flex flex-col flex-grow overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-0 pt-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b pb-6 flex-shrink-0 pl-12 md:pl-20 pt-2">
           <div className="flex items-center gap-4">
             <div className="p-4 bg-teal-50 text-teal-600 rounded-2xl">
               <ShoppingCart size={28} />

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Info, CheckCircle, Clock, ShieldAlert, Sparkles, MessageSquare, ArrowRight } from 'lucide-react';
+import { Bell, X, Info, CheckCircle, Clock, ShieldAlert, Sparkles, MessageSquare, ArrowRight, Trash2 } from 'lucide-react';
 import { NotificationService } from '../services/notificationService';
 import { Notification, UserProfile } from '../types';
 
@@ -14,12 +14,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [readIds, setReadIds] = useState<string[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('noosh_read_notifs');
-    if (stored) setReadIds(JSON.parse(stored));
-  }, []);
+    const storedRead = localStorage.getItem('noosh_read_notifs');
+    if (storedRead) setReadIds(JSON.parse(storedRead));
+    
+    const storedDeleted = localStorage.getItem('noosh_deleted_notifs');
+    if (storedDeleted) setDeletedIds(JSON.parse(storedDeleted));
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,11 +43,20 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
   }, [isOpen, user]);
 
   const markAsRead = (id: string) => {
-    if (!readIds.includes(id)) {
-      const next = [...readIds, id];
+    const storedRead = JSON.parse(localStorage.getItem('noosh_read_notifs') || '[]');
+    if (!storedRead.includes(id)) {
+      const next = [...storedRead, id];
       setReadIds(next);
       localStorage.setItem('noosh_read_notifs', JSON.stringify(next));
     }
+  };
+
+  const deleteNotif = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const next = [...deletedIds, id];
+    setDeletedIds(next);
+    localStorage.setItem('noosh_deleted_notifs', JSON.stringify(next));
+    if (selectedNotif?.id === id) setSelectedNotif(null);
   };
 
   const handleNotifClick = (n: Notification) => {
@@ -52,6 +65,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
   };
 
   if (!isOpen) return null;
+
+  const visibleNotifications = notifications.filter(n => !deletedIds.includes(n.id));
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-start justify-center p-4 no-print animate-enter">
@@ -83,13 +98,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
                 <div className="w-10 h-10 border-4 border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
                 <span className="font-black text-xs">در حال دریافت خبرها...</span>
              </div>
-           ) : notifications.length === 0 ? (
+            ) : visibleNotifications.length === 0 ? (
              <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-300 text-center px-10">
                 <Sparkles size={48} className="opacity-10 mb-2"/>
                 <p className="font-black text-slate-400 text-xs leading-relaxed">فعلاً خبر جدیدی برای شما نیست.</p>
              </div>
            ) : (
-             notifications.map(n => {
+             visibleNotifications.map(n => {
                 const isUnread = !readIds.includes(n.id);
                 return (
                     <div 
@@ -104,7 +119,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
                              <MessageSquare size={18}/>
                           </div>
                           <div className="flex-grow">
-                             <h4 className={`text-sm transition-all ${isUnread ? 'font-black text-slate-900' : 'font-bold text-slate-500'}`}>{n.title}</h4>
+                             <div className="flex justify-between items-start">
+                                <h4 className={`text-sm transition-all ${isUnread ? 'font-black text-slate-900' : 'font-bold text-slate-500'}`}>{n.title}</h4>
+                                <button 
+                                  onClick={(e) => deleteNotif(e, n.id)}
+                                  className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                  title="حذف پیام"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                             </div>
                              <p className={`text-[10px] mt-1.5 leading-relaxed line-clamp-2 ${isUnread ? 'font-black text-slate-600' : 'font-bold text-slate-400'}`}>{n.message}</p>
                              <div className="flex items-center gap-2 mt-3 text-[8px] font-black text-slate-300">
                                 <Clock size={10}/> {new Intl.DateTimeFormat('fa-IR', {timeStyle: 'short', dateStyle: 'medium'}).format(new Date(n.send_time))}
