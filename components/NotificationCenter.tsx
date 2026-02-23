@@ -43,7 +43,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     if (!readIds.includes(id)) {
       const next = [...readIds, id];
       setReadIds(next);
-      await NotificationService.markAsRead(user.uid, id, user.readNotificationIds || []);
+      await NotificationService.markAsRead(user.uid, id);
     }
   };
 
@@ -51,7 +51,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
     e.stopPropagation();
     const next = [...deletedIds, id];
     setDeletedIds(next);
-    await NotificationService.deleteNotificationForUser(user.uid, id, user.deletedNotificationIds || []);
+    await NotificationService.deleteNotificationForUser(user.uid, id);
     if (selectedNotif?.id === id) setSelectedNotif(null);
   };
 

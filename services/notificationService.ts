@@ -1,5 +1,5 @@
 
-import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, writeBatch, arrayUnion } from "firebase/firestore";
 import { db } from "./firebase";
 import { Notification, NotificationLog } from "../types";
 
@@ -66,26 +66,22 @@ export const NotificationService = {
   /**
    * Mark a notification as read for a user
    */
-  markAsRead: async (userId: string, notificationId: string, currentReadIds: string[]) => {
-    if (!currentReadIds.includes(notificationId)) {
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, {
-        readNotificationIds: [...currentReadIds, notificationId]
-      });
-      window.dispatchEvent(new CustomEvent('user-data-updated'));
-    }
+  markAsRead: async (userId: string, notificationId: string) => {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      readNotificationIds: arrayUnion(notificationId)
+    });
+    window.dispatchEvent(new CustomEvent('user-data-updated'));
   },
 
   /**
    * Delete a notification for a user (hide it permanently)
    */
-  deleteNotificationForUser: async (userId: string, notificationId: string, currentDeletedIds: string[]) => {
-    if (!currentDeletedIds.includes(notificationId)) {
-      const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, {
-        deletedNotificationIds: [...currentDeletedIds, notificationId]
-      });
-      window.dispatchEvent(new CustomEvent('user-data-updated'));
-    }
+  deleteNotificationForUser: async (userId: string, notificationId: string) => {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      deletedNotificationIds: arrayUnion(notificationId)
+    });
+    window.dispatchEvent(new CustomEvent('user-data-updated'));
   }
 };

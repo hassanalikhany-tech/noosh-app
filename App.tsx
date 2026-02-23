@@ -16,6 +16,7 @@ import { NotificationService } from './services/notificationService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
 import { CHALLENGES } from './data/challenges';
+import metadata from './metadata.json';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
 
@@ -41,7 +42,7 @@ const AppContent: React.FC = () => {
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [appVersion, setAppVersion] = useState("V15.95");
+  const [appVersion, setAppVersion] = useState(metadata.name.split(' ').pop() || "V16.2");
   const [planLoading, setPlanLoading] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
@@ -69,11 +70,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        const metaRes = await fetch('/metadata.json');
-        if (metaRes.ok) {
-          const metaData = await metaRes.json();
-          if (metaData.name) setAppVersion(metaData.name.split(' ').pop() || "V15.95");
-        }
         await RecipeService.initialize();
         const user = await UserService.getCurrentUser();
         if (user) {
@@ -90,6 +86,16 @@ const AppContent: React.FC = () => {
     };
     initApp();
 
+    const handleUserUpdate = async () => {
+      const user = await UserService.getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        await checkUnreadNotifications(user);
+      }
+    };
+
+    window.addEventListener('user-data-updated', handleUserUpdate);
+
     // Periodically update last active
     const interval = setInterval(() => {
       const mobile = localStorage.getItem('noosh_auth_mobile');
@@ -98,18 +104,15 @@ const AppContent: React.FC = () => {
       }
     }, 1000 * 60 * 3); // Every 3 minutes
 
-    return () => clearInterval(interval);
+    return () => {
+      window.removeEventListener('user-data-updated', handleUserUpdate);
+      clearInterval(interval);
+    };
   }, []);
 
   const closeNotif = async () => {
     if (dontShowAgain && filterNotif.filterKey && currentUser) {
-      const currentKeys = currentUser.hiddenGuidanceKeys || [];
-      if (!currentKeys.includes(filterNotif.filterKey)) {
-        const updatedUser = await UserService.updateProfile(currentUser.username, { 
-          hiddenGuidanceKeys: [...currentKeys, filterNotif.filterKey] 
-        });
-        setCurrentUser(updatedUser);
-      }
+      await UserService.hideGuidance(currentUser.uid, filterNotif.filterKey);
     }
     setFilterNotif(prev => ({ ...prev, exiting: true }));
     setTimeout(() => setFilterNotif(prev => ({ ...prev, show: false, exiting: false })), 800);

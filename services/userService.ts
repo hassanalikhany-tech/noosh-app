@@ -1,6 +1,6 @@
 
 import { signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
-import { doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, addDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, addDoc, arrayUnion } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { UserProfile, ShoppingItem, VisitorProfile, VisitorFinancialInfo, CommissionLog } from "../types";
 import { RecipeService } from "./recipeService";
@@ -289,5 +289,11 @@ export const UserService = {
   },
   toggleUserApproval: async (uid: string, status: boolean) => { await updateDoc(doc(db, "users", uid), { isApproved: !status }); notifyUpdate(); },
   resetUserDevices: async (uid: string) => { await updateDoc(doc(db, "users", uid), { registeredDevices: [] }); notifyUpdate(); },
-  deleteUser: async (uid: string) => { await updateDoc(doc(db, "users", uid), { isDeleted: true }); notifyUpdate(); }
+  deleteUser: async (uid: string) => { await updateDoc(doc(db, "users", uid), { isDeleted: true }); notifyUpdate(); },
+  hideGuidance: async (uid: string, key: string) => {
+    await updateDoc(doc(db, "users", uid), {
+      hiddenGuidanceKeys: arrayUnion(key)
+    });
+    notifyUpdate();
+  }
 };
