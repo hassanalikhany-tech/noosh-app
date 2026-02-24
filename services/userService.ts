@@ -8,6 +8,8 @@ import { RecipeService } from "./recipeService";
 const TEST_MOBILE = '09143013288';
 const notifyUpdate = () => window.dispatchEvent(new CustomEvent('user-data-updated'));
 
+let cachedUser: UserProfile | null = null;
+
 const generateReferralCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
   let code = '';
@@ -246,12 +248,23 @@ export const UserService = {
       const isTest = mobile === TEST_MOBILE;
       try {
         const userDoc = await getDoc(doc(db, "users", mobile));
-        if (userDoc.exists()) return userDoc.data() as UserProfile;
-        if (isTest) return { uid: TEST_MOBILE, fullName: "مدیر سیستم", isAdmin: true, role: 'admin' } as any;
+        if (userDoc.exists()) {
+          const user = userDoc.data() as UserProfile;
+          cachedUser = user;
+          return user;
+        }
+        if (isTest) {
+          const user = { uid: TEST_MOBILE, fullName: "مدیر سیستم", isAdmin: true, role: 'admin' } as any;
+          cachedUser = user;
+          return user;
+        }
       } catch (e) {}
     }
+    cachedUser = null;
     return null;
   },
+
+  getCachedUser: () => cachedUser,
 
   updateProfile: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
     const mobile = localStorage.getItem('noosh_auth_mobile');

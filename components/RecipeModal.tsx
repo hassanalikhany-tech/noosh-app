@@ -1,5 +1,5 @@
 
-import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus } from 'lucide-react';
+import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus, Wallet, TrendingUp } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
@@ -19,7 +19,7 @@ const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', '�
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, onUpdateUser }) => {
   const [addedToCart, setAddedToCart] = useState(false);
-  const [servings, setServings] = useState(user?.familySize || 4);
+  const [servings, setServings] = useState(user?.householdSize || user?.familySize || 4);
 
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
   const hasIngredients = dish.ingredients && dish.ingredients.length > 0;
@@ -32,7 +32,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
   useEffect(() => {
     if (isOpen) {
       setAddedToCart(false);
-      setServings(user?.familySize || 4);
+      setServings(user?.householdSize || user?.familySize || 4);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -121,6 +121,60 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                 </div>
             </div>
           </div>
+
+          {/* بخش هزینه و بودجه */}
+          {(dish.totalCost !== undefined && dish.totalCost > 0) && (
+            <div className="mb-8 p-5 sm:p-6 bg-slate-50 border border-slate-100 rounded-3xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                    <Wallet size={20} />
+                  </div>
+                  <h4 className="font-black text-slate-800 text-sm sm:text-base">برآورد هزینه اقتصادی</h4>
+                </div>
+                {dish.economicLabel && (
+                  <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    dish.economicLabel === 'economic' ? 'bg-emerald-500 text-white' : 
+                    dish.economicLabel === 'balanced' ? 'bg-amber-500 text-white' : 
+                    'bg-rose-500 text-white'
+                  }`}>
+                    {dish.economicLabel === 'economic' ? 'اقتصادی' : 
+                     dish.economicLabel === 'balanced' ? 'متعادل' : 
+                     'پرهزینه'}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1">هزینه کل ({toPersianDigits(servings)} نفر)</p>
+                  <p className="text-sm sm:text-lg font-black text-slate-800">
+                    {toPersianDigits(Math.round((dish.totalCost || 0) * (servings / 4)).toLocaleString('fa-IR'))} <span className="text-[10px]">تومان</span>
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="text-[10px] font-bold text-slate-400 mb-1">هزینه هر نفر</p>
+                  <p className="text-sm sm:text-lg font-black text-emerald-600">
+                    {toPersianDigits((dish.costPerServing || 0).toLocaleString('fa-IR'))} <span className="text-[10px]">تومان</span>
+                  </p>
+                </div>
+              </div>
+
+              {dish.accuracyPercent !== undefined && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-grow h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-teal-500 transition-all duration-1000" 
+                      style={{ width: `${dish.accuracyPercent}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-[9px] font-black text-slate-400 whitespace-nowrap">
+                    دقت محاسبه: {toPersianDigits(dish.accuracyPercent)}٪
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
             {hasIngredients && (

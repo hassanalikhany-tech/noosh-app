@@ -57,7 +57,11 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
   useEffect(() => {
     loadDishes();
     window.addEventListener('recipes-updated', loadDishes);
-    return () => window.removeEventListener('recipes-updated', loadDishes);
+    window.addEventListener('user-data-updated', loadDishes);
+    return () => {
+      window.removeEventListener('recipes-updated', loadDishes);
+      window.removeEventListener('user-data-updated', loadDishes);
+    };
   }, []);
 
   const handleManualSync = async () => {

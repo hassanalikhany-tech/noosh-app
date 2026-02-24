@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, VisitorProfile } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera, Wallet, Users } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import { PANTRY_ITEMS } from '../data/pantry';
 import DishVisual from './DishVisual';
@@ -123,6 +123,30 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     return all.filter(i => i.includes(ingredientSearch)).slice(0, 20);
   }, [ingredientSearch]);
 
+  const [budgetInput, setBudgetInput] = useState(user.monthlyFoodBudget ? user.monthlyFoodBudget.toString() : '');
+
+  const handleBudgetChange = async (val: string) => {
+    setBudgetInput(val);
+    if (!val) {
+      onUpdateUser(prev => ({ ...prev, monthlyFoodBudget: null }));
+      await UserService.updateProfile(user.username, { monthlyFoodBudget: null });
+      return;
+    }
+    // Convert Persian digits to English before processing
+    const normalized = val.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+    const digitsOnly = normalized.replace(/[^0-9]/g, '');
+    if (!digitsOnly) return;
+    
+    const num = parseInt(digitsOnly);
+    onUpdateUser(prev => ({ ...prev, monthlyFoodBudget: num }));
+    await UserService.updateProfile(user.username, { monthlyFoodBudget: num });
+  };
+
+  const handleHouseholdSizeChange = async (val: number) => {
+    onUpdateUser(prev => ({ ...prev, householdSize: val }));
+    await UserService.updateProfile(user.username, { householdSize: val });
+  };
+
   return (
     <div className="flex flex-col h-full animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
@@ -176,6 +200,67 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
           <div className="h-10 sm:h-12 w-full"></div>
           <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
+              {/* بخش مدیریت بودجه اقتصادی */}
+              <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-3 sm:p-4 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-[1.5rem]">
+                    <Wallet size={22} className="sm:w-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-2xl font-black text-slate-800">مدیریت بودجه اقتصادی</h2>
+                    <p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">تنظیم بودجه ماهانه برای پیشنهاد غذاهای مقرون‌به‌صرفه</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="text-xs sm:text-sm font-black text-slate-600 flex items-center gap-2">
+                      <Wallet size={16} /> بودجه ماهانه غذا (تومان)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="مثلاً ۵,۰۰۰,۰۰۰" 
+                      value={budgetInput}
+                      onChange={(e) => handleBudgetChange(e.target.value)}
+                      className="w-full px-5 py-3 sm:px-6 sm:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-2xl outline-none focus:border-emerald-400 font-bold text-sm sm:text-lg transition-all"
+                    />
+                    <p className="text-[10px] text-slate-400 font-medium">اختیاری: برای فیلتر هوشمند قیمت‌ها</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-xs sm:text-sm font-black text-slate-600 flex items-center gap-2">
+                      <Users size={16} /> تعداد نفرات خانواده
+                    </label>
+                    <div className="flex items-center gap-4 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-2xl p-1">
+                      <button 
+                        onClick={() => handleHouseholdSizeChange(Math.max(1, (user.householdSize || 4) - 1))}
+                        className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white rounded-lg sm:rounded-xl shadow-sm text-slate-600 hover:text-emerald-600 transition-colors"
+                      >
+                        <Minus size={20} />
+                      </button>
+                      <span className="flex-grow text-center font-black text-lg sm:text-xl text-slate-800">
+                        {toPersian(user.householdSize || 4)} نفر
+                      </span>
+                      <button 
+                        onClick={() => handleHouseholdSizeChange((user.householdSize || 4) + 1)}
+                        className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white rounded-lg sm:rounded-xl shadow-sm text-slate-600 hover:text-emerald-600 transition-colors"
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {user.monthlyFoodBudget && (
+                  <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
+                    <p className="text-xs sm:text-sm font-bold text-emerald-800 leading-relaxed">
+                      سهم هر نفر برای هر وعده: <span className="font-black text-emerald-600">{((user.monthlyFoodBudget / 30 / (user.householdSize || 4)).toLocaleString('fa-IR'))} تومان</span>
+                    </p>
+                    <p className="text-[10px] text-emerald-600 mt-1 font-medium">سیستم بر اساس این مبلغ، غذاهای اقتصادی را در اولویت قرار می‌دهد.</p>
+                  </div>
+                )}
+              </div>
+
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">

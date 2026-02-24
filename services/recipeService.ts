@@ -14,6 +14,8 @@ import {
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
 import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
+import { EconomicService } from './economicService';
+import { UserService } from './userService';
 
 let cachedDishes: Dish[] = [];
 let isInitialized = false;
@@ -26,6 +28,7 @@ const notifyRecipesUpdate = (count: number) => {
 export const RecipeService = {
   initialize: async (): Promise<{count: number}> => {
     try {
+      await EconomicService.initialize();
       const localCache = await DB.getAll('dishes');
       if (localCache && localCache.length > 0) {
         cachedDishes = localCache;
@@ -74,9 +77,14 @@ export const RecipeService = {
   getAllDishes: (): Dish[] => {
     const hiddenIds = getHiddenDishIds();
     const renamedMap = getRenamedDishes();
+    const user = UserService.getCachedUser(); // I need to add this method to UserService or use another way
+    
     return cachedDishes
       .filter(d => !hiddenIds.includes(d.id))
-      .map(d => renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d);
+      .map(d => {
+        let dish = renamedMap[d.id] ? { ...d, name: renamedMap[d.id] } : d;
+        return EconomicService.enrichDishWithEconomicData(dish, user);
+      });
   },
 
   getRawDishes: (): Dish[] => cachedDishes,

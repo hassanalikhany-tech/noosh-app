@@ -12,6 +12,7 @@ import AuthGate from './components/auth/AuthGate';
 import NotificationCenter from './components/NotificationCenter';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
+import { EconomicService } from './services/economicService';
 import { NotificationService } from './services/notificationService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
@@ -74,7 +75,13 @@ const AppContent: React.FC = () => {
         const user = await UserService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
-          if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
+          if (user.weeklyPlan) {
+            const enrichedPlan = user.weeklyPlan.map(p => ({
+              ...p,
+              dish: EconomicService.enrichDishWithEconomicData(p.dish, user)
+            }));
+            setDisplayPlan(enrichedPlan);
+          }
           await checkUnreadNotifications(user);
           
           // Update last active immediately
@@ -90,6 +97,13 @@ const AppContent: React.FC = () => {
       const user = await UserService.getCurrentUser();
       if (user) {
         setCurrentUser(user);
+        if (user.weeklyPlan) {
+          const enrichedPlan = user.weeklyPlan.map(p => ({
+            ...p,
+            dish: EconomicService.enrichDishWithEconomicData(p.dish, user)
+          }));
+          setDisplayPlan(enrichedPlan);
+        }
         await checkUnreadNotifications(user);
       }
     };

@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock, RefreshCw } from 'lucide-react';
+import { Utensils, ChevronLeft, Flame, Clock, Leaf, Heart, ThumbsDown, Lock, RefreshCw, Wallet } from 'lucide-react';
 import { DayPlan, UserProfile } from '../types';
+import { EconomicService } from '../services/economicService';
 import RecipeModal from './RecipeModal';
 import DishVisual from './DishVisual';
 import { estimateCalories, estimateCookTime, getDishNature } from '../utils/recipeHelpers';
@@ -34,7 +35,14 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser, onRefresh
   const time = plan.dish.cookTime || estimateCookTime(plan.dish);
   const natureInfo = plan.dish.nature ? { type: plan.dish.nature, label: plan.dish.natureLabel || '' } : getDishNature(plan.dish);
   
-  const toPersianDigits = (num: number) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
+  const familySize = user.householdSize || user.familySize || 4;
+  
+  // Calculate cost dynamically to ensure it's always up-to-date with EconomicService
+  const { totalCost } = EconomicService.calculateDishCost(plan.dish);
+  const costPerServing = totalCost > 0 ? Math.round(totalCost / 4) : (plan.dish.costPerServing || 0);
+  const estimatedCost = costPerServing * familySize;
+
+  const toPersianDigits = (num: number | string) => num.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -132,14 +140,33 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser, onRefresh
               natureInfo.type === 'cold' ? 'bg-blue-500 text-white border-blue-400' : 'bg-emerald-500 text-white border-emerald-400'
             }`}>طبع {natureInfo.label}</div>
           </div>
+
+          {/* تگ وضعیت اقتصادی */}
+          {plan.dish.economicLabel && (
+            <div className="absolute top-4 left-16 z-10 opacity-90">
+              <div className={`px-3 py-1 rounded-xl text-[9px] font-black shadow-md border flex items-center gap-1 ${
+                plan.dish.economicLabel === 'economic' ? 'bg-emerald-600 text-white border-emerald-500' : 
+                plan.dish.economicLabel === 'balanced' ? 'bg-blue-600 text-white border-blue-500' : 
+                'bg-amber-600 text-white border-amber-500'
+              }`}>
+                <Wallet size={10} />
+                {plan.dish.economicLabel === 'economic' ? 'اقتصادی' : 
+                 plan.dish.economicLabel === 'balanced' ? 'متعادل' : 'پرهزینه'}
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="p-6 flex flex-col flex-grow text-right bg-gradient-to-b from-white to-slate-50/10">
           <h3 className={`text-2xl font-black transition-colors mb-3 ${isLocked ? 'text-slate-400' : 'text-slate-800 group-hover:text-teal-600'}`}>{plan.dish.name}</h3>
           
-          <div className="flex gap-3 mb-4 text-[10px] text-slate-500 font-black">
+          <div className="flex flex-wrap gap-2 mb-4 text-[10px] text-slate-500 font-black">
              <span className="flex items-center gap-1.5 bg-rose-50 text-rose-600 px-3 py-1.5 rounded-xl border border-rose-100"><Flame size={14} /> {toPersianDigits(calories)} کالری</span>
              <span className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl border border-orange-100"><Clock size={14} /> {toPersianDigits(time)} دقیقه</span>
+             <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl border border-emerald-100">
+               <Wallet size={14} /> 
+               هزینه ({toPersianDigits(familySize)} نفر): {estimatedCost > 0 ? `${toPersianDigits(estimatedCost.toLocaleString('fa-IR'))} تومان` : 'نامشخص'}
+             </span>
           </div>
 
           <div className="relative flex-grow overflow-hidden">
