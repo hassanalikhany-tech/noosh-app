@@ -34,10 +34,6 @@ export interface Dish {
   cookTime?: number;
   difficulty?: string;
   natureLabel?: string;
-  totalCost?: number;
-  costPerServing?: number;
-  economicLabel?: 'economic' | 'balanced' | 'expensive';
-  accuracyPercent?: number;
 }
 
 export interface DayPlan {
@@ -276,8 +272,6 @@ export interface UserProfile {
   readNotificationIds?: string[];
   deletedNotificationIds?: string[];
   hiddenGuidanceKeys?: string[];
-  monthlyFoodBudget?: number | null;
-  householdSize?: number;
 }
 
 // --- Independent Add-on Modules: Notification & Feedback ---
@@ -317,12 +311,4 @@ export interface UserFeedback {
   device: string;
   assigned_to_name?: string;
   assigned_at?: number;
-}
-
-export interface IngredientPrice {
-  id: string;
-  name: string;
-  price: number; // Price per unit
-  unit: string;
-  updatedAt: number;
 }

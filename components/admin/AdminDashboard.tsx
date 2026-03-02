@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ShieldCheck, LogOut, Trash2, CalendarPlus, Users, Search, FileJson, ExternalLink, GitMerge, ImageIcon, CheckCircle, XCircle, FileSpreadsheet, Lock, ShieldAlert, SmartphoneNfc, UserPlus, UserCheck, UserX, Loader2, Award, Gift, QrCode, Ticket, TicketMinus, Info, Check, X, CreditCard, Eye, Fingerprint, Clock, Banknote, Shield, Settings2, Layers, Save, RefreshCw, BarChart3, PieChart, Activity, Bell, MessageSquare, Wallet } from 'lucide-react';
+import { ShieldCheck, LogOut, Trash2, CalendarPlus, Users, Search, FileJson, ExternalLink, GitMerge, ImageIcon, CheckCircle, XCircle, FileSpreadsheet, Lock, ShieldAlert, SmartphoneNfc, UserPlus, UserCheck, UserX, Loader2, Award, Gift, QrCode, Ticket, TicketMinus, Info, Check, X, CreditCard, Eye, Fingerprint, Clock, Banknote, Shield, Settings2, Layers, Save, RefreshCw, BarChart3, PieChart, Activity, Bell, MessageSquare } from 'lucide-react';
 import { UserService } from '../../services/userService';
 import { UserProfile } from '../../types';
 import DatabaseManager from './DatabaseManager';
@@ -17,7 +17,6 @@ import SystemAnalytics from './SystemAnalytics';
 import SecurityAlerts from './SecurityAlerts';
 import NotificationManager from './NotificationManager';
 import FeedbackManager from './FeedbackManager';
-import EconomicManager from './EconomicManager';
 import { auth } from '../../services/firebase';
 import { SecurityService } from '../../services/securityService';
 
@@ -26,7 +25,7 @@ interface AdminDashboardProps {
   onSwitchToApp?: () => void;
 }
 
-type AdminTab = 'users' | 'security-alerts' | 'analytics' | 'notifications' | 'feedback' | 'settlements' | 'financial-reports' | 'financial' | 'payments' | 'security-logs' | 'visitors' | 'images' | 'duplicates' | 'csv-converter' | 'database' | 'security-policy' | 'backup' | 'economic';
+type AdminTab = 'users' | 'security-alerts' | 'analytics' | 'notifications' | 'feedback' | 'settlements' | 'financial-reports' | 'financial' | 'payments' | 'security-logs' | 'visitors' | 'images' | 'duplicates' | 'csv-converter' | 'database' | 'security-policy' | 'backup';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('users');
@@ -99,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col dir-rtl text-right font-sans">
-      <header className="bg-slate-900 text-white p-6 shadow-xl sticky top-0 z-50">
+      <header className="bg-slate-900 text-white p-3 shadow-xl sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-500 rounded-2xl shadow-lg"><ShieldCheck size={28} /></div>
@@ -112,7 +111,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         </div>
       </header>
 
-      <div className="bg-white border-b sticky top-[84px] z-40 overflow-x-auto no-scrollbar">
+      <div className="bg-white border-b sticky top-[60px] z-40 overflow-x-auto no-scrollbar">
         <div className="container mx-auto flex gap-1 px-4 min-w-max">
           {[
             {id: 'users', label: 'کاربران', icon: Users},
@@ -123,7 +122,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             {id: 'settlements', label: 'تسویه ویزیتورها', icon: Banknote},
             {id: 'financial-reports', label: 'داشبورد مالی', icon: PieChart},
             {id: 'financial', label: 'تنظیمات قیمت', icon: Settings2},
-            {id: 'economic', label: 'مدیریت بودجه', icon: Wallet},
             {id: 'payments', label: 'تراکنش‌ها', icon: CreditCard},
             {id: 'security-logs', label: 'امنیت', icon: ShieldAlert},
             {id: 'visitors', label: 'ویزیتورها', icon: Award},
@@ -135,7 +133,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
             <button 
               key={tab.id} 
               onClick={() => setActiveTab(tab.id as AdminTab)} 
-              className={`py-4 px-6 font-black text-[11px] flex items-center gap-2 transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-indigo-600 bg-indigo-50/30' : 'text-slate-400 hover:bg-slate-50'}`}
+              className={`py-2 px-4 font-black text-[11px] flex items-center gap-2 transition-all relative whitespace-nowrap ${activeTab === tab.id ? 'text-indigo-600 bg-indigo-50/30' : 'text-slate-400 hover:bg-slate-50'}`}
             >
               <tab.icon size={16} /> {tab.label}
               {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-500 rounded-t-full"></div>}
@@ -144,7 +142,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4">
         {activeTab === 'users' && (
           <div className="space-y-6 animate-enter">
             <div className="bg-white rounded-[2.5rem] shadow-sm border overflow-hidden border-slate-200">
@@ -209,7 +207,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onSwitchToApp
         {activeTab === 'settlements' && <VisitorSettlements />}
         {activeTab === 'financial-reports' && <FinancialReports />}
         {activeTab === 'financial' && <FinancialSettings />}
-        {activeTab === 'economic' && <EconomicManager />}
         {activeTab === 'payments' && <PaymentLogs />}
         {activeTab === 'security-logs' && <SecurityReports />}
         {activeTab === 'csv-converter' && <CsvToJsonConverter />}

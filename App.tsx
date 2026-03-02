@@ -12,7 +12,6 @@ import AuthGate from './components/auth/AuthGate';
 import NotificationCenter from './components/NotificationCenter';
 import { RecipeService } from './services/recipeService';
 import { UserService } from './services/userService';
-import { EconomicService } from './services/economicService';
 import { NotificationService } from './services/notificationService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
@@ -75,13 +74,7 @@ const AppContent: React.FC = () => {
         const user = await UserService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
-          if (user.weeklyPlan) {
-            const enrichedPlan = user.weeklyPlan.map(p => ({
-              ...p,
-              dish: EconomicService.enrichDishWithEconomicData(p.dish, user)
-            }));
-            setDisplayPlan(enrichedPlan);
-          }
+          if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
           await checkUnreadNotifications(user);
           
           // Update last active immediately
@@ -97,13 +90,6 @@ const AppContent: React.FC = () => {
       const user = await UserService.getCurrentUser();
       if (user) {
         setCurrentUser(user);
-        if (user.weeklyPlan) {
-          const enrichedPlan = user.weeklyPlan.map(p => ({
-            ...p,
-            dish: EconomicService.enrichDishWithEconomicData(p.dish, user)
-          }));
-          setDisplayPlan(enrichedPlan);
-        }
         await checkUnreadNotifications(user);
       }
     };
@@ -437,7 +423,7 @@ const AppContent: React.FC = () => {
         ))}
       </div>
 
-      <header className="fixed top-0 left-0 right-0 z-[1000] no-print h-16 sm:h-20 lg:h-24 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center px-4 sm:px-12 shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-[1000] no-print h-12 sm:h-14 lg:h-16 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex items-center px-4 sm:px-12 shadow-sm">
         <div className="flex items-center justify-between w-full">
           <div 
             onClick={() => setViewMode('plan')} 
@@ -487,35 +473,35 @@ const AppContent: React.FC = () => {
 
       <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => { setIsNotificationCenterOpen(false); checkUnreadNotifications(currentUser!); }} user={currentUser!} />
 
-      <main className="flex-grow pt-16 sm:pt-20 lg:pt-24 pb-16 sm:pb-0 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
+      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
-            <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10 border-b border-white/20">
-                <div className="backdrop-blur-3xl bg-white/50 border border-white/60 shadow-xl shadow-slate-200/50 rounded-[1.75rem] sm:rounded-[2.5rem] p-3 sm:p-6 space-y-3 sm:space-y-4 max-w-7xl mx-auto">
-                    <div className="flex justify-center gap-8 sm:gap-16 border-b border-white/40 pb-2 sm:pb-4">
-                       <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
-                         <Leaf size={24} className="sm:w-8 sm:h-8" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
+            <div className="sticky top-0 z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
+                <div className="bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] p-2 sm:p-4 space-y-2 sm:space-y-3 max-w-7xl mx-auto">
+                    <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3">
+                       <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
+                         <Leaf size={28} className="sm:w-10 sm:h-10" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
                        </button>
-                       <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.onlyFavoritesMode ? 'text-rose-600' : 'text-slate-300'}`} title="فقط محبوب‌ها">
-                         <Heart size={24} className="sm:w-8 sm:h-8" fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
+                       <button onClick={() => handleToggleFilter('onlyFavoritesMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.onlyFavoritesMode ? 'text-rose-600' : 'text-slate-300'}`} title="فقط محبوب‌ها">
+                         <Heart size={28} className="sm:w-10 sm:h-10" fill={currentUser.onlyFavoritesMode ? "currentColor" : "none"} />
                        </button>
-                       <button onClick={() => handleToggleFilter('quickMealsMode')} className={`p-1.5 sm:p-2 transition-all active:scale-125 ${currentUser.quickMealsMode ? 'text-amber-600' : 'text-slate-300'}`} title="غذای سریع">
-                         <Zap size={24} className="sm:w-8 sm:h-8" fill={currentUser.quickMealsMode ? "currentColor" : "none"} />
+                       <button onClick={() => handleToggleFilter('quickMealsMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.quickMealsMode ? 'text-amber-600' : 'text-slate-300'}`} title="غذای سریع">
+                         <Zap size={28} className="sm:w-10 sm:h-10" fill={currentUser.quickMealsMode ? "currentColor" : "none"} />
                        </button>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-                       <div className="flex-grow grid grid-cols-4 gap-2 sm:gap-3 w-full">
-                          <button onClick={() => handleGeneratePlan('daily')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm transition-all shadow-sm active:scale-95 ${planLoading === 'daily' ? 'bg-teal-50 text-teal-600' : 'bg-white/80 text-slate-800 hover:bg-teal-50'}`}>
-                             {planLoading === 'daily' ? <Loader2 size={14} className="animate-spin" /> : <Utensils size={14} className="sm:w-[18px]" />} <span>امروز</span>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+                        <div className="flex-grow grid grid-cols-4 gap-3 sm:gap-4 w-full">
+                          <button onClick={() => handleGeneratePlan('daily')} disabled={planLoading !== null} className={`flex items-center justify-center gap-2 sm:gap-4 py-2 sm:py-3 rounded-2xl sm:rounded-[2rem] font-black text-[10px] sm:text-base transition-all shadow-sm active:scale-95 ${planLoading === 'daily' ? 'bg-teal-50 text-teal-600' : 'bg-slate-50 text-slate-800 hover:bg-teal-50 border border-slate-100'}`}>
+                             {planLoading === 'daily' ? <Loader2 size={16} className="animate-spin" /> : <Utensils size={16} className="sm:w-6 sm:h-6" />} <span>امروز</span>
                           </button>
-                          <button onClick={() => handleGeneratePlan('weekly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm shadow-md transition-all active:scale-95 ${planLoading === 'weekly' ? 'bg-slate-800' : 'bg-slate-900 text-white'}`}>
-                             {planLoading === 'weekly' ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} className="sm:w-[18px]" />} <span>هفتگی</span>
+                          <button onClick={() => handleGeneratePlan('weekly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-2 sm:gap-4 py-2 sm:py-3 rounded-2xl sm:rounded-[2rem] font-black text-[10px] sm:text-base shadow-xl transition-all active:scale-95 ${planLoading === 'weekly' ? 'bg-slate-700' : 'bg-slate-900 text-white'}`}>
+                             {planLoading === 'weekly' ? <Loader2 size={16} className="animate-spin" /> : <Calendar size={16} className="sm:w-6 sm:h-6" />} <span>هفتگی</span>
                           </button>
-                          <button onClick={() => handleGeneratePlan('monthly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm shadow-md transition-all active:scale-95 ${planLoading === 'monthly' ? 'bg-emerald-700' : 'bg-emerald-600 text-white'}`}>
-                             {planLoading === 'monthly' ? <Loader2 size={14} className="animate-spin" /> : <CalendarDays size={14} className="sm:w-[18px]" />} <span>ماهانه</span>
+                          <button onClick={() => handleGeneratePlan('monthly')} disabled={planLoading !== null} className={`flex items-center justify-center gap-2 sm:gap-4 py-2 sm:py-3 rounded-2xl sm:rounded-[2rem] font-black text-[10px] sm:text-base shadow-xl transition-all active:scale-95 ${planLoading === 'monthly' ? 'bg-emerald-700' : 'bg-emerald-600 text-white'}`}>
+                             {planLoading === 'monthly' ? <Loader2 size={16} className="animate-spin" /> : <CalendarDays size={16} className="sm:w-6 sm:h-6" />} <span>ماهانه</span>
                           </button>
-                          <button onClick={() => window.print()} className="flex items-center justify-center gap-1.5 sm:gap-3 py-2.5 sm:py-4 rounded-xl sm:rounded-[1.75rem] font-black text-[10px] sm:text-sm bg-white/80 text-slate-500 hover:text-indigo-600 transition-all shadow-sm active:scale-95 border border-white/60">
-                             <Printer size={14} className="sm:w-[18px]" /> <span>چاپ</span>
+                          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 sm:gap-4 py-2 sm:py-3 rounded-2xl sm:rounded-[2rem] font-black text-[10px] sm:text-base bg-white text-slate-500 hover:text-indigo-600 transition-all shadow-sm active:scale-95 border border-slate-200">
+                             <Printer size={16} className="sm:w-6 sm:h-6" /> <span>چاپ</span>
                           </button>
                        </div>
                     </div>
@@ -523,10 +509,10 @@ const AppContent: React.FC = () => {
             </div>
 
             <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-                <div className="h-10 sm:h-12 w-full"></div>
-                <div className="max-w-7xl mx-auto py-4 sm:py-6">
+                <div className="max-w-7xl mx-auto py-8 sm:py-12">
+
                     {displayPlan.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+                      <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                         {displayPlan.map((plan, idx) => (
                            <MealCard 
                             key={idx} 
@@ -553,8 +539,8 @@ const AppContent: React.FC = () => {
         {viewMode === 'settings' && <Preferences user={currentUser!} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[1000] no-print h-16 sm:h-auto">
-        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around h-16 px-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)]">
+      <div className="fixed bottom-0 left-0 right-0 z-[1000] no-print h-12 sm:h-auto">
+        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around h-12 px-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)]">
            {navItems.map(nav => (
               <button key={nav.id} onClick={() => setViewMode(nav.id as ViewMode)} className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all ${viewMode === nav.id ? 'text-teal-600' : 'text-slate-400'}`}>
                  <div className={`p-1.5 rounded-lg transition-all ${viewMode === nav.id ? 'bg-teal-50' : ''}`}><nav.icon size={20} strokeWidth={viewMode === nav.id ? 2.5 : 2} /></div>
@@ -567,8 +553,8 @@ const AppContent: React.FC = () => {
            </button>
         </div>
 
-        <footer className="hidden md:flex backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[2.5rem] h-[90px] px-12 items-center justify-between shadow-2xl mx-12 mb-10">
-            <button onClick={() => setViewMode('settings')} className={`flex items-center gap-3 px-8 py-4 rounded-[1.75rem] transition-all flex-shrink-0 ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-2xl' : 'bg-white/80 border border-slate-200 text-slate-700 hover:bg-white'}`}>
+        <footer className="hidden md:flex backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[2.5rem] h-[60px] px-12 items-center justify-between shadow-2xl mx-12 mb-4">
+            <button onClick={() => setViewMode('settings')} className={`flex items-center gap-3 px-8 py-2 rounded-[1.75rem] transition-all flex-shrink-0 ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-2xl' : 'bg-white/80 border border-slate-200 text-slate-700 hover:bg-white'}`}>
                 <Settings size={24} />
                 <span className="text-lg font-black">تنظیمات</span>
             </button>
