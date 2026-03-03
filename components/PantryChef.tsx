@@ -149,7 +149,6 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
       </div>
 
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-          <div className="h-10 sm:h-12 w-full"></div>
           <div className="max-w-7xl mx-auto py-4 sm:py-6 space-y-6 sm:space-y-10">
               {selectedItems.length > 0 && (
                 <div className="flex flex-wrap gap-2 animate-enter">

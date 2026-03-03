@@ -174,7 +174,6 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
 
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-          <div className="h-10 sm:h-12 w-full"></div>
           <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>

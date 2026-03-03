@@ -427,10 +427,10 @@ const AppContent: React.FC = () => {
         <div className="flex items-center justify-between w-full">
           <div 
             onClick={() => setViewMode('plan')} 
-            className="flex flex-col items-center cursor-pointer logo-animate transition-all"
+            className="flex flex-col items-center cursor-pointer logo-animate transition-all pt-1"
           >
-            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-8 h-8 sm:w-14 sm:h-14 object-contain" />
-            <span className="text-[6px] sm:text-[10px] font-black text-emerald-600 tracking-[0.2em] uppercase mt-1">{appVersion}</span>
+            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
+            <span className="text-[6px] sm:text-[10px] font-black text-emerald-600 tracking-[0.2em] uppercase mt-0.5">{appVersion}</span>
           </div>
 
           <div className="hidden lg:flex flex-col items-center" style={{ direction: 'ltr' }}>
@@ -509,8 +509,7 @@ const AppContent: React.FC = () => {
             </div>
 
             <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
-                <div className="max-w-7xl mx-auto py-8 sm:py-12">
-
+                <div className="max-w-7xl mx-auto py-4 sm:py-6">
                     {displayPlan.length > 0 ? (
                       <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                         {displayPlan.map((plan, idx) => (

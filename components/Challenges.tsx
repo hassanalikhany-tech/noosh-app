@@ -79,7 +79,6 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
       </div>
 
       <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-24 no-scrollbar">
-          <div className="h-6 sm:h-10 w-full"></div>
           <div className="max-w-7xl mx-auto py-2 sm:py-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {CHALLENGES.map((challenge) => {

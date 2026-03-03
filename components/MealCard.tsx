@@ -87,7 +87,7 @@ const MealCard: React.FC<MealCardProps> = ({ plan, user, onUpdateUser, onRefresh
         className={`group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:scale-[1.02] hover:z-[60] transition-all duration-500 overflow-hidden border border-slate-100 flex flex-col h-full cursor-pointer relative ${localBlacklisted ? 'opacity-75 grayscale-[0.3]' : ''} ${isLocked ? 'grayscale opacity-60' : ''}`}
         onClick={handleCardClick}
       >
-        <div className="relative h-20 overflow-hidden">
+        <div className="relative h-60 overflow-hidden">
           <DishVisual category={plan.dish.category} className={`w-full h-full transition-all duration-1000 ease-out ${isLocked ? '' : 'group-hover:scale-110 group-hover:brightness-110'}`} iconSize={48} imageUrl={plan.dish.imageUrl} dishId={plan.dish.id} />
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
