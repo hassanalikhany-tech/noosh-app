@@ -260,6 +260,13 @@ const AppContent: React.FC = () => {
   const shopRowsPerPage = 20;
 
   const chunkedPlan = useMemo(() => {
+    if (displayPlan.length > 16) {
+      // For monthly plans or any plan > 16 days, use the 16/remaining split as requested
+      return [
+        displayPlan.slice(0, 16),
+        displayPlan.slice(16)
+      ];
+    }
     const chunks = [];
     for (let i = 0; i < displayPlan.length; i += planRowsPerPage) {
       chunks.push(displayPlan.slice(i, i + planRowsPerPage));
@@ -319,22 +326,22 @@ const AppContent: React.FC = () => {
                 </div>
                 
                 <div className="w-full space-y-5 pt-4 border-t border-slate-100">
-                  <button 
+                   <button 
                     onClick={() => setDontShowAgain(!dontShowAgain)}
                     className="flex items-center justify-center gap-3 w-full group cursor-pointer transition-all"
                   >
-                     <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${dontShowAgain ? 'bg-slate-900 border-slate-900 shadow-md' : 'border-slate-200 group-hover:border-slate-400'}`}>
-                        {dontShowAgain && <Check size={20} className="text-white" strokeWidth={4} />}
-                     </div>
-                     <span className="text-base sm:text-lg font-black text-slate-600">دیگر نمایش نده</span>
-                  </button>
+                      <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${dontShowAgain ? 'bg-slate-900 border-slate-900 shadow-md' : 'border-slate-200 group-hover:border-slate-400'}`}>
+                         {dontShowAgain && <Check size={20} className="text-white" strokeWidth={4} />}
+                      </div>
+                      <span className="text-base sm:text-lg font-black text-slate-600">دیگر نمایش نده</span>
+                   </button>
 
-                  <button 
+                   <button 
                     onClick={closeNotif}
                     className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[1.75rem] font-black text-lg sm:text-xl shadow-xl transition-all active:scale-95"
                   >
-                     متوجه شدم
-                  </button>
+                      متوجه شدم
+                   </button>
                 </div>
              </div>
           </div>
@@ -367,14 +374,17 @@ const AppContent: React.FC = () => {
                    </tr>
                 </thead>
                 <tbody>
-                   {chunk.map((plan, idx) => (
-                      <tr key={idx}>
-                         <td className="text-center font-mono">{toPersian(pageIdx * planRowsPerPage + idx + 1)}</td>
-                         <td className="font-bold">{plan.dayName}</td>
-                         <td className="font-black text-slate-800">{plan.dish.name}</td>
-                         <td className="text-slate-500">{CATEGORY_LABELS[plan.dish.category]}</td>
-                      </tr>
-                   ))}
+                   {chunk.map((plan, idx) => {
+                      const rowNumber = pageIdx === 0 ? idx + 1 : 16 + idx + 1;
+                      return (
+                        <tr key={idx}>
+                           <td className="text-center font-mono">{toPersian(rowNumber)}</td>
+                          <td className="font-bold">{plan.dayName}</td>
+                          <td className="font-black text-slate-800">{plan.dish.name}</td>
+                          <td className="text-slate-500">{CATEGORY_LABELS[plan.dish.category]}</td>
+                       </tr>
+                       );
+                    })}
                 </tbody>
              </table>
              <div className="print-footer">🌐 www.nooshapp.ir | اپلیکیشن تخصصی هوشمند برنامه‌ریزی غذایی نوش</div>

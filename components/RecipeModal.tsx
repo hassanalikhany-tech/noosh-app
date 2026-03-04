@@ -1,5 +1,5 @@
 
-import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus, Play, Pause, RotateCcw, CheckSquare, Square, Trophy } from 'lucide-react';
+import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus, Play, Pause, RotateCcw, CheckSquare, Square, Trophy, AlarmClock } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
@@ -21,9 +21,12 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
   const [addedToCart, setAddedToCart] = useState(false);
   const [servings, setServings] = useState(user?.familySize || 4);
   const [checkedSteps, setCheckedSteps] = useState<number[]>([]);
+  const [isTimerOverlayOpen, setIsTimerOverlayOpen] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerInput, setTimerInput] = useState(10); // Default 10 mins
+  const [isAlarmPlaying, setIsAlarmPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const hasRecipe = dish.recipeSteps && dish.recipeSteps.length > 0;
   const hasIngredients = dish.ingredients && dish.ingredients.length > 0;
@@ -76,11 +79,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
         setTimerSeconds(prev => {
           if (prev <= 1) {
             setIsTimerRunning(false);
-            // Play a sound or alert?
-            try {
-              const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-              audio.play();
-            } catch (e) {}
+            setIsAlarmPlaying(true);
             return 0;
           }
           return prev - 1;
@@ -89,6 +88,31 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     }
     return () => { if (interval) clearInterval(interval); };
   }, [isTimerRunning]);
+
+  // Alarm logic
+  useEffect(() => {
+    if (isAlarmPlaying) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audioRef.current.loop = true;
+      }
+      audioRef.current.play().catch(e => console.log("Audio play failed", e));
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [isAlarmPlaying]);
+
+  const stopAlarm = () => {
+    setIsAlarmPlaying(false);
+  };
 
   const toggleStep = (idx: number) => {
     setCheckedSteps(prev => 
@@ -165,32 +189,6 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                  <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-2xl text-sm font-black"><Activity size={18} /> {difficulty}</div>
               </div>
             </div>
-            
-            {/* Timer Widget */}
-            <div className="bg-slate-900 text-white p-2 sm:p-3 rounded-[1.5rem] shadow-2xl flex items-center gap-6 border border-white/10">
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تایمر آشپزی</span>
-                <span className="text-xl font-mono font-black tabular-nums">{timerSeconds > 0 ? formatTime(timerSeconds) : `${toPersianDigits(timerInput)}:۰۰`}</span>
-              </div>
-              <div className="flex gap-2">
-                {!isTimerRunning ? (
-                  <button onClick={startTimer} className="w-12 h-12 bg-emerald-500 hover:bg-emerald-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90">
-                    <Play size={20} fill="currentColor" />
-                  </button>
-                ) : (
-                  <button onClick={pauseTimer} className="w-12 h-12 bg-amber-500 hover:bg-amber-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90">
-                    <Pause size={20} fill="currentColor" />
-                  </button>
-                )}
-                <button onClick={resetTimer} className="w-12 h-12 bg-slate-700 hover:bg-slate-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90">
-                  <RotateCcw size={20} />
-                </button>
-              </div>
-              <div className="hidden sm:flex flex-col gap-1">
-                <button onClick={() => setTimerInput(prev => Math.min(120, prev + 5))} className="p-1 hover:text-emerald-400 transition-colors"><Plus size={16} /></button>
-                <button onClick={() => setTimerInput(prev => Math.max(1, prev - 5))} className="p-1 hover:text-rose-400 transition-colors"><Minus size={16} /></button>
-              </div>
-            </div>
           </div>
           
           <button 
@@ -199,6 +197,22 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           >
             <X size={32} />
           </button>
+        </div>
+
+        {/* Timer Trigger Bar - Positioned clearly below the photo */}
+        <div className="bg-slate-50 border-b border-slate-100 p-4 flex justify-center flex-shrink-0 z-40">
+             <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsTimerOverlayOpen(true);
+              }}
+              className={`flex items-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-[2rem] text-base font-black hover:bg-teal-600 transition-all shadow-2xl active:scale-95 relative overflow-hidden group ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
+             >
+               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+               <AlarmClock size={24} strokeWidth={3} className={isTimerRunning ? 'text-amber-400' : ''} />
+               <span>تایمر</span>
+             </button>
         </div>
         
         <div className="flex-grow overflow-y-auto p-8 sm:p-12 no-scrollbar">
@@ -324,6 +338,104 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           </div>
         </div>
       </div>
+
+      {isTimerOverlayOpen && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-white/10 backdrop-blur-xl"
+          onClick={(e) => { e.stopPropagation(); }}
+        >
+          <div 
+            className="w-full max-w-md bg-slate-900/90 text-white p-8 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 flex flex-col gap-6 transform transition-all animate-slide-down"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-teal-500 rounded-2xl shadow-lg">
+                  <AlarmClock size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">تایمر</h3>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsTimerOverlayOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center py-4">
+              <span className="text-6xl font-mono font-black tabular-nums tracking-tighter">
+                {timerSeconds > 0 ? formatTime(timerSeconds) : `${toPersianDigits(timerInput)}:۰۰`}
+              </span>
+              <div className="flex items-center gap-8 mt-6">
+                <button 
+                  onClick={() => setTimerInput(prev => Math.min(120, prev + 1))}
+                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all active:scale-90"
+                >
+                  <Plus size={24} />
+                </button>
+                <div className="text-center">
+                  <span className="text-sm font-black text-slate-400">زمان تنظیمی</span>
+                  <div className="text-xl font-black">{toPersianDigits(timerInput)} دقیقه</div>
+                </div>
+                <button 
+                  onClick={() => setTimerInput(prev => Math.max(1, prev - 1))}
+                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all active:scale-90"
+                >
+                  <Minus size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {isAlarmPlaying ? (
+                <button 
+                  onClick={stopAlarm}
+                  className="col-span-2 py-5 bg-rose-600 hover:bg-rose-700 text-white rounded-[1.75rem] font-black text-lg shadow-xl animate-pulse transition-all active:scale-95"
+                >
+                  قطع صدای زنگ
+                </button>
+              ) : (
+                <>
+                  {!isTimerRunning ? (
+                    <button 
+                      onClick={startTimer}
+                      className="py-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-[1.75rem] font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                    >
+                      <Play size={24} fill="currentColor" />
+                      شروع
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={pauseTimer}
+                      className="py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-[1.75rem] font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                    >
+                      <Pause size={24} fill="currentColor" />
+                      توقف
+                    </button>
+                  )}
+                  <button 
+                    onClick={resetTimer}
+                    className="py-5 bg-slate-700 hover:bg-slate-600 text-white rounded-[1.75rem] font-black text-lg shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95"
+                  >
+                    <RotateCcw size={24} />
+                    ریست
+                  </button>
+                </>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setIsTimerOverlayOpen(false)}
+              className="w-full py-4 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-2xl font-black text-sm transition-all border border-white/5"
+            >
+              بستن پنجره تایمر
+            </button>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
