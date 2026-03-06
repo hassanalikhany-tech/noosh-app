@@ -183,11 +183,6 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div className="space-y-2">
               <h2 className="text-slate-900 text-2xl sm:text-4xl font-black drop-shadow-sm">{dish.name}</h2>
-              <div className="flex flex-wrap gap-3">
-                 <div className="flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-2xl text-sm font-black"><Clock size={18} /> {toPersianDigits(time)} دقیقه</div>
-                 <div className="flex items-center gap-2 bg-rose-100 text-rose-700 px-4 py-2 rounded-2xl text-sm font-black"><Flame size={18} /> ~{toPersianDigits(calories)} کالری</div>
-                 <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-2xl text-sm font-black"><Activity size={18} /> {difficulty}</div>
-              </div>
             </div>
           </div>
           
@@ -199,18 +194,35 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           </button>
         </div>
 
-        {/* Timer Trigger Bar - Positioned clearly below the photo */}
-        <div className="bg-slate-50 border-b border-slate-100 p-4 flex justify-center flex-shrink-0 z-40">
+        {/* Timer & Info Bar - Positioned clearly below the photo */}
+        <div className="bg-slate-50 border-b border-slate-100 p-4 flex flex-row items-center justify-between flex-shrink-0 z-40 px-6 sm:px-10">
+             {/* Right side: Info (Time, Calories, Difficulty) */}
+             <div className="flex flex-wrap gap-2 sm:gap-4">
+                <div className="flex items-center gap-1.5 bg-orange-100 text-orange-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-orange-200/50 shadow-sm">
+                  <Clock size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                  <span>{toPersianDigits(time)} دقیقه</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-rose-100 text-rose-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-rose-200/50 shadow-sm">
+                  <Flame size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                  <span>~{toPersianDigits(calories)} کالری</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-blue-100 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-blue-200/50 shadow-sm">
+                  <Activity size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                  <span>{difficulty}</span>
+                </div>
+             </div>
+
+             {/* Left side: Timer */}
              <button 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsTimerOverlayOpen(true);
               }}
-              className={`flex items-center gap-3 bg-slate-900 text-white px-10 py-4 rounded-[2rem] text-base font-black hover:bg-teal-600 transition-all shadow-2xl active:scale-95 relative overflow-hidden group ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
+              className={`flex items-center gap-2 sm:gap-3 bg-slate-900 text-white px-6 py-3 sm:px-10 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] text-xs sm:text-base font-black hover:bg-teal-600 transition-all shadow-xl active:scale-95 relative overflow-hidden group ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
              >
                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-               <AlarmClock size={24} strokeWidth={3} className={isTimerRunning ? 'text-amber-400' : ''} />
+               <AlarmClock size={20} strokeWidth={3} className={`sm:w-6 sm:h-6 ${isTimerRunning ? 'text-amber-400' : ''}`} />
                <span>تایمر</span>
              </button>
         </div>
