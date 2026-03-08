@@ -176,63 +176,59 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 bg-black/80 backdrop-blur-md overflow-hidden" onClick={onClose}>
       <div className="relative w-full h-full sm:w-[95vw] sm:h-[95vh] sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         
-        {/* Full-screen Header */}
-        <div className="relative h-40 sm:h-60 flex-shrink-0">
-          <DishVisual category={dish.category} className="w-full h-full object-cover" iconSize={120} imageUrl={dish.imageUrl} dishId={dish.id} />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <h2 className="text-slate-900 text-2xl sm:text-4xl font-black drop-shadow-sm">{dish.name}</h2>
-            </div>
+        {/* Fixed Glassy Header */}
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-50 sticky top-0 shadow-sm">
+          {/* Row 1: Centered Title */}
+          <div className="relative p-4 sm:p-6 flex items-center justify-center">
+            <h2 className="text-slate-900 text-2xl sm:text-4xl font-black drop-shadow-sm text-center">{dish.name}</h2>
+            <button 
+              onClick={onClose} 
+              className="absolute right-4 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 bg-slate-100/50 hover:bg-slate-200/50 rounded-full text-slate-900 flex items-center justify-center transition-all shadow-sm active:scale-90 border border-slate-200"
+            >
+              <X size={24} />
+            </button>
           </div>
-          
-          <button 
-            onClick={onClose} 
-            className="absolute top-8 right-8 z-[60] w-14 h-14 bg-white/90 hover:bg-white backdrop-blur-md rounded-full text-slate-900 flex items-center justify-center transition-all shadow-2xl active:scale-90 border border-slate-100"
-          >
-            <X size={32} />
-          </button>
-        </div>
 
-        {/* Timer & Info Bar - Positioned clearly below the photo */}
-        <div className="bg-slate-50 border-b border-slate-100 p-4 flex flex-row items-center justify-between flex-shrink-0 z-40 px-6 sm:px-10">
-             {/* Right side: Info (Time, Calories, Difficulty) */}
-             <div className="flex flex-wrap gap-2 sm:gap-4">
-                <div className="flex items-center gap-1.5 bg-orange-100 text-orange-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-orange-200/50 shadow-sm">
-                  <Clock size={16} className="sm:w-[18px] sm:h-[18px]" /> 
-                  <span>{toPersianDigits(time)} دقیقه</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-rose-100 text-rose-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-rose-200/50 shadow-sm">
-                  <Flame size={16} className="sm:w-[18px] sm:h-[18px]" /> 
-                  <span>~{toPersianDigits(calories)} کالری</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-blue-100 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-blue-200/50 shadow-sm">
-                  <Activity size={16} className="sm:w-[18px] sm:h-[18px]" /> 
-                  <span>{difficulty}</span>
-                </div>
-             </div>
+          {/* Row 2: Info Bar (Glassy) */}
+          <div className="p-4 flex flex-row items-center justify-between px-6 sm:px-10 bg-slate-50/30 border-t border-slate-100/50">
+               {/* Right side: Info (Time, Calories, Difficulty) */}
+               <div className="flex flex-wrap gap-2 sm:gap-4">
+                  <div className="flex items-center gap-1.5 bg-orange-100/80 text-orange-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-orange-200/30 shadow-sm backdrop-blur-sm">
+                    <Clock size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                    <span>{toPersianDigits(time)} دقیقه</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-rose-100/80 text-rose-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-rose-200/30 shadow-sm backdrop-blur-sm">
+                    <Flame size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                    <span>~{toPersianDigits(calories)} کالری</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-blue-100/80 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-blue-200/30 shadow-sm backdrop-blur-sm">
+                    <Activity size={16} className="sm:w-[18px] sm:h-[18px]" /> 
+                    <span>{difficulty}</span>
+                  </div>
+               </div>
 
-             {/* Left side: Timer */}
-             <button 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsTimerOverlayOpen(true);
-              }}
-              className={`flex items-center gap-2 sm:gap-3 bg-slate-900 text-white px-6 py-3 sm:px-10 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] text-xs sm:text-base font-black hover:bg-teal-600 transition-all shadow-xl active:scale-95 relative overflow-hidden group ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
-             >
-               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-               <AlarmClock size={20} strokeWidth={3} className={`sm:w-6 sm:h-6 ${isTimerRunning ? 'text-amber-400' : ''}`} />
-               <span>تایمر</span>
-             </button>
+               {/* Left side: Timer */}
+               <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsTimerOverlayOpen(true);
+                }}
+                className={`flex items-center gap-2 sm:gap-3 bg-slate-900/90 text-white px-6 py-3 sm:px-10 sm:py-4 rounded-[1.5rem] sm:rounded-[2rem] text-xs sm:text-base font-black hover:bg-teal-600 transition-all shadow-xl active:scale-95 relative overflow-hidden group ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
+               >
+                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                 <AlarmClock size={20} strokeWidth={3} className={`sm:w-6 sm:h-6 ${isTimerRunning ? 'text-amber-400' : ''}`} />
+                 <span>تایمر</span>
+               </button>
+          </div>
         </div>
         
-        <div className="flex-grow overflow-y-auto p-8 sm:p-12 no-scrollbar">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="flex-grow overflow-y-auto p-0 no-scrollbar">
+          <div className="max-w-7xl mx-auto p-6 sm:p-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12">
               
-              {/* Sidebar: Info & Ingredients */}
-              <div className="lg:col-span-4 space-y-10">
+              {/* Right Column: Ingredients & Info (lg:col-span-7) */}
+              <div className="lg:col-span-7 space-y-8">
                 <div className="flex flex-col gap-6">
                   <div className={`p-6 rounded-[2rem] border-2 flex flex-col gap-4 ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-100' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
                       <div className="flex items-center gap-4">
@@ -287,8 +283,17 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                 )}
               </div>
 
-              {/* Main Content: Steps */}
-              <div className="lg:col-span-8">
+              {/* Left Column: Image (lg:col-span-5) */}
+              <div className="lg:col-span-5">
+                {/* Square Image */}
+                <div className="aspect-square w-full max-w-md mx-auto lg:mx-0 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white relative group">
+                  <DishVisual category={dish.category} className="w-full h-full" iconSize={120} imageUrl={dish.imageUrl} dishId={dish.id} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                </div>
+              </div>
+
+              {/* Bottom Column: Steps (lg:col-span-12) */}
+              <div className="lg:col-span-12 mt-4">
                 {hasRecipe ? (
                   <div className="space-y-8">
                     <div className="flex items-center justify-between">
