@@ -176,21 +176,25 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 bg-black/80 backdrop-blur-md overflow-hidden" onClick={onClose}>
       <div className="relative w-full h-full sm:w-[95vw] sm:h-[95vh] sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         
-        {/* Fixed Glassy Header */}
-        <div className="flex-shrink-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 z-50 sticky top-0 shadow-sm">
-          {/* Row 1: Centered Title */}
-          <div className="relative p-4 sm:p-6 flex items-center justify-center">
-            <h2 className="text-slate-900 text-2xl sm:text-4xl font-black drop-shadow-sm text-center">{dish.name}</h2>
+        {/* Fixed Glassy Header - Ultra Transparent & High Blur */}
+        <div className="flex-shrink-0 bg-white/10 backdrop-blur-[50px] border-b border-white/20 z-50 sticky top-0 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+          
+          {/* Row 1: Centered Title with Premium Typography */}
+          <div className="relative p-6 sm:p-10 flex items-center justify-center">
+            <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-center bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-teal-800 to-slate-900 drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)] leading-tight py-2">
+              {dish.name}
+            </h2>
             <button 
               onClick={onClose} 
-              className="absolute right-4 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 bg-slate-100/50 hover:bg-slate-200/50 rounded-full text-slate-900 flex items-center justify-center transition-all shadow-sm active:scale-90 border border-slate-200"
+              className="absolute right-4 sm:right-10 w-12 h-12 sm:w-16 sm:h-16 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-slate-900 flex items-center justify-center transition-all shadow-xl active:scale-90 border border-white/30 group"
             >
-              <X size={24} />
+              <X size={32} className="group-hover:rotate-90 transition-transform duration-500" />
             </button>
           </div>
 
-          {/* Row 2: Info Bar (Glassy) */}
-          <div className="p-4 flex flex-row items-center justify-between px-6 sm:px-10 bg-slate-50/30 border-t border-slate-100/50">
+          {/* Row 2: Info Bar (Ultra Glassy) */}
+          <div className="p-4 flex flex-row items-center justify-between px-6 sm:px-12 bg-white/5 border-t border-white/10">
                {/* Right side: Info (Time, Calories, Difficulty) */}
                <div className="flex flex-wrap gap-2 sm:gap-4">
                   <div className="flex items-center gap-1.5 bg-orange-100/80 text-orange-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black border border-orange-200/30 shadow-sm backdrop-blur-sm">
