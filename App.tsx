@@ -291,7 +291,7 @@ const AppContent: React.FC = () => {
   }, [currentUser?.customShoppingList]);
 
   if (isInitializing || !currentUser) return (
-    <div className="h-[100dvh] landscape:h-auto landscape:min-h-screen landscape:overflow-visible w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl overflow-hidden">
+    <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-slate-950 text-white dir-rtl overflow-hidden">
       <Loader2 className="w-16 h-16 text-teal-500 animate-spin mb-4" />
       <p className="text-sm font-black tracking-widest animate-pulse">فراخوانی دستیار هوشمند نوش...</p>
     </div>
@@ -483,10 +483,10 @@ const AppContent: React.FC = () => {
 
       <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => { setIsNotificationCenterOpen(false); checkUnreadNotifications(currentUser!); }} user={currentUser!} />
 
-      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden landscape:overflow-visible flex flex-col bg-[#f8fafc]">
+      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
-            <div className="sticky top-0 landscape:relative z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
+            <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
                 <div className="bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] p-2 sm:p-4 space-y-2 sm:space-y-3 max-w-7xl mx-auto">
                     <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">

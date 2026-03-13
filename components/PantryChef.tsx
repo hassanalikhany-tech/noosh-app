@@ -124,7 +124,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   return (
     <div className="flex flex-col h-full animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
-      <div className="sticky top-0 landscape:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
+      <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[3.5rem] p-4 sm:p-8 shadow-xl shadow-slate-200/50 relative overflow-hidden max-w-7xl mx-auto">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4 relative z-10">
               <div className="flex items-center gap-3 sm:gap-4 text-right flex-row w-full lg:w-auto">
@@ -148,7 +148,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
           </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto landscape:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
+      <div className="flex-grow overflow-y-auto [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
           <div className="max-w-7xl mx-auto py-4 sm:py-6 space-y-6 sm:space-y-10">
               {selectedItems.length > 0 && (
                 <div className="flex flex-wrap gap-2 animate-enter">
