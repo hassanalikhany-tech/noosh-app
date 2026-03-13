@@ -62,7 +62,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
   return (
     <div className="flex flex-col h-full animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
-      <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-2 sm:py-4 sm:px-10">
+      <div className="sticky top-0 landscape:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-2 sm:py-4 sm:px-10">
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-6 shadow-xl shadow-slate-200/50 relative overflow-hidden max-w-7xl mx-auto">
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
               <div className="p-2 sm:p-4 bg-yellow-400 rounded-lg sm:rounded-[1.5rem] shadow-xl">
@@ -78,7 +78,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
           </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-24 no-scrollbar">
+      <div className="flex-grow overflow-y-auto landscape:overflow-visible px-4 sm:px-10 pb-24 no-scrollbar">
           <div className="max-w-7xl mx-auto py-2 sm:py-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {CHALLENGES.map((challenge) => {

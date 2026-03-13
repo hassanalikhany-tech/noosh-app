@@ -113,8 +113,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const toPersianDigits = (num: string) => num.replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-slate-100 p-4 sm:p-8 font-sans dir-rtl overflow-hidden">
-      <div className="w-full max-w-6xl h-full max-h-[850px] flex flex-col lg:flex-row bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-white">
+    <div className="h-screen landscape:h-auto landscape:min-h-screen landscape:overflow-visible w-full flex items-center justify-center bg-slate-100 p-4 sm:p-8 font-sans dir-rtl overflow-hidden">
+        <div className="w-full max-w-6xl h-full landscape:h-auto max-h-[850px] flex flex-col lg:flex-row bg-white rounded-[3.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-white">
         
         {/* بخش برندینگ (تیره) */}
         <div className="hidden lg:flex lg:w-1/2 metallic-navy relative flex-col items-center justify-center p-16 text-white overflow-hidden">
@@ -138,7 +138,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         {/* بخش فرم (روشن) */}
-        <div className="w-full lg:w-1/2 h-full flex flex-col justify-center p-8 sm:p-20 relative bg-white overflow-y-auto no-scrollbar">
+        <div className="w-full lg:w-1/2 h-full landscape:h-auto flex flex-col justify-center p-8 sm:p-20 relative bg-white overflow-y-auto no-scrollbar landscape:overflow-visible">
           
           <div className="lg:hidden mb-12 flex flex-col items-center gap-3 logo-animate">
               <img src="https://i.ibb.co/gMDKtj4p/3.png" className="w-24 h-24 animate-float" alt="Logo" />

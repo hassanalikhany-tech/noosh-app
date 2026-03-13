@@ -126,7 +126,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
   return (
     <div className="flex flex-col h-full animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
-      <div className="sticky top-0 z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
+      <div className="sticky top-0 landscape:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[3.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-8">
               <div className="flex items-center gap-3 sm:gap-6 text-right w-full sm:w-auto">
@@ -173,7 +173,7 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
 
-      <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
+      <div className="flex-grow overflow-y-auto landscape:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
           <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
