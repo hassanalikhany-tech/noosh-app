@@ -244,16 +244,16 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
               
-              {/* Left Column: Image (3.5x3.5 inch square) */}
-              <div className="lg:col-span-4 flex flex-col items-center lg:items-start gap-6">
-                <div className="w-full max-w-[3.5in] aspect-square rounded-[2.25rem] overflow-hidden shadow-2xl border-6 border-white ring-1 ring-slate-200 relative group">
-                  <DishVisual category={dish.category} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" iconSize={90} imageUrl={dish.imageUrl} dishId={dish.id} />
+              {/* Left Column: Image (4x4 inch square) */}
+              <div className="lg:col-span-5 flex flex-col items-center lg:items-start gap-6">
+                <div className="w-full max-w-[4in] aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl border-6 border-white ring-1 ring-slate-200 relative group">
+                  <DishVisual category={dish.category} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" iconSize={100} imageUrl={dish.imageUrl} dishId={dish.id} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
               </div>
 
               {/* Right Column: Ingredients */}
-              <div className="lg:col-span-8 space-y-6">
+              <div className="lg:col-span-7 space-y-6">
                 <div className="flex items-center gap-3 text-slate-900 font-black text-2xl border-r-4 border-teal-500 pr-4">
                   <Utensils size={28} className="text-teal-600" />
                   <h3>مواد لازم</h3>
