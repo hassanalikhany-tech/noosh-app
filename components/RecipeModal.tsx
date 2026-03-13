@@ -173,11 +173,11 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 bg-black/80 backdrop-blur-md overflow-hidden" onClick={onClose}>
-      <div className="relative w-full h-full sm:w-[95vw] sm:h-[95vh] sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 bg-black/80 backdrop-blur-md overflow-hidden landscape:overflow-y-auto" onClick={onClose}>
+      <div className="relative w-full h-full sm:w-[95vw] sm:h-[95vh] landscape:h-auto sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden landscape:overflow-visible" onClick={e => e.stopPropagation()}>
         
         {/* Glassmorphism Header */}
-        <div className="sticky top-0 z-[100] bg-white/40 backdrop-blur-2xl border-b border-white/30 p-6 sm:p-8 shadow-xl flex-shrink-0">
+        <div className="sticky top-0 landscape:relative z-[100] bg-white/40 backdrop-blur-2xl border-b border-white/30 p-6 sm:p-8 landscape:p-4 shadow-xl flex-shrink-0">
           <button 
             onClick={onClose} 
             className="absolute top-4 right-4 z-[110] w-10 h-10 bg-white/80 hover:bg-rose-500 hover:text-white backdrop-blur-md rounded-full text-slate-900 flex items-center justify-center transition-all shadow-lg active:scale-90 border border-white/20"
@@ -186,15 +186,15 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           </button>
 
           {/* Row 1: Dish Name */}
-          <div className="text-center mb-8 pt-2">
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] tracking-tight leading-tight">
+          <div className="text-center mb-8 pt-2 landscape:mb-2 landscape:pt-0">
+            <h2 className="text-3xl sm:text-5xl landscape:text-2xl font-black text-slate-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] tracking-tight leading-tight">
               {dish.name}
             </h2>
           </div>
 
           {/* Row 2: Info & Timer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3 order-2 sm:order-1">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 landscape:mb-2 landscape:gap-2 landscape:flex-row landscape:flex-wrap">
+            <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3 order-2 sm:order-1 landscape:order-1">
               <div className="flex items-center gap-1.5 bg-orange-500 text-white px-4 py-2 rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-orange-200/50">
                 <Clock size={16} /> 
                 <span>{toPersianDigits(time)} دقیقه</span>
@@ -215,7 +215,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                 e.stopPropagation();
                 setIsTimerOverlayOpen(true);
               }}
-              className={`flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-sm sm:text-base font-black hover:bg-teal-600 transition-all shadow-xl active:scale-95 order-1 sm:order-2 ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
+              className={`flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl text-sm sm:text-base font-black hover:bg-teal-600 transition-all shadow-xl active:scale-95 order-1 sm:order-2 landscape:order-2 landscape:py-2 landscape:px-4 ${isTimerRunning ? 'animate-pulse ring-4 ring-amber-400/50' : ''}`}
             >
               <AlarmClock size={20} strokeWidth={3} className={isTimerRunning ? 'text-amber-400' : ''} />
               <span>تایمر آشپزی</span>
@@ -223,30 +223,30 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           </div>
 
           {/* Row 3: Nature & Servings */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border-2 shadow-sm order-2 sm:order-1 ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-200 text-orange-700' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 landscape:flex-row landscape:gap-2">
+            <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border-2 shadow-sm order-2 sm:order-1 landscape:order-1 landscape:py-1.5 landscape:px-3 ${natureInfo.type === 'hot' ? 'bg-orange-50 border-orange-200 text-orange-700' : natureInfo.type === 'cold' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
                {natureInfo.type === 'hot' ? <Sun size={20} /> : natureInfo.type === 'cold' ? <Snowflake size={20} /> : <Scale size={20} />}
-               <span className="font-black text-sm">طبع {natureInfo.label} (مصلح: {natureInfo.mosleh})</span>
+               <span className="font-black text-sm landscape:text-xs">طبع {natureInfo.label} (مصلح: {natureInfo.mosleh})</span>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/80 px-4 py-2 rounded-2xl shadow-inner border border-slate-100 order-1 sm:order-2">
+            <div className="flex items-center gap-4 bg-white/80 px-4 py-2 rounded-2xl shadow-inner border border-slate-100 order-1 sm:order-2 landscape:order-2 landscape:py-1 landscape:px-3">
                 <span className="text-xs font-black text-slate-400 ml-2">تعداد نفرات:</span>
                 <div className="flex items-center gap-3">
                     <button onClick={() => setServings(Math.max(1, servings - 1))} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition-all"><Minus size={18} /></button>
-                    <span className="text-xl font-black text-slate-900 min-w-[30px] text-center">{toPersianDigits(servings)}</span>
+                    <span className="text-xl font-black text-slate-900 min-w-[30px] text-center landscape:text-lg">{toPersianDigits(servings)}</span>
                     <button onClick={() => setServings(Math.min(20, servings + 1))} className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center hover:bg-emerald-100 text-slate-500 hover:text-emerald-600 transition-all"><Plus size={18} /></button>
                 </div>
             </div>
           </div>
         </div>
         
-        <div className="flex-grow overflow-y-auto p-6 sm:p-10 no-scrollbar">
+        <div className="flex-grow overflow-y-auto p-6 sm:p-10 no-scrollbar landscape:overflow-visible landscape:p-4">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
               
               {/* Left Column: Image (4x4 inch square) */}
-              <div className="lg:col-span-5 flex flex-col items-center lg:items-start gap-6">
-                <div className="w-full max-w-[4in] aspect-square rounded-[2.5rem] overflow-hidden shadow-2xl border-6 border-white ring-1 ring-slate-200 relative group">
+              <div className="lg:col-span-5 flex flex-col items-center lg:items-start gap-6 landscape:gap-2">
+                <div className="w-full max-w-[4in] landscape:max-w-[180px] aspect-square rounded-[2.5rem] landscape:rounded-3xl overflow-hidden shadow-2xl border-6 border-white ring-1 ring-slate-200 relative group">
                   <DishVisual category={dish.category} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" iconSize={100} imageUrl={dish.imageUrl} dishId={dish.id} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
@@ -349,11 +349,11 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
 
       {isTimerOverlayOpen && (
         <div 
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-white/10 backdrop-blur-xl"
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-white/10 backdrop-blur-xl landscape:overflow-y-auto"
           onClick={(e) => { e.stopPropagation(); }}
         >
           <div 
-            className="w-full max-w-md bg-slate-900/90 text-white p-8 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 flex flex-col gap-6 transform transition-all animate-slide-down"
+            className="w-full max-w-md bg-slate-900/90 text-white p-8 rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 flex flex-col gap-6 transform transition-all animate-slide-down landscape:h-auto landscape:my-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
