@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard, Bell, Zap, Square, CheckSquare } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard, Bell, Zap } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Challenges from './components/Challenges';
@@ -47,28 +47,22 @@ const AppContent: React.FC = () => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showStartOverlay, setShowStartOverlay] = useState(false);
-
-  useEffect(() => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile && !document.fullscreenElement) {
-      setShowStartOverlay(true);
-    }
-  }, []);
-
-  const handleStartApp = () => {
-    enterFullscreen();
-    setShowStartOverlay(false);
-  };
 
   const enterFullscreen = () => {
-    const elem = document.documentElement as any;
-    const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
-    if (requestMethod) {
-      requestMethod.call(elem).catch(() => {});
+    try {
+      const elem = document.documentElement as any;
+      const requestMethod = elem.requestFullscreen || 
+                           elem.webkitRequestFullscreen || 
+                           elem.mozRequestFullScreen || 
+                           elem.msRequestFullscreen;
+      if (requestMethod) {
+        requestMethod.call(elem).catch(() => {});
+      }
+      // Force scroll to hide address bar on mobile as fallback
+      window.scrollTo(0, 1);
+    } catch (e) {
+      console.log("Fullscreen request failed");
     }
-    // Force scroll to hide address bar on mobile as fallback
-    window.scrollTo(0, 1);
   };
 
   const exitFullscreen = () => {
@@ -82,9 +76,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
-      if (document.fullscreenElement) {
-        setShowStartOverlay(false);
-      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -102,12 +93,20 @@ const AppContent: React.FC = () => {
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     document.addEventListener('keydown', handleKeyDown);
+    
+    // Silent trigger on first interaction
     document.addEventListener('click', handleFirstInteraction);
     document.addEventListener('touchstart', handleFirstInteraction);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
@@ -378,27 +377,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="h-[100dvh] landscape:h-auto landscape:overflow-visible w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
-      
-      {showStartOverlay && (
-        <div 
-          className="fixed inset-0 z-[10000] bg-slate-950 flex flex-col items-center justify-center p-8 text-center animate-enter"
-          onClick={handleStartApp}
-        >
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-teal-500/20 blur-3xl rounded-full animate-pulse"></div>
-            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain relative animate-float" />
-          </div>
-          <h1 className="text-3xl font-black text-white mb-4">خوش آمدید به نوش</h1>
-          <p className="text-slate-400 font-bold mb-12 leading-relaxed">برای تجربه بهتر و نمایش تمام صفحه، دکمه زیر را لمس کنید</p>
-          <button 
-            onClick={handleStartApp}
-            className="px-12 py-5 bg-teal-600 hover:bg-teal-500 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_50px_rgba(20,184,166,0.3)] transition-all active:scale-95 flex items-center gap-4"
-          >
-            <ScanFace size={28} />
-            <span>ورود به برنامه</span>
-          </button>
-        </div>
-      )}
       
       {filterNotif.show && (
         <>

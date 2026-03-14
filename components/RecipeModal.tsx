@@ -1,5 +1,5 @@
 
-import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus, Play, Pause, RotateCcw, CheckSquare, Square, Trophy, AlarmClock } from 'lucide-react';
+import { X, ChefHat, Clock, Activity, Flame, PlusCircle, Check, Sun, Snowflake, Scale, ShieldCheck, Utensils, AlertCircle, Users, Minus, Plus, Play, Pause, RotateCcw, Trophy, AlarmClock, CheckCircle2 } from 'lucide-react';
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
@@ -174,7 +174,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center [@media(orientation:landscape)_and_(max-height:500px)]:items-start p-0 [@media(orientation:landscape)_and_(max-height:500px)]:p-4 bg-black/80 backdrop-blur-md overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-y-auto" onClick={onClose}>
-      <div className="relative w-full h-[100dvh] sm:w-[95vw] sm:h-[95vh] [@media(orientation:landscape)_and_(max-height:500px)]:h-auto sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible" onClick={e => e.stopPropagation()}>
+      <div className="relative w-full h-[100dvh] sm:w-[95vw] sm:h-[95vh] [@media(orientation:landscape)_and_(max-height:500px)]:h-auto rounded-none sm:rounded-[3rem] bg-white flex flex-col animate-enter shadow-2xl overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible" onClick={e => e.stopPropagation()}>
         
         {/* Glassmorphism Header */}
         <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[100] bg-white/40 backdrop-blur-2xl border-b border-white/30 p-6 sm:p-8 [@media(orientation:landscape)_and_(max-height:500px)]:p-4 shadow-xl flex-shrink-0">
@@ -318,7 +318,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
                               </p>
                             </div>
                             <div className={`flex-shrink-0 self-center transition-all duration-500 ${isChecked ? 'text-emerald-500' : 'text-slate-200'}`}>
-                              {isChecked ? <CheckSquare size={24} /> : <Square size={24} />}
+                              {isChecked ? <CheckCircle2 size={24} /> : <div className="w-6 h-6 rounded-full border-2 border-current" />}
                             </div>
                           </div>
                         );
