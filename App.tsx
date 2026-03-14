@@ -46,6 +46,52 @@ const AppContent: React.FC = () => {
   const [planLoading, setPlanLoading] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const enterFullscreen = () => {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
+    }
+  };
+
+  const exitFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(err => console.error("Exit fullscreen error:", err));
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        exitFullscreen();
+      }
+    };
+
+    const handleFirstInteraction = () => {
+      if (!document.fullscreenElement) {
+        enterFullscreen();
+      }
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('touchstart', handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
   
   const [filterNotif, setFilterNotif] = useState<FilterNotif>({ 
     show: false, message: '', active: false, icon: Info, color: 'teal', exiting: false, filterKey: ''
@@ -311,6 +357,16 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="h-[100dvh] landscape:h-auto landscape:overflow-visible w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
+      
+      {isFullscreen && (
+        <button 
+          onClick={exitFullscreen}
+          className="fixed top-2 left-2 z-[9999] p-1.5 bg-black/20 hover:bg-black/40 text-white/50 hover:text-white rounded-full transition-all backdrop-blur-sm no-print"
+          title="خروج از تمام صفحه (Esc)"
+        >
+          <X size={16} />
+        </button>
+      )}
       
       {filterNotif.show && (
         <>
