@@ -358,15 +358,13 @@ const AppContent: React.FC = () => {
   return (
     <div className="h-[100dvh] landscape:h-auto landscape:overflow-visible w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
       
-      {isFullscreen && (
-        <button 
-          onClick={exitFullscreen}
-          className="fixed top-2 left-2 z-[9999] p-1.5 bg-black/20 hover:bg-black/40 text-white/50 hover:text-white rounded-full transition-all backdrop-blur-sm no-print"
-          title="خروج از تمام صفحه (Esc)"
-        >
-          <X size={16} />
-        </button>
-      )}
+      <button 
+        onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+        className="fixed top-2 left-2 z-[9999] p-1.5 bg-black/20 hover:bg-black/40 text-white/50 hover:text-white rounded-full transition-all backdrop-blur-sm no-print"
+        title={isFullscreen ? "خروج از تمام صفحه (Esc)" : "نمایش تمام صفحه"}
+      >
+        {isFullscreen ? <X size={16} /> : <Square size={16} />}
+      </button>
       
       {filterNotif.show && (
         <>
