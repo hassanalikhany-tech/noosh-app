@@ -49,15 +49,20 @@ const AppContent: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const enterFullscreen = () => {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
+    const elem = document.documentElement as any;
+    const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+    if (requestMethod) {
+      requestMethod.call(elem).catch(() => {});
+      // Force scroll to hide address bar on mobile as fallback
+      window.scrollTo(0, 1);
     }
   };
 
   const exitFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(err => console.error("Exit fullscreen error:", err));
+    const doc = document as any;
+    const exitMethod = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+    if (exitMethod) {
+      exitMethod.call(doc).catch(() => {});
     }
   };
 
