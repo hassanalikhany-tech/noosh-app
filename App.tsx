@@ -47,15 +47,28 @@ const AppContent: React.FC = () => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showStartOverlay, setShowStartOverlay] = useState(false);
+
+  useEffect(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && !document.fullscreenElement) {
+      setShowStartOverlay(true);
+    }
+  }, []);
+
+  const handleStartApp = () => {
+    enterFullscreen();
+    setShowStartOverlay(false);
+  };
 
   const enterFullscreen = () => {
     const elem = document.documentElement as any;
     const requestMethod = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
     if (requestMethod) {
       requestMethod.call(elem).catch(() => {});
-      // Force scroll to hide address bar on mobile as fallback
-      window.scrollTo(0, 1);
     }
+    // Force scroll to hide address bar on mobile as fallback
+    window.scrollTo(0, 1);
   };
 
   const exitFullscreen = () => {
@@ -69,6 +82,9 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
+      if (document.fullscreenElement) {
+        setShowStartOverlay(false);
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -363,13 +379,26 @@ const AppContent: React.FC = () => {
   return (
     <div className="h-[100dvh] landscape:h-auto landscape:overflow-visible w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
       
-      <button 
-        onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-        className="fixed top-2 left-2 z-[9999] p-1.5 bg-black/20 hover:bg-black/40 text-white/50 hover:text-white rounded-full transition-all backdrop-blur-sm no-print"
-        title={isFullscreen ? "خروج از تمام صفحه (Esc)" : "نمایش تمام صفحه"}
-      >
-        {isFullscreen ? <X size={16} /> : <Square size={16} />}
-      </button>
+      {showStartOverlay && (
+        <div 
+          className="fixed inset-0 z-[10000] bg-slate-950 flex flex-col items-center justify-center p-8 text-center animate-enter"
+          onClick={handleStartApp}
+        >
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-teal-500/20 blur-3xl rounded-full animate-pulse"></div>
+            <img src="https://i.ibb.co/gMDKtj4p/3.png" alt="Logo" className="w-32 h-32 object-contain relative animate-float" />
+          </div>
+          <h1 className="text-3xl font-black text-white mb-4">خوش آمدید به نوش</h1>
+          <p className="text-slate-400 font-bold mb-12 leading-relaxed">برای تجربه بهتر و نمایش تمام صفحه، دکمه زیر را لمس کنید</p>
+          <button 
+            onClick={handleStartApp}
+            className="px-12 py-5 bg-teal-600 hover:bg-teal-500 text-white rounded-[2rem] font-black text-xl shadow-[0_20px_50px_rgba(20,184,166,0.3)] transition-all active:scale-95 flex items-center gap-4"
+          >
+            <ScanFace size={28} />
+            <span>ورود به برنامه</span>
+          </button>
+        </div>
+      )}
       
       {filterNotif.show && (
         <>
@@ -640,7 +669,7 @@ const AppContent: React.FC = () => {
 
       {isShoppingListOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 sm:p-8 bg-black/60 backdrop-blur-sm no-print" onClick={() => setIsShoppingListOpen(false)}>
-           <div className="relative w-full max-w-2xl bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden animate-enter h-full sm:h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+           <div className="relative w-full max-w-2xl bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden animate-enter h-[100dvh] sm:h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <button onClick={() => setIsShoppingListOpen(false)} className="absolute top-8 left-8 p-3 bg-slate-100 rounded-full text-slate-500 z-[210] hover:bg-slate-200 transition-all shadow-sm"><X size={24} /></button>
               <div className="flex-grow overflow-y-auto">
                 <ShoppingList 

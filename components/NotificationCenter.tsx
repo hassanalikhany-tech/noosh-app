@@ -69,11 +69,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose
       <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm" onClick={onClose}></div>
       
       <div 
-        className="relative w-full max-w-2xl bg-white rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/20 flex flex-col transition-all duration-300" 
+        className="relative w-full max-w-2xl bg-white sm:rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border border-white/20 flex flex-col transition-all duration-300" 
         style={{ 
-          marginTop: '100px',
-          marginBottom: '160px',
-          maxHeight: 'calc(100vh - 260px)' 
+          marginTop: 'auto',
+          marginBottom: 'auto',
+          height: '100dvh',
+          maxHeight: '100dvh' 
         }}
         onClick={e => e.stopPropagation()}
       >
