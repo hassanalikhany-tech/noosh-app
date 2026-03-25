@@ -60,7 +60,7 @@ const Challenges: React.FC<ChallengesProps> = ({ user, onUpdateUser, onNotify })
   };
 
   return (
-    <div className="flex flex-col h-full animate-enter">
+    <div className="flex flex-col h-full [@media(orientation:landscape)_and_(max-height:500px)]:h-auto animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
       <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-2 sm:py-4 sm:px-10">
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-6 shadow-xl shadow-slate-200/50 relative overflow-hidden max-w-7xl mx-auto">

@@ -53,29 +53,48 @@ const AppContent: React.FC = () => {
       const elem = document.documentElement as any;
       const requestMethod = elem.requestFullscreen || 
                            elem.webkitRequestFullscreen || 
+                           elem.webkitRequestFullScreen ||
                            elem.mozRequestFullScreen || 
                            elem.msRequestFullscreen;
       if (requestMethod) {
-        requestMethod.call(elem).catch(() => {});
+        requestMethod.call(elem).catch((err: any) => {
+          console.error("Fullscreen error:", err);
+        });
+      } else {
+        // Fallback for devices that don't support Fullscreen API (like iPhone)
+        window.scrollTo(0, 1);
+        setIsFullscreen(true); // Simulate state for UI toggle
       }
-      // Force scroll to hide address bar on mobile as fallback
-      window.scrollTo(0, 1);
     } catch (e) {
       console.log("Fullscreen request failed");
     }
   };
 
   const exitFullscreen = () => {
-    const doc = document as any;
-    const exitMethod = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
-    if (exitMethod) {
-      exitMethod.call(doc).catch(() => {});
+    try {
+      const doc = document as any;
+      const exitMethod = doc.exitFullscreen || 
+                        doc.webkitExitFullscreen || 
+                        doc.webkitCancelFullScreen ||
+                        doc.mozCancelFullScreen || 
+                        doc.msExitFullscreen;
+      if (exitMethod) {
+        exitMethod.call(doc).catch(() => {});
+      } else {
+        setIsFullscreen(false);
+      }
+    } catch (e) {
+      console.log("Exit fullscreen failed");
     }
   };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as any;
+      setIsFullscreen(!!(doc.fullscreenElement || 
+                         doc.webkitFullscreenElement || 
+                         doc.mozFullScreenElement || 
+                         doc.msFullscreenElement));
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -542,10 +561,10 @@ const AppContent: React.FC = () => {
 
       <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => { setIsNotificationCenterOpen(false); checkUnreadNotifications(currentUser!); }} user={currentUser!} />
 
-      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
+      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-y-auto flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
-          <div className="flex flex-col h-full animate-enter">
-            <div className="sticky z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
+          <div className="flex flex-col h-full [@media(orientation:landscape)_and_(max-height:500px)]:h-auto animate-enter">
+            <div className="sticky [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
                 <div className="bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] p-2 sm:p-4 space-y-2 sm:space-y-3 max-w-7xl mx-auto">
                     <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
@@ -577,7 +596,7 @@ const AppContent: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
+            <div className="flex-grow overflow-y-auto [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
                 <div className="max-w-7xl mx-auto py-4 sm:py-6">
                     {displayPlan.length > 0 ? (
                       <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">

@@ -199,7 +199,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
   };
 
   return (
-    <div className="flex flex-col h-full animate-enter">
+    <div className="flex flex-col h-full [@media(orientation:landscape)_and_(max-height:500px)]:h-auto animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
       <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/40 backdrop-blur-2xl px-4 py-3 sm:py-6 sm:px-10">
           <div className="backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[1.75rem] sm:rounded-[3.5rem] p-4 sm:p-8 shadow-xl shadow-slate-200/50 relative overflow-hidden max-w-7xl mx-auto">
