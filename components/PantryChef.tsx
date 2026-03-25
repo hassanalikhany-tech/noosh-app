@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed, RefreshCw, Trash2, CheckCircle2, AlertCircle, Clock, Heart, Filter, Package, ListTodo, AlertTriangle, Plus, Minus, Save, ShoppingCart } from 'lucide-react';
-import { PANTRY_ITEMS } from '../data/pantry';
+import { PANTRY_ITEMS, getIngredientCategoryId } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { Dish, UserProfile, InventoryItem } from '../types';
 import { isIngredientMatch } from '../utils/recipeHelpers';
@@ -22,6 +22,7 @@ interface ProcessedResult {
   missingItems: string[];
   isPerfect: boolean;
   missingCount: number;
+  priorityScore: number;
 }
 
 const CategoryItemsList: React.FC<{
@@ -86,11 +87,44 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
         const matched = dish.ingredients.filter(ing => 
           items.some(s => isIngredientMatch(s, ing.item))
         ).map(i => i.item);
+        
         const missing = dish.ingredients.filter(ing => !matched.includes(ing.item)).map(i => i.item);
-        return { dish, matchedItems: matched, missingItems: missing, isPerfect: missing.length === 0, missingCount: missing.length };
+        
+        // Filter out additives from missing count as per user request
+        const essentialMissing = missing.filter(item => {
+          const catId = getIngredientCategoryId(item);
+          return catId !== 'additives';
+        });
+
+        // Calculate priority score based on matched categories
+        // Proteins (1) > Grains (2) > Vegetables (3)
+        let priorityScore = 0;
+        matched.forEach(item => {
+          const catId = getIngredientCategoryId(item);
+          if (catId === 'proteins') priorityScore += 100;
+          else if (catId === 'grains') priorityScore += 10;
+          else if (catId === 'vegetables') priorityScore += 1;
+        });
+
+        return { 
+          dish, 
+          matchedItems: matched, 
+          missingItems: missing, 
+          isPerfect: essentialMissing.length === 0, 
+          missingCount: essentialMissing.length,
+          priorityScore // Higher is better
+        };
       })
       .filter(res => res.matchedItems.length > 0)
-      .sort((a, b) => a.missingCount - b.missingCount);
+      .sort((a, b) => {
+        // First priority: least essential missing items
+        if (a.missingCount !== b.missingCount) {
+          return a.missingCount - b.missingCount;
+        }
+        // Second priority: category score (Proteins > Grains > Vegetables)
+        return b.priorityScore - a.priorityScore;
+      });
+
       setRawResults(processed);
       setIsSearching(false);
       setActiveTab('selection');

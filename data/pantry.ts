@@ -59,3 +59,8 @@ export const PANTRY_ITEMS: PantryCategory[] = [
 ];
 
 export const SPICES_AND_ADDITIVES = PANTRY_ITEMS.find(c => c.id === 'additives')?.items || [];
+
+export const getIngredientCategoryId = (itemName: string): string | null => {
+  const category = PANTRY_ITEMS.find(cat => cat.items.some(item => item === itemName || itemName.includes(item) || item.includes(itemName)));
+  return category ? category.id : null;
+};

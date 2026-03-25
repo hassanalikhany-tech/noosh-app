@@ -69,7 +69,9 @@ export const convertToKg = (amount: number, unit: string): number => {
 export const normalizeUnit = (unit: string): string => {
   const u = unit.trim();
   if (u === 'گرم' || u === 'g' || u === 'کیلوگرم' || u === 'kg') return 'کیلوگرم';
-  if (u === 'عدد' || u === 'piece' || u === 'number') return 'عدد';
+  if (u === 'عدد' || u === 'piece' || u === 'number' || u === 'دانه') return 'عدد';
+  if (u === 'لیتر' || u === 'l' || u === 'میلی‌لیتر' || u === 'ml') return 'لیتر';
+  if (u.includes('قاشق')) return 'قاشق';
   return u;
 };
 
@@ -87,15 +89,32 @@ export const getInventoryUpdate = (
     const invIdx = newInventory.findIndex(item => isIngredientMatch(item.name, ing.item));
     if (invIdx !== -1) {
       const invItem = { ...newInventory[invIdx] };
-      const requiredAmount = ing.amount * scale;
+      const requiredAmount = (ing.amount || 0) * scale;
       
-      if (invItem.unit === 'کیلوگرم' && (ing.unit === 'گرم' || ing.unit === 'کیلوگرم')) {
+      const invUnit = normalizeUnit(invItem.unit);
+      const ingUnit = normalizeUnit(ing.unit || '');
+
+      if (invUnit === 'کیلوگرم' && ingUnit === 'کیلوگرم') {
         const requiredKg = convertToKg(requiredAmount, ing.unit);
         invItem.amount = Math.max(0, invItem.amount - requiredKg);
         newInventory[invIdx] = invItem;
         updatedCount++;
-      } else if (invItem.unit === 'عدد' && ing.unit === 'عدد') {
+      } else if (invUnit === 'عدد' && ingUnit === 'عدد') {
         invItem.amount = Math.max(0, invItem.amount - requiredAmount);
+        newInventory[invIdx] = invItem;
+        updatedCount++;
+      } else if (invUnit === 'لیتر' && ingUnit === 'لیتر') {
+        const amountInLiters = (ing.unit === 'میلی‌لیتر' || ing.unit === 'ml') ? requiredAmount / 1000 : requiredAmount;
+        invItem.amount = Math.max(0, invItem.amount - amountInLiters);
+        newInventory[invIdx] = invItem;
+        updatedCount++;
+      } else if (invUnit === ingUnit || ingUnit === 'قاشق' || ing.unit === 'به میزان لازم') {
+        // For other units or "as needed", we just decrement a small amount or just count as match
+        // If it's "as needed", we don't subtract but we count it as a match to avoid the error message
+        if (ing.unit !== 'به میزان لازم') {
+          const deduct = requiredAmount > 0 ? requiredAmount : 1;
+          invItem.amount = Math.max(0, invItem.amount - (invItem.unit === 'کیلوگرم' ? 0.01 : 1));
+        }
         newInventory[invIdx] = invItem;
         updatedCount++;
       }
