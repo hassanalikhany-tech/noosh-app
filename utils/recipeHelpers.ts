@@ -35,21 +35,28 @@ export const getDishNature = (dish: Dish): { type: NatureType; label: string; mo
 };
 
 export const isIngredientMatch = (selected: string, ingredient: string): boolean => {
-  const s = selected.trim();
-  const i = ingredient.trim();
+  const normalize = (str: string) => 
+    str.trim()
+       .replace(/ی/g, 'ي')
+       .replace(/ک/g, 'ك')
+       .replace(/آ/g, 'ا');
+
+  const s = normalize(selected);
+  const i = normalize(ingredient);
   
-  // Basic match (case insensitive-ish for Persian)
+  // Specific fix for Egg (تخم مرغ) vs Chicken (مرغ)
+  if ((s === 'مرغ' && i.includes('تخم مرغ')) || (i === 'مرغ' && s.includes('تخم مرغ'))) {
+    return false;
+  }
+
   if (i.includes(s) || s.includes(i)) return true;
   
-  // Special case for Chicken (مرغ) and Joojeh (جوجه)
-  // If user selects "مرغ", it should match "جوجه", "سینه مرغ", "ران مرغ", etc.
   if (s === 'مرغ') {
     if (i.includes('جوجه') || i.includes('سینه') || i.includes('ران') || i.includes('بال') || i.includes('کتف')) {
       return true;
     }
   }
 
-  // If user selects "گوشت سینه مرغ", it should also match "مرغ" or "جوجه"
   if (s.includes('مرغ') && (i === 'مرغ' || i.includes('جوجه'))) {
     return true;
   }
@@ -69,9 +76,10 @@ export const convertToKg = (amount: number, unit: string): number => {
 export const normalizeUnit = (unit: string): string => {
   const u = unit.trim();
   if (u === 'گرم' || u === 'g' || u === 'کیلوگرم' || u === 'kg') return 'کیلوگرم';
-  if (u === 'عدد' || u === 'piece' || u === 'number' || u === 'دانه') return 'عدد';
-  if (u === 'لیتر' || u === 'l' || u === 'میلی‌لیتر' || u === 'ml') return 'لیتر';
+  if (u === 'عدد' || u === 'piece' || u === 'number' || u === 'دانه' || u === 'حلقه') return 'عدد';
+  if (u === 'لیتر' || u === 'l' || u === 'میلی‌لیتر' || u === 'ml' || u === 'پیمانه' || u === 'استکان') return 'لیتر';
   if (u.includes('قاشق')) return 'قاشق';
+  if (u.includes('لازم') || u.includes('دلخواه')) return 'به میزان لازم';
   return u;
 };
 
@@ -108,11 +116,12 @@ export const getInventoryUpdate = (
         invItem.amount = Math.max(0, invItem.amount - amountInLiters);
         newInventory[invIdx] = invItem;
         updatedCount++;
-      } else if (invUnit === ingUnit || ingUnit === 'قاشق' || ing.unit === 'به میزان لازم') {
-        // For other units or "as needed", we just decrement a small amount or just count as match
-        // If it's "as needed", we don't subtract but we count it as a match to avoid the error message
-        if (ing.unit !== 'به میزان لازم') {
+      } else {
+        // Lenient matching: if names match, we count it as a match
+        // and try to deduct a reasonable amount if possible
+        if (ingUnit !== 'به میزان لازم') {
           const deduct = requiredAmount > 0 ? requiredAmount : 1;
+          // If units are different, we just deduct 1 unit or 0.01 kg as a fallback
           invItem.amount = Math.max(0, invItem.amount - (invItem.unit === 'کیلوگرم' ? 0.01 : 1));
         }
         newInventory[invIdx] = invItem;

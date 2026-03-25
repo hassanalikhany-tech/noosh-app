@@ -23,6 +23,7 @@ interface ProcessedResult {
   isPerfect: boolean;
   missingCount: number;
   priorityScore: number;
+  proteinMatchScore: number;
 }
 
 const CategoryItemsList: React.FC<{
@@ -106,13 +107,30 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
           else if (catId === 'vegetables') priorityScore += 1;
         });
 
+        // Protein specific logic for prioritization
+        const recipeProteins = dish.ingredients.filter(ing => getIngredientCategoryId(ing.item) === 'proteins').map(i => i.item);
+        const selectedProteins = items.filter(item => getIngredientCategoryId(item) === 'proteins');
+        
+        const matchedProteins = recipeProteins.filter(rp => 
+          selectedProteins.some(sp => isIngredientMatch(sp, rp))
+        );
+        const unmatchedProteins = recipeProteins.filter(rp => 
+          !matchedProteins.includes(rp)
+        );
+
+        // Calculate protein match score
+        // +1000 for each matched protein
+        // -5000 for each unmatched protein (penalty for expensive unselected proteins)
+        let proteinMatchScore = (matchedProteins.length * 1000) - (unmatchedProteins.length * 5000);
+
         return { 
           dish, 
           matchedItems: matched, 
           missingItems: missing, 
           isPerfect: essentialMissing.length === 0, 
           missingCount: essentialMissing.length,
-          priorityScore // Higher is better
+          priorityScore, // Higher is better
+          proteinMatchScore
         };
       })
       .filter(res => res.matchedItems.length > 0)
@@ -121,7 +139,11 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
         if (a.missingCount !== b.missingCount) {
           return a.missingCount - b.missingCount;
         }
-        // Second priority: category score (Proteins > Grains > Vegetables)
+        // Second priority: Protein Match Quality (Exact matches first, no unselected proteins)
+        if (a.proteinMatchScore !== b.proteinMatchScore) {
+          return b.proteinMatchScore - a.proteinMatchScore;
+        }
+        // Third priority: category score (Proteins > Grains > Vegetables)
         return b.priorityScore - a.priorityScore;
       });
 
@@ -240,12 +262,6 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4 relative z-10">
               <div className="flex items-center gap-3 sm:gap-4 text-right flex-row w-full lg:w-auto">
                 <div className="w-10 h-10 sm:w-16 sm:h-16 bg-teal-500 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg"><ChefHat size={22} className="sm:w-8 sm:h-8" /></div>
-                <div>
-                  <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-none">دستیار آشپز برتر</h2>
-                  <p className="text-teal-600 text-[8px] sm:text-xs font-black mt-1 uppercase tracking-widest">Smart Pantry Discovery</p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
                 <div className="flex bg-slate-100 p-1 rounded-xl sm:rounded-2xl border border-slate-200">
                   <button 
                     onClick={() => setActiveTab('selection')}
@@ -263,6 +279,8 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                     {lowStockItems.length > 0 && <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>}
                   </button>
                 </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
                 <div className="relative flex-grow">
                    <input type="text" placeholder="جستجوی مواد غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full sm:w-64 px-10 sm:px-12 py-2.5 sm:py-4 bg-white border-2 border-slate-300 rounded-xl sm:rounded-2xl text-slate-800 font-black outline-none focus:border-teal-500 transition-all shadow-md placeholder:text-slate-400 text-xs sm:text-sm" />
                    <Search className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} sm:size={20} />
