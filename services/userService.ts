@@ -271,6 +271,7 @@ export const UserService = {
   },
 
   updateShoppingList: async (username: string, items: any[]) => UserService.updateProfile(username, { customShoppingList: items }),
+  updateInventory: async (username: string, items: any[]) => UserService.updateProfile(username, { inventory: items }),
   toggleFavorite: async (username: string, dishId: string) => {
     const user = await UserService.getCurrentUser();
     const favs = user?.favoriteDishIds?.includes(dishId) ? user.favoriteDishIds.filter(id => id !== dishId) : [...(user?.favoriteDishIds || []), dishId];

@@ -1,5 +1,5 @@
 
-import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard, Bell, Zap } from 'lucide-react';
+import { CalendarDays, RefreshCw, ChefHat, Search, Settings, Trophy, X, ShoppingCart, Heart, Clock, Trash2, Calendar, Leaf, Sparkles, Utensils, ShieldCheck, ArrowRight, CloudDownload, UserX, Info, CheckCircle2, Wand2, Loader2, ScanFace, Printer, Share2, MessageCircle, Smartphone, Database, ShieldAlert, FilterX, Check, AlertTriangle, Shield, LayoutDashboard, Bell, Zap, Maximize, Minimize } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import AdminDashboard from './components/admin/AdminDashboard';
 import Challenges from './components/Challenges';
@@ -84,32 +84,18 @@ const AppContent: React.FC = () => {
       }
     };
 
-    const handleFirstInteraction = () => {
-      if (!document.fullscreenElement) {
-        enterFullscreen();
-      }
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-    };
-
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     document.addEventListener('keydown', handleKeyDown);
     
-    // Silent trigger on first interaction
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('touchstart', handleFirstInteraction);
-
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, []);
   
@@ -376,7 +362,7 @@ const AppContent: React.FC = () => {
   const FilterIcon = filterNotif.icon;
 
   return (
-    <div className="h-[100dvh] landscape:h-auto landscape:overflow-visible w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
+    <div className="h-[100dvh] w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
       
       {filterNotif.show && (
         <>
@@ -543,16 +529,23 @@ const AppContent: React.FC = () => {
                 </div>
               )}
             </button>
+            <button 
+              onClick={() => isFullscreen ? exitFullscreen() : enterFullscreen()} 
+              className="p-2 sm:p-3.5 bg-white border border-slate-100 text-slate-600 rounded-xl sm:rounded-2xl shadow-sm hover:bg-slate-50 transition-all"
+              title={isFullscreen ? "خروج از تمام صفحه" : "تمام صفحه"}
+             >
+                {isFullscreen ? <Minimize size={18} className="sm:w-6 sm:h-6" /> : <Maximize size={18} className="sm:w-6 sm:h-6" />}
+             </button>
           </div>
         </div>
       </header>
 
       <NotificationCenter isOpen={isNotificationCenterOpen} onClose={() => { setIsNotificationCenterOpen(false); checkUnreadNotifications(currentUser!); }} user={currentUser!} />
 
-      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible flex flex-col bg-[#f8fafc]">
+      <main className="flex-grow pt-12 sm:pt-14 lg:pt-16 pb-12 sm:pb-16 no-print overflow-hidden flex flex-col bg-[#f8fafc]">
         {viewMode === 'plan' && (
           <div className="flex flex-col h-full animate-enter">
-            <div className="sticky top-0 [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
+            <div className="sticky z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
                 <div className="bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] p-2 sm:p-4 space-y-2 sm:space-y-3 max-w-7xl mx-auto">
                     <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
@@ -584,7 +577,7 @@ const AppContent: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto landscape:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
+            <div className="flex-grow overflow-y-auto px-4 sm:px-10 pb-20 no-scrollbar">
                 <div className="max-w-7xl mx-auto py-4 sm:py-6">
                     {displayPlan.length > 0 ? (
                       <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
@@ -615,7 +608,7 @@ const AppContent: React.FC = () => {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-[1000] no-print h-12 sm:h-auto">
-        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around h-12 px-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)]">
+        <div className="md:hidden landscape:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 flex items-center justify-around h-12 px-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.15)]">
            {navItems.map(nav => (
               <button key={nav.id} onClick={() => setViewMode(nav.id as ViewMode)} className={`flex flex-col items-center justify-center gap-1 flex-1 transition-all ${viewMode === nav.id ? 'text-teal-600' : 'text-slate-400'}`}>
                  <div className={`p-1.5 rounded-lg transition-all ${viewMode === nav.id ? 'bg-teal-50' : ''}`}><nav.icon size={20} strokeWidth={viewMode === nav.id ? 2.5 : 2} /></div>
@@ -628,18 +621,18 @@ const AppContent: React.FC = () => {
            </button>
         </div>
 
-        <footer className="hidden md:flex backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[2.5rem] h-[60px] px-12 items-center justify-between shadow-2xl mx-12 mb-4">
-            <button onClick={() => setViewMode('settings')} className={`flex items-center gap-3 px-8 py-2 rounded-[1.75rem] transition-all flex-shrink-0 ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-2xl' : 'bg-white/80 border border-slate-200 text-slate-700 hover:bg-white'}`}>
+        <footer className="hidden md:flex landscape:flex backdrop-blur-3xl bg-white/50 border border-white/60 rounded-[2.5rem] h-[60px] px-6 md:px-12 items-center justify-between shadow-2xl mx-4 md:mx-12 mb-2 md:mb-4">
+            <button onClick={() => setViewMode('settings')} className={`flex items-center gap-3 px-4 md:px-8 py-2 rounded-[1.75rem] transition-all flex-shrink-0 ${viewMode === 'settings' ? 'bg-slate-900 text-white shadow-2xl' : 'bg-white/80 border border-slate-200 text-slate-700 hover:bg-white'}`}>
                 <Settings size={24} />
-                <span className="text-lg font-black">تنظیمات</span>
+                <span className="hidden sm:inline text-lg font-black">تنظیمات</span>
             </button>
-            <div className="flex-grow flex items-center justify-center gap-4 text-slate-500 font-black italic">
-               <Sparkles size={24} className="text-amber-400 animate-pulse" />
-               <span className="text-lg">{footerMessage}</span>
+            <div className="flex-grow flex items-center justify-center gap-2 md:gap-4 text-slate-500 font-black italic">
+               <Sparkles size={20} className="text-amber-400 animate-pulse md:w-6 md:h-6" />
+               <span className="text-xs md:text-lg truncate">{footerMessage}</span>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 bg-teal-500/10 text-teal-600 rounded-2xl flex items-center justify-center">
-                 <ChefHat size={32} />
+            <div className="flex items-center gap-3 md:gap-6">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-teal-500/10 text-teal-600 rounded-2xl flex items-center justify-center">
+                 <ChefHat size={24} className="md:w-8 md:h-8" />
               </div>
             </div>
         </footer>

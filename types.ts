@@ -231,6 +231,15 @@ export interface UserDevice {
   status: 'active' | 'inactive';
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  amount: number;
+  unit: string;
+  minThreshold: number;
+  lastUpdated: number;
+}
+
 export interface UserProfile {
   uid: string;
   username: string;
@@ -256,6 +265,7 @@ export interface UserProfile {
   dietMode?: boolean; 
   activeChallengeId?: string | null; 
   customShoppingList?: ShoppingItem[]; 
+  inventory?: InventoryItem[];
   hasCompletedSetup?: boolean;
   onlyFavoritesMode?: boolean;
   meatlessMode?: boolean;
