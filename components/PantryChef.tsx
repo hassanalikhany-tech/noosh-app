@@ -4,7 +4,7 @@ import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed
 import { PANTRY_ITEMS, getIngredientCategoryId } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { Dish, UserProfile, InventoryItem } from '../types';
-import { isIngredientMatch } from '../utils/recipeHelpers';
+import { isIngredientMatch, getStandardUnit } from '../utils/recipeHelpers';
 import { UserService } from '../services/userService';
 import RecipeModal from './RecipeModal';
 import MealCard from './MealCard';
@@ -168,18 +168,21 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     });
   };
 
-  const addToInventory = (itemName: string) => {
+  const addToInventory = async (itemName: string) => {
     if (inventory.some(i => i.name === itemName)) return;
     
+    // Get all dishes to find preferred unit
+    const allDishes = await RecipeService.getAllDishes();
+    const preferredUnit = getStandardUnit(itemName, allDishes);
+    
     // Guess base unit based on common usage or category
-    let defaultUnit = 'عدد';
+    let defaultUnit = preferredUnit;
     let defaultAmount = 1;
     let defaultThreshold = 0.5;
 
     const category = PANTRY_ITEMS.find(c => c.items.includes(itemName));
     if (category && (category.id === 'proteins' || category.id === 'grains' || category.id === 'vegetables')) {
-      // Most of these are weight-based in recipes
-      defaultUnit = 'کیلوگرم';
+      if (defaultUnit === 'عدد') defaultUnit = 'کیلوگرم';
       defaultAmount = 1; // 1kg
       defaultThreshold = 0.2; // 200g
     }
@@ -388,21 +391,31 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                                   <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-end gap-1">
                                       <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                                        <button onClick={() => updateInventoryItem(item.id, { amount: Math.max(0, item.amount - (item.unit === 'کیلوگرم' ? 0.1 : 1)) })} className="p-1 hover:bg-white rounded-md text-slate-500 transition-all"><Minus size={14} /></button>
-                                        <div className="px-3 min-w-[80px] text-center">
-                                          <span className={`text-xs font-black ${item.amount <= item.minThreshold ? 'text-rose-600' : 'text-slate-700'}`}>{toPersian(Number(item.amount.toFixed(2)))}</span>
-                                          <select 
-                                            value={item.unit} 
-                                            onChange={(e) => updateInventoryItem(item.id, { unit: e.target.value })}
-                                            className="text-[9px] text-slate-400 mr-1 bg-transparent outline-none cursor-pointer hover:text-teal-500"
-                                          >
-                                            <option value="کیلوگرم">کیلوگرم</option>
-                                            <option value="عدد">عدد</option>
-                                            <option value="بسته">بسته</option>
-                                            <option value="لیتر">لیتر</option>
-                                          </select>
+                                        <div className="flex items-center gap-1">
+                                          <button onClick={() => {
+                                            const step = item.unit === 'کیلوگرم' ? 0.1 : 1;
+                                            updateInventoryItem(item.id, { amount: Math.max(0, Math.round((item.amount - step) * 10) / 10) });
+                                          }} className="p-1 hover:bg-white rounded-md text-slate-500 transition-all"><Minus size={14} /></button>
+                                          <div className="px-3 min-w-[80px] text-center">
+                                            <span className={`text-xs font-black ${item.amount <= item.minThreshold ? 'text-rose-600' : 'text-slate-700'}`}>{toPersian(Number(item.amount.toFixed(2)))}</span>
+                                            <select 
+                                              value={item.unit} 
+                                              onChange={(e) => updateInventoryItem(item.id, { unit: e.target.value })}
+                                              className="text-[9px] text-slate-400 mr-1 bg-transparent outline-none cursor-pointer hover:text-teal-500"
+                                            >
+                                              <option value="کیلوگرم">کیلوگرم</option>
+                                              <option value="عدد">عدد</option>
+                                              <option value="بسته">بسته</option>
+                                              <option value="لیتر">لیتر</option>
+                                              <option value="گرم">گرم</option>
+                                              <option value="میلی‌لیتر">میلی‌لیتر</option>
+                                            </select>
+                                          </div>
+                                          <button onClick={() => {
+                                            const step = item.unit === 'کیلوگرم' ? 0.1 : 1;
+                                            updateInventoryItem(item.id, { amount: Math.round((item.amount + step) * 10) / 10 });
+                                          }} className="p-1 hover:bg-white rounded-md text-slate-500 transition-all"><Plus size={14} /></button>
                                         </div>
-                                        <button onClick={() => updateInventoryItem(item.id, { amount: item.amount + (item.unit === 'کیلوگرم' ? 0.1 : 1) })} className="p-1 hover:bg-white rounded-md text-slate-500 transition-all"><Plus size={14} /></button>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="text-[8px] text-slate-400">آستانه هشدار:</span>

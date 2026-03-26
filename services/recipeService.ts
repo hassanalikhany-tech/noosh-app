@@ -48,7 +48,10 @@ export const RecipeService = {
       const q = query(collection(db, "dishes"), limit(4000));
       const snapshot = await (forceServer ? getDocsFromServer(q) : getDocs(q));
       
-      const cloudDishes = snapshot.docs.map(doc => doc.data() as Dish);
+      const cloudDishes = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      } as Dish));
       
       if (cloudDishes.length > 0) {
         cachedDishes = cloudDishes;
@@ -90,10 +93,47 @@ export const RecipeService = {
       const dishRef = doc(db, "dishes", dishId);
       await updateDoc(dishRef, updates);
       cachedDishes = cachedDishes.map(d => d.id === dishId ? { ...d, ...updates } : d);
-      await DB.put('dishes', cachedDishes.find(d => d.id === dishId));
+      const updatedDish = cachedDishes.find(d => d.id === dishId);
+      if (updatedDish) await DB.put('dishes', updatedDish);
       notifyRecipesUpdate(cachedDishes.length);
       return true;
     } catch (e) { return false; }
+  },
+
+  updateDishesBatch: async (updates: { id: string, data: Partial<Dish> }[]): Promise<boolean> => {
+    if (updates.length === 0) return true;
+    try {
+      const batch = writeBatch(db);
+      const updatedIds = new Set<string>();
+      
+      updates.forEach(u => {
+        const dishRef = doc(db, "dishes", u.id);
+        batch.update(dishRef, u.data);
+        updatedIds.add(u.id);
+      });
+      
+      await batch.commit();
+      
+      // Update cache and local DB
+      cachedDishes = cachedDishes.map(d => {
+        const update = updates.find(u => u.id === d.id);
+        return update ? { ...d, ...update.data } : d;
+      });
+      
+      const dbInstance = await DB.init();
+      const transaction = dbInstance.transaction('dishes', 'readwrite');
+      const store = transaction.objectStore('dishes');
+      for (const u of updates) {
+        const updatedDish = cachedDishes.find(d => d.id === u.id);
+        if (updatedDish) await store.put(updatedDish);
+      }
+      
+      notifyRecipesUpdate(cachedDishes.length);
+      return true;
+    } catch (e) {
+      console.error("Batch update failed:", e);
+      return false;
+    }
   },
 
   deleteDish: async (dishId: string): Promise<boolean> => {

@@ -146,9 +146,10 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     return val.toString().replace(/[0-9]/g, d => '۰۱۲۳۴۵۶۷۸۹'['0123456789'.indexOf(d)]);
   };
 
-  const getScaledAmount = (baseAmount: number) => {
+  const getScaledAmount = (baseAmount: number | undefined) => {
     if (!baseAmount) return 0;
-    return Math.round((baseAmount / 4) * servings * 10) / 10;
+    const baseServings = dish.servings || 4;
+    return Math.round((baseAmount / baseServings) * servings * 10) / 10;
   };
 
   const handleAddAllToCart = () => {
@@ -178,7 +179,7 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
       user.inventory || [],
       dish.ingredients,
       servings,
-      4 // Assuming base servings is 4 for all recipes for now
+      dish.servings || 4
     );
 
     if (updatedCount > 0) {

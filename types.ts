@@ -34,6 +34,7 @@ export interface Dish {
   cookTime?: number;
   difficulty?: string;
   natureLabel?: string;
+  servings?: number;
 }
 
 export interface DayPlan {
