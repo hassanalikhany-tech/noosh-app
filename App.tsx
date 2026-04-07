@@ -321,16 +321,15 @@ const AppContent: React.FC = () => {
         if (existingIdx !== -1) {
           currentShoppingList[existingIdx] = {
             ...currentShoppingList[existingIdx],
-            amount: undefined, // No amounts as per user request
-            unit: undefined,
             category: missing.category || currentShoppingList[existingIdx].category
           };
+          // Remove amount/unit if they exist to follow "no amounts" request
+          delete currentShoppingList[existingIdx].amount;
+          delete currentShoppingList[existingIdx].unit;
         } else {
           currentShoppingList.push({
             id: `plan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             name: baseName,
-            amount: undefined, // No amounts as per user request
-            unit: undefined,
             checked: false,
             fromRecipe: 'برنامه غذایی',
             category: missing.category
@@ -692,7 +691,7 @@ const AppContent: React.FC = () => {
                                 <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 {isSyncingPlan ? <Loader2 size={28} className="animate-spin text-teal-400" /> : <ShoppingCart size={28} className="text-teal-400" />}
                                 <div className="flex flex-col items-start">
-                                   <span>افزودن کل برنامه به لیست خرید</span>
+                                   <span>افزودن تمام اقلام مورد نیاز برنامه به سبد خرید</span>
                                    <span className="text-[10px] text-slate-400 font-bold">کسری‌های انبار به صورت خودکار محاسبه و اضافه می‌شوند</span>
                                 </div>
                                 <ArrowRight size={24} className="mr-4 group-hover:translate-x-[-10px] transition-transform" />
