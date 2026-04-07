@@ -60,16 +60,64 @@ export const PANTRY_ITEMS: PantryCategory[] = [
 
 export const SPICES_AND_ADDITIVES = PANTRY_ITEMS.find(c => c.id === 'additives')?.items || [];
 
+const normalizeForSearch = (str: string): string => 
+  str.trim()
+     .replace(/ی/g, 'ی')
+     .replace(/ي/g, 'ی')
+     .replace(/ک/g, 'ک')
+     .replace(/ك/g, 'ک')
+     .replace(/آ/g, 'ا')
+     .replace(/غ/g, 'ق') // Common typo: پرتغال vs پرتقال
+     .replace(/\s+/g, '')
+     .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+export const getBaseIngredientName = (itemName: string): string => {
+  const normalizedSearch = normalizeForSearch(itemName);
+  if (!normalizedSearch) return itemName;
+
+  // 1. Try exact match first
+  for (const cat of PANTRY_ITEMS) {
+    for (const item of cat.items) {
+      if (normalizeForSearch(item) === normalizedSearch) return item;
+    }
+  }
+
+  // 2. Try to find if the input contains a base item (e.g., "پیاز بزرگ" contains "پیاز")
+  let bestMatch: string | null = null;
+  let maxMatchLength = 0;
+
+  for (const cat of PANTRY_ITEMS) {
+    for (const item of cat.items) {
+      const ni = normalizeForSearch(item);
+      // Ensure we match the base name within the input
+      if (normalizedSearch.includes(ni)) {
+        // We prefer the longest match to be more specific (e.g., "گوشت چرخ‌کرده" over "گوشت")
+        if (ni.length > maxMatchLength) {
+          maxMatchLength = ni.length;
+          bestMatch = item;
+        }
+      }
+    }
+  }
+  
+  return bestMatch || itemName;
+};
+
 export const getIngredientCategoryId = (itemName: string): string | null => {
-  const normalizedSearch = itemName.trim();
-  // Try exact match first
-  let category = PANTRY_ITEMS.find(cat => cat.items.some(item => item === normalizedSearch));
+  const normalizedSearch = normalizeForSearch(itemName);
+  if (!normalizedSearch) return null;
+
+  // Try exact match on normalized names first
+  let category = PANTRY_ITEMS.find(cat => cat.items.some(item => normalizeForSearch(item) === normalizedSearch));
   if (category) return category.id;
 
-  // Try partial match but with more care
-  category = PANTRY_ITEMS.find(cat => cat.items.some(item => 
-    normalizedSearch.includes(item) || item.includes(normalizedSearch)
-  ));
+  // Try partial match but only if the pantry item is a significant part of the search or vice versa
+  // To avoid "خلال" matching everything, we check if the match is more than just a few characters
+  category = PANTRY_ITEMS.find(cat => cat.items.some(item => {
+    const ni = normalizeForSearch(item);
+    if (ni.length < 3 || normalizedSearch.length < 3) return ni === normalizedSearch;
+    return normalizedSearch.includes(ni) || ni.includes(normalizedSearch);
+  }));
   
   return category ? category.id : null;
 };

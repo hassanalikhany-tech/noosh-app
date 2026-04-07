@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, X, Hash, Ruler } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
-import { getIngredientCategoryId } from '../data/pantry';
+import { getIngredientCategoryId, getBaseIngredientName } from '../data/pantry';
 
 interface ShoppingListProps {
   weeklyPlan: DayPlan[]; 
@@ -105,7 +105,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
-    const name = newItemName.trim();
+    const name = getBaseIngredientName(newItemName.trim());
     const amount = newItemAmount ? parseFloat(newItemAmount) : 0;
     const unit = newItemUnit.trim() || '';
     
@@ -115,8 +115,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     if (existingIdx !== -1) {
       currentList[existingIdx] = {
         ...currentList[existingIdx],
-        amount: (currentList[existingIdx].amount || 0) + amount,
-        unit: unit || currentList[existingIdx].unit, // Prefer new unit if provided
+        amount: undefined, // No amounts as per user request
+        unit: undefined,
         category: currentList[existingIdx].category || getIngredientCategoryId(name) || 'other'
       };
       updateCustomItems(currentList);
@@ -124,8 +124,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
       const newItem: ShoppingItem = {
         id: Date.now().toString(),
         name: name,
-        amount: amount || undefined,
-        unit: unit || undefined,
+        amount: undefined, // No amounts as per user request
+        unit: undefined,
         checked: false,
         category: getIngredientCategoryId(name) || 'other'
       };
@@ -207,9 +207,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
         text += `🔹 *${categoryTitles[catId]}*\n`;
         items.forEach((item, index) => {
-          const qty = item.amount ? ` (${toPersianDigits(item.amount)} ${item.unit || ''})` : '';
           const source = item.fromRecipe ? ` [بابت: ${item.fromRecipe}]` : '';
-          text += `  ${toPersianDigits(index + 1)}. ${item.name}${qty}${source}\n`;
+          text += `  ${toPersianDigits(index + 1)}. ${item.name}${source}\n`;
         });
         text += `\n`;
       }
@@ -289,34 +288,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                     className="w-full px-6 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-base font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner"
                   />
                 </div>
-                <div className="relative w-24">
-                   <input 
-                    type="number" 
-                    value={newItemAmount}
-                    onChange={(e) => setNewItemAmount(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                    placeholder="مقدار"
-                    className="w-full px-4 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-sm font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner text-center"
-                  />
-                </div>
-                <div className="relative w-28">
-                   <input 
-                    type="text" 
-                    value={newItemUnit}
-                    onChange={(e) => setNewItemUnit(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddItem()}
-                    placeholder="واحد"
-                    className="w-full px-4 py-4 rounded-[1.5rem] border-2 border-slate-100 focus:border-teal-500 outline-none text-sm font-black transition-all text-slate-800 bg-slate-50/50 shadow-inner text-center"
-                  />
-                </div>
                 <button onClick={handleAddItem} className="px-5 bg-teal-600 text-white rounded-[1.5rem] hover:bg-teal-700 shadow-xl shadow-teal-100 active:scale-95 transition-all flex items-center justify-center">
                   <Plus size={32} />
                 </button>
               </div>
               <div className="flex justify-center gap-6 px-4">
                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><ShoppingCart size={10} /> نام کالا</span>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Hash size={10} /> مقدار</span>
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Ruler size={10} /> واحد</span>
               </div>
             </div>
             <div className="space-y-8">
@@ -355,10 +332,9 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                                 <span className={`text-base font-black transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
                                   {item.name}
                                 </span>
-                                {(item.amount || item.fromRecipe) && (
+                                {item.fromRecipe && (
                                   <div className="flex flex-wrap gap-2 items-center mt-1">
-                                    {item.amount && item.amount > 0 && <span className="text-[10px] text-teal-600 font-black bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">{toPersianDigits(item.amount)} {item.unit}</span>}
-                                    {item.fromRecipe && <span className="text-[9px] text-slate-400 font-bold bg-slate-100/50 px-2 py-0.5 rounded-lg border border-slate-100/50 truncate max-w-[150px]">بابت: {item.fromRecipe}</span>}
+                                    <span className="text-[9px] text-slate-400 font-bold bg-slate-100/50 px-2 py-0.5 rounded-lg border border-slate-100/50 truncate max-w-[150px]">بابت: {item.fromRecipe}</span>
                                   </div>
                                 )}
                               </div>

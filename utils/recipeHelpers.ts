@@ -1,5 +1,5 @@
 import { Dish, NatureType } from '../types';
-import { getIngredientCategoryId } from '../data/pantry';
+import { getIngredientCategoryId, getBaseIngredientName } from '../data/pantry';
 
 export const estimateCookTime = (dish: Dish): number => {
   let time = 45; 
@@ -243,7 +243,7 @@ export const getInventoryUpdate = (
             const deficit = Math.abs(Math.min(0, invItem.amount) - newAmount);
             if (deficit > 0) {
               missingItems.push({
-                item: invItem.name,
+                item: getBaseIngredientName(invItem.name),
                 amount: deficit,
                 unit: invItem.unit,
                 category: getIngredientCategoryId(invItem.name)
@@ -291,7 +291,7 @@ export const getInventoryUpdate = (
       };
       newInventory.push(newItem);
       missingItems.push({
-        item: ing.item,
+        item: getBaseIngredientName(ing.item),
         amount: requiredAmount,
         unit: ing.unit || 'عدد',
         category: getIngredientCategoryId(ing.item)

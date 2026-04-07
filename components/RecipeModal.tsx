@@ -6,7 +6,7 @@ import { Dish, ShoppingItem, UserProfile } from '../types';
 import DishVisual from './DishVisual';
 import { UserService } from '../services/userService';
 import { estimateCalories, estimateCookTime, getDifficulty, getDishNature, getInventoryUpdate, isIngredientMatch } from '../utils/recipeHelpers';
-import { getIngredientCategoryId } from '../data/pantry';
+import { getIngredientCategoryId, getBaseIngredientName } from '../data/pantry';
 
 interface RecipeModalProps {
   dish: Dish;
@@ -165,23 +165,25 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
       
       if (isExcluded || isAdditive) return;
 
+      const baseName = getBaseIngredientName(ing.item);
       const amount = getScaledAmount(ing.amount);
-      const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, ing.item));
+      const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, baseName));
 
       if (existingIdx !== -1) {
-        // Consolidate: Sum amounts
+        // Consolidate: No amounts as per user request
         currentList[existingIdx] = {
           ...currentList[existingIdx],
-          amount: (currentList[existingIdx].amount || 0) + amount,
+          amount: undefined,
+          unit: undefined,
           fromRecipe: `${currentList[existingIdx].fromRecipe}, ${dish.name}`
         };
       } else {
         // Add new
         currentList.push({
           id: `ing-${Date.now()}-${Math.random()}`,
-          name: ing.item,
-          amount: amount,
-          unit: ing.unit,
+          name: baseName,
+          amount: undefined,
+          unit: undefined,
           checked: false,
           fromRecipe: `${dish.name} (${toPersianDigits(servings)} نفر)`
         });
@@ -223,10 +225,11 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
             const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, mi.item));
 
             if (existingIdx !== -1) {
-              // Consolidate: Sum amounts
+              // Consolidate: No amounts as per user request
               currentList[existingIdx] = {
                 ...currentList[existingIdx],
-                amount: (currentList[existingIdx].amount || 0) + amount,
+                amount: undefined,
+                unit: undefined,
                 fromRecipe: `${currentList[existingIdx].fromRecipe}, کسری ${dish.name}`
               };
             } else {
@@ -234,8 +237,8 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
               currentList.push({
                 id: `ing-deficit-${Date.now()}-${Math.random()}`,
                 name: mi.item,
-                amount: amount,
-                unit: mi.unit,
+                amount: undefined,
+                unit: undefined,
                 checked: false,
                 fromRecipe: `کسری برای: ${dish.name} (${toPersianDigits(servings)} نفر)`
               });
@@ -243,17 +246,17 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           });
           
           updatedUser.customShoppingList = currentList;
-          UserService.updateShoppingList(user.username, currentList).catch(err => {
-            console.error("Failed to sync shopping list after cooking:", err);
-          });
         }
 
         // Optimistic update
         if (onUpdateUser) onUpdateUser(updatedUser);
         
-        // Sync in background
-        UserService.updateInventory(user.username, newInventory).catch(err => {
-          console.error("Failed to sync inventory after cooking:", err);
+        // Sync in background with consolidated update
+        UserService.updateProfile(user.username, {
+          inventory: newInventory,
+          customShoppingList: updatedUser.customShoppingList
+        }).catch(err => {
+          console.error("Failed to sync user data after cooking:", err);
         });
       }
       

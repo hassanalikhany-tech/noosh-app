@@ -17,6 +17,7 @@ import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } fro
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
 import { getInventoryUpdate } from './utils/recipeHelpers';
 import { CHALLENGES } from './data/challenges';
+import { getBaseIngredientName } from './data/pantry';
 import metadata from './metadata.json';
 
 type ViewMode = 'plan' | 'pantry' | 'search' | 'challenges' | 'settings';
@@ -312,23 +313,24 @@ const AppContent: React.FC = () => {
       const currentShoppingList = [...(currentUser.customShoppingList || [])];
       
       missingItems.forEach(missing => {
+        const baseName = getBaseIngredientName(missing.item);
         const existingIdx = currentShoppingList.findIndex(item => 
-          item.name.trim() === missing.item.trim() && !item.checked
+          item.name.trim() === baseName.trim() && !item.checked
         );
         
         if (existingIdx !== -1) {
           currentShoppingList[existingIdx] = {
             ...currentShoppingList[existingIdx],
-            amount: (currentShoppingList[existingIdx].amount || 0) + missing.amount,
-            unit: missing.unit || currentShoppingList[existingIdx].unit,
+            amount: undefined, // No amounts as per user request
+            unit: undefined,
             category: missing.category || currentShoppingList[existingIdx].category
           };
         } else {
           currentShoppingList.push({
             id: `plan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            name: missing.item,
-            amount: missing.amount,
-            unit: missing.unit,
+            name: baseName,
+            amount: undefined, // No amounts as per user request
+            unit: undefined,
             checked: false,
             fromRecipe: 'برنامه غذایی',
             category: missing.category
@@ -343,8 +345,10 @@ const AppContent: React.FC = () => {
       };
 
       setCurrentUser(updatedUser);
-      await UserService.updateInventory(currentUser.username, newInventory);
-      await UserService.updateShoppingList(currentUser.username, currentShoppingList);
+      await UserService.updateProfile(currentUser.username, { 
+        inventory: newInventory, 
+        customShoppingList: currentShoppingList 
+      });
       setIsShoppingListOpen(true);
     } catch (err: any) {
       console.error("Sync error:", err);
@@ -551,8 +555,7 @@ const AppContent: React.FC = () => {
                    <tr>
                       <th className="w-12 text-center">ردیف</th>
                       <th>نام کالا / مواد اولیه</th>
-                      <th className="w-32 text-center">مقدار</th>
-                      <th className="w-32 text-center">واحد</th>
+
                       <th className="w-48">بابت دستور پخت</th>
                    </tr>
                 </thead>
@@ -561,8 +564,7 @@ const AppContent: React.FC = () => {
                       <tr key={item.id}>
                          <td className="text-center font-mono">{toPersian(pageIdx * shopRowsPerPage + idx + 1)}</td>
                          <td className="font-black text-slate-800">{item.name}</td>
-                         <td className="text-center font-bold text-teal-600">{toPersian(item.amount || '---')}</td>
-                         <td className="text-center text-slate-500">{item.unit || '---'}</td>
+
                          <td className="text-[11px] text-slate-400">{item.fromRecipe || 'خرید متفرقه'}</td>
                       </tr>
                    ))}
