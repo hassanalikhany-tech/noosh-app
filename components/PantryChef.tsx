@@ -4,7 +4,7 @@ import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed
 import { PANTRY_ITEMS, getIngredientCategoryId } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { Dish, UserProfile, InventoryItem } from '../types';
-import { isIngredientMatch, getStandardUnit } from '../utils/recipeHelpers';
+import { isIngredientMatch, getStandardUnit, convertToBase } from '../utils/recipeHelpers';
 import { UserService } from '../services/userService';
 import RecipeModal from './RecipeModal';
 import MealCard from './MealCard';
@@ -14,13 +14,14 @@ interface PantryChefProps {
   onUpdateUser: (user: UserProfile) => void;
 }
 
-type ResultFilter = 'all' | 'perfect' | 'near' | 'quick' | 'favorites';
+type ResultFilter = 'all' | 'perfect' | 'near' | 'cookable' | 'quick' | 'favorites';
 
 interface ProcessedResult {
   dish: Dish;
   matchedItems: string[];
   missingItems: string[];
   isPerfect: boolean;
+  isFullyCookable: boolean;
   missingCount: number;
   priorityScore: number;
   proteinMatchScore: number;
@@ -123,11 +124,32 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
         // -5000 for each unmatched protein (penalty for expensive unselected proteins)
         let proteinMatchScore = (matchedProteins.length * 1000) - (unmatchedProteins.length * 5000);
 
+        // Check if fully cookable based on inventory amounts
+        let isFullyCookable = essentialMissing.length === 0;
+        if (isFullyCookable && activeTab === 'inventory') {
+          isFullyCookable = dish.ingredients.every(ing => {
+            const catId = getIngredientCategoryId(ing.item);
+            if (catId === 'additives') return true;
+            
+            const invItem = inventory.find(i => isIngredientMatch(i.name, ing.item));
+            if (!invItem || invItem.amount <= 0) return false;
+            
+            const invBase = convertToBase(invItem.amount, invItem.unit, invItem.name);
+            const ingBase = convertToBase(ing.amount || 0, ing.unit || '', ing.item);
+            
+            if (invBase.type !== 'unknown' && ingBase.type !== 'unknown' && invBase.type === ingBase.type) {
+              return invBase.value >= ingBase.value;
+            }
+            return true; // Fallback
+          });
+        }
+
         return { 
           dish, 
           matchedItems: matched, 
           missingItems: missing, 
           isPerfect: essentialMissing.length === 0, 
+          isFullyCookable,
           missingCount: essentialMissing.length,
           priorityScore, // Higher is better
           proteinMatchScore
@@ -231,6 +253,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     if (!rawResults) return null;
     switch (activeFilter) {
       case 'perfect': return rawResults.filter(r => r.isPerfect);
+      case 'cookable': return rawResults.filter(r => r.isFullyCookable || (r.missingCount >= 0 && r.missingCount <= 1));
       case 'near': return rawResults.filter(r => r.missingCount > 0 && r.missingCount <= 2);
       case 'quick': return rawResults.filter(r => (r.dish.cookTime || 60) <= 45);
       case 'favorites': return rawResults.filter(r => user.favoriteDishIds?.includes(r.dish.id));
@@ -250,6 +273,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     if (!rawResults) return 0;
     switch (filter) {
       case 'perfect': return rawResults.filter(r => r.isPerfect).length;
+      case 'cookable': return rawResults.filter(r => r.isFullyCookable || (r.missingCount >= 0 && r.missingCount <= 1)).length;
       case 'near': return rawResults.filter(r => r.missingCount > 0 && r.missingCount <= 2).length;
       case 'quick': return rawResults.filter(r => (r.dish.cookTime || 60) <= 45).length;
       case 'favorites': return rawResults.filter(r => user.favoriteDishIds?.includes(r.dish.id)).length;
@@ -284,7 +308,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
-                <div className="relative flex-grow">
+                <div className="relative flex-grow w-full sm:w-auto">
                    <input type="text" placeholder="جستجوی مواد غذایی..." value={pantrySearchTerm} onChange={(e) => setPantrySearchTerm(e.target.value)} className="w-full sm:w-64 px-10 sm:px-12 py-2.5 sm:py-4 bg-white border-2 border-slate-300 rounded-xl sm:rounded-2xl text-slate-800 font-black outline-none focus:border-teal-500 transition-all shadow-md placeholder:text-slate-400 text-xs sm:text-sm" />
                    <Search className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} sm:size={20} />
                 </div>
@@ -348,12 +372,29 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                           {lowStockItems.map(item => (
                             <div key={item.id} className="px-2 py-1 bg-white border border-rose-200 text-rose-700 rounded-lg text-[10px] font-black flex items-center gap-2">
                               {item.name} ({toPersian(item.amount)} {item.unit})
-                              <button onClick={() => {
-                                const currentList = user.customShoppingList || [];
-                                if (!currentList.some(i => i.name === item.name)) {
-                                  UserService.updateShoppingList(user.username, [...currentList, { id: Math.random().toString(), name: item.name, checked: false, amount: item.minThreshold * 2, unit: item.unit }]);
-                                }
-                              }} className="text-teal-600 hover:text-teal-700"><ShoppingCart size={14} /></button>
+                                <button onClick={() => {
+                                  const currentList = [...(user.customShoppingList || [])];
+                                  const existingIdx = currentList.findIndex(i => i.name === item.name);
+                                  const amountToAdd = item.minThreshold * 2;
+                                  
+                                  if (existingIdx !== -1) {
+                                    currentList[existingIdx] = {
+                                      ...currentList[existingIdx],
+                                      amount: (currentList[existingIdx].amount || 0) + amountToAdd
+                                    };
+                                  } else {
+                                    currentList.push({ 
+                                      id: Math.random().toString(), 
+                                      name: item.name, 
+                                      checked: false, 
+                                      amount: amountToAdd, 
+                                      unit: item.unit 
+                                    });
+                                  }
+                                  
+                                  onUpdateUser({ ...user, customShoppingList: currentList });
+                                  UserService.updateShoppingList(user.username, currentList);
+                                }} className="text-teal-600 hover:text-teal-700"><ShoppingCart size={14} /></button>
                             </div>
                           ))}
                         </div>
@@ -375,7 +416,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                       <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
                         {inventory.length > 0 ? (
                           <div className="divide-y divide-slate-50">
-                            {inventory.map(item => (
+                            {[...inventory].sort((a, b) => a.name.localeCompare(b.name, 'fa')).map(item => (
                               <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center gap-3">
                                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.amount <= item.minThreshold ? 'bg-rose-100 text-rose-500' : 'bg-teal-50 text-teal-500'}`}>
@@ -396,12 +437,18 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                                             const step = item.unit === 'کیلوگرم' ? 0.1 : 1;
                                             updateInventoryItem(item.id, { amount: Math.max(0, Math.round((item.amount - step) * 10) / 10) });
                                           }} className="p-1 hover:bg-white rounded-md text-slate-500 transition-all"><Minus size={14} /></button>
-                                          <div className="px-3 min-w-[80px] text-center">
-                                            <span className={`text-xs font-black ${item.amount <= item.minThreshold ? 'text-rose-600' : 'text-slate-700'}`}>{toPersian(Number(item.amount.toFixed(2)))}</span>
+                                          <div className="px-2 min-w-[100px] flex items-center justify-center gap-1">
+                                            <input 
+                                              type="number"
+                                              step={item.unit === 'کیلوگرم' ? "0.1" : "1"}
+                                              value={item.amount}
+                                              onChange={(e) => updateInventoryItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
+                                              className={`w-14 bg-white/50 rounded px-1 py-0.5 text-xs font-black outline-none text-center border border-transparent focus:border-teal-300 transition-all ${item.amount <= item.minThreshold ? 'text-rose-600' : 'text-slate-700'}`}
+                                            />
                                             <select 
                                               value={item.unit} 
                                               onChange={(e) => updateInventoryItem(item.id, { unit: e.target.value })}
-                                              className="text-[9px] text-slate-400 mr-1 bg-transparent outline-none cursor-pointer hover:text-teal-500"
+                                              className="text-[9px] text-slate-400 bg-transparent outline-none cursor-pointer hover:text-teal-500"
                                             >
                                               <option value="کیلوگرم">کیلوگرم</option>
                                               <option value="عدد">عدد</option>
@@ -486,9 +533,10 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
 
               {rawResults && (
                 <div ref={resultsAreaRef} className="space-y-6 sm:space-y-10 animate-enter pt-6 sm:pt-10 border-t border-slate-100 scroll-mt-24">
-                  <div className="bg-white border border-slate-200 p-2 sm:p-4 rounded-2xl sm:rounded-[2.5rem] flex flex-wrap items-center gap-2 sm:gap-3 shadow-lg max-w-4xl mx-auto">
+                  <div className="bg-white border border-slate-200 p-2 sm:p-4 rounded-2xl sm:rounded-[2.5rem] flex flex-wrap items-center gap-2 sm:gap-3 shadow-lg max-w-5xl mx-auto">
                      {[
                        { id: 'all', label: 'همه پیشنهادات', icon: Sparkles },
+                       { id: 'cookable', label: 'قابل پخت', icon: UtensilsCrossed },
                        { id: 'perfect', label: 'آماده طبخ', icon: CheckCircle2 },
                        { id: 'near', label: 'کمبود جزئی', icon: AlertCircle },
                        { id: 'favorites', label: 'محبوب‌ها', icon: Heart },
@@ -511,10 +559,11 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 pb-10">
-                    {filteredResults && filteredResults.length > 0 ? filteredResults.map(({ dish, missingCount, isPerfect }) => (
+                    {filteredResults && filteredResults.length > 0 ? filteredResults.map(({ dish, missingCount, isPerfect, isFullyCookable }) => (
                       <div key={dish.id} className="relative animate-enter">
-                        {isPerfect && <div className="absolute -top-2 -right-2 z-20 bg-emerald-500 text-white px-3 py-1 rounded-lg shadow-xl border-2 border-white font-black text-[8px] sm:text-[10px]">آماده طبخ</div>}
-                        <MealCard plan={{ dayName: isPerfect ? 'کامل' : `${toPersian(missingCount)} کسری`, dish }} user={user} onUpdateUser={onUpdateUser} />
+                        {isFullyCookable && <div className="absolute -top-2 -right-2 z-20 bg-teal-500 text-white px-3 py-1 rounded-lg shadow-xl border-2 border-white font-black text-[8px] sm:text-[10px]">موجود در انبار</div>}
+                        {!isFullyCookable && isPerfect && <div className="absolute -top-2 -right-2 z-20 bg-emerald-500 text-white px-3 py-1 rounded-lg shadow-xl border-2 border-white font-black text-[8px] sm:text-[10px]">آماده طبخ</div>}
+                        <MealCard plan={{ dayName: isFullyCookable ? 'کامل' : isPerfect ? 'آماده' : `${toPersian(missingCount)} کسری`, dish }} user={user} onUpdateUser={onUpdateUser} />
                       </div>
                     )) : (
                       <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 flex flex-col items-center gap-3">

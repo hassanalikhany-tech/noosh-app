@@ -1,4 +1,5 @@
 import { Dish, NatureType } from '../types';
+import { getIngredientCategoryId } from '../data/pantry';
 
 export const estimateCookTime = (dish: Dish): number => {
   let time = 45; 
@@ -51,6 +52,17 @@ export const isIngredientMatch = (selected: string, ingredient: string): boolean
   // Specific fix for Egg (تخم مرغ) vs Chicken (مرغ)
   if ((s === 'مرغ' && i.includes('تخم مرغ')) || (i === 'مرغ' && s.includes('تخم مرغ'))) {
     return false;
+  }
+
+  // Specific fix for Water (آب) vs other liquids starting with Water (آبلیمو، آبغوره، ...)
+  const waterNorm = normalizeItemName('آب');
+  const waterBoilingNorm = normalizeItemName('آب جوش');
+  
+  if (s === waterNorm || s === waterBoilingNorm) {
+    return i === waterNorm || i === waterBoilingNorm;
+  }
+  if (i === waterNorm || i === waterBoilingNorm) {
+    return s === waterNorm || s === waterBoilingNorm;
   }
 
   if (i.includes(s) || s.includes(i)) return true;
@@ -164,6 +176,8 @@ export const convertToBase = (amount: number, unit: string, itemName?: string): 
   return { value: amount, type: 'unknown' };
 };
 
+const EXCLUDED_INVENTORY_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
+
 export const getInventoryUpdate = (
   inventory: any[],
   ingredients: any[],
@@ -171,81 +185,122 @@ export const getInventoryUpdate = (
   baseServings: number = 4
 ) => {
   const scale = servings / baseServings;
-  const newInventory = [...inventory];
+  const newInventory = inventory.map(item => ({ ...item }));
   let updatedCount = 0;
+  const missingItems: any[] = [];
 
   ingredients.forEach(ing => {
+    const requiredAmount = (ing.amount || 0) * scale;
+    if (requiredAmount <= 0) return;
+
+    // Check if item is in excluded list, is an additive, or has no category
+    const isExcluded = EXCLUDED_INVENTORY_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
+    const categoryId = getIngredientCategoryId(ing.item);
+    const isAdditive = categoryId === 'additives';
+    const isUnknown = categoryId === null;
+    
+    if (isExcluded || isAdditive || isUnknown) return;
+
     const invIdx = newInventory.findIndex(item => isIngredientMatch(item.name, ing.item));
+    
     if (invIdx !== -1) {
-      const invItem = { ...newInventory[invIdx] };
-      const requiredAmount = (ing.amount || 0) * scale;
-      
+      const invItem = newInventory[invIdx];
       const invBase = convertToBase(invItem.amount, invItem.unit, invItem.name);
       const ingBase = convertToBase(requiredAmount, ing.unit || '', ing.item);
 
       if (invBase.type !== 'unknown' && ingBase.type !== 'unknown' && invBase.type === ingBase.type) {
-        // Same type (e.g. both weight), so we can subtract base values
-        const remainingBase = Math.max(0, invBase.value - ingBase.value);
+        const remainingBase = invBase.value - ingBase.value;
+        let newAmount = invItem.amount;
         
-        // Convert back to inventory unit
-        // Special case for Onion back-conversion
+        // Special conversions...
         if (invItem.name && isIngredientMatch('پیاز', invItem.name) && (invItem.unit === 'عدد' || invItem.unit === 'دانه')) {
-          invItem.amount = remainingBase / 100;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        } 
-        // Special case for Garlic back-conversion
-        else if (invItem.name && isIngredientMatch('سیر', invItem.name) && invItem.unit.includes('حبه')) {
-          invItem.amount = remainingBase / 10;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        }
-        // Special case for Olive Oil back-conversion
-        else if (invItem.name && isIngredientMatch('روغن زیتون', invItem.name) && normalizeUnit(invItem.unit) === 'قاشق') {
-          invItem.amount = remainingBase / 50;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        }
-        // Special case for Saffron back-conversion
-        else if (invItem.name && isIngredientMatch('زعفران دم کرده', invItem.name) && normalizeUnit(invItem.unit) === 'به میزان لازم') {
-          invItem.amount = remainingBase / 0.25;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        }
-        // Special case for Chicken Breast back-conversion (if inventory is in count)
-        else if (invItem.name && isIngredientMatch('سینه مرغ', invItem.name) && normalizeUnit(invItem.unit) === 'عدد') {
-          invItem.amount = remainingBase / 250;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        }
-        // Special case for Carrot back-conversion (if inventory is in count)
-        else if (invItem.name && isIngredientMatch('هویج', invItem.name) && normalizeUnit(invItem.unit) === 'عدد') {
-          invItem.amount = remainingBase / 100;
-          newInventory[invIdx] = invItem;
-          updatedCount++;
-        }
-        else {
+          newAmount = remainingBase / 100;
+        } else if (invItem.name && isIngredientMatch('سیر', invItem.name) && invItem.unit.includes('حبه')) {
+          newAmount = remainingBase / 10;
+        } else if (invItem.name && isIngredientMatch('روغن زیتون', invItem.name) && normalizeUnit(invItem.unit) === 'قاشق') {
+          newAmount = remainingBase / 50;
+        } else if (invItem.name && isIngredientMatch('زعفران دم کرده', invItem.name) && normalizeUnit(invItem.unit) === 'به میزان لازم') {
+          newAmount = remainingBase / 0.25;
+        } else if (invItem.name && isIngredientMatch('سینه مرغ', invItem.name) && normalizeUnit(invItem.unit) === 'عدد') {
+          newAmount = remainingBase / 250;
+        } else if (invItem.name && isIngredientMatch('هویج', invItem.name) && normalizeUnit(invItem.unit) === 'عدد') {
+          newAmount = remainingBase / 100;
+        } else {
           const invConv = UNIT_CONVERSIONS[invItem.unit] || Object.entries(UNIT_CONVERSIONS).find(([k]) => invItem.unit.includes(k))?.[1];
           if (invConv) {
-            invItem.amount = remainingBase / invConv.factor;
-            newInventory[invIdx] = invItem;
-            updatedCount++;
+            newAmount = remainingBase / invConv.factor;
+          } else {
+            newAmount = invItem.amount - requiredAmount;
           }
         }
+
+        // Handle deficit
+        if (newAmount < 0) {
+          if (isExcluded) {
+            // Don't go negative for excluded items, just cap at 0
+            invItem.amount = 0;
+          } else {
+            const deficit = Math.abs(Math.min(0, invItem.amount) - newAmount);
+            if (deficit > 0) {
+              missingItems.push({
+                item: invItem.name,
+                amount: deficit,
+                unit: invItem.unit,
+                category: getIngredientCategoryId(invItem.name)
+              });
+            }
+            invItem.amount = newAmount;
+          }
+        } else {
+          invItem.amount = newAmount;
+        }
+        updatedCount++;
       } else if (isIngredientMatch(invItem.name, ing.item)) {
-        // Fallback if types don't match or are unknown but names match
-        // If it's "to taste", don't deduct
         if (normalizeUnit(ing.unit || '') !== 'به میزان لازم') {
-          const deduct = invItem.unit === 'کیلوگرم' ? 0.05 : 1; // Deduct a small amount
-          invItem.amount = Math.max(0, invItem.amount - deduct);
-          newInventory[invIdx] = invItem;
+          const oldAmount = invItem.amount;
+          const deduct = invItem.unit === 'کیلوگرم' ? 0.05 : 1;
+          const nextAmount = invItem.amount - deduct;
+          
+          if (nextAmount < 0) {
+            if (isExcluded) {
+              invItem.amount = 0;
+            } else {
+              missingItems.push({
+                item: invItem.name,
+                amount: Math.abs(Math.min(0, oldAmount) - nextAmount),
+                unit: invItem.unit,
+                category: getIngredientCategoryId(invItem.name)
+              });
+              invItem.amount = nextAmount;
+            }
+          } else {
+            invItem.amount = nextAmount;
+          }
           updatedCount++;
         }
       }
+    } else if (!isExcluded) {
+      // Item not in inventory and NOT excluded -> add as negative
+      const newItem = {
+        id: `inv-${Date.now()}-${Math.random()}`,
+        name: ing.item,
+        amount: -requiredAmount,
+        unit: ing.unit || 'عدد',
+        minThreshold: 0.5,
+        lastUpdated: Date.now()
+      };
+      newInventory.push(newItem);
+      missingItems.push({
+        item: ing.item,
+        amount: requiredAmount,
+        unit: ing.unit || 'عدد',
+        category: getIngredientCategoryId(ing.item)
+      });
+      updatedCount++;
     }
   });
 
-  return { newInventory, updatedCount };
+  return { newInventory, updatedCount, missingItems };
 };
 
 export interface UnitDiscrepancy {

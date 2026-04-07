@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ShoppingCart, CheckCircle2, Printer, Trash2, Plus, MessageCircle, AlertTriangle, Smartphone, X, Hash, Ruler } from 'lucide-react';
 import { ShoppingItem, UserProfile, DayPlan } from '../types';
 import { UserService } from '../services/userService';
+import { getIngredientCategoryId } from '../data/pantry';
 
 interface ShoppingListProps {
   weeklyPlan: DayPlan[]; 
@@ -34,6 +35,68 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const activeItems = useMemo(() => uniqueItems.filter(i => !i.checked), [uniqueItems]);
 
+  const groupedItems = useMemo(() => {
+    const groups: Record<string, ShoppingItem[]> = {
+      'proteins': [],
+      'grains': [],
+      'vegetables': [],
+      'other': []
+    };
+
+    uniqueItems.forEach(item => {
+      const cat = item.category || 'other';
+      if (groups[cat]) {
+        groups[cat].push(item);
+      } else {
+        groups['other'].push(item);
+      }
+    });
+
+    // Internal sorting for each category
+    const sortProteins = (a: ShoppingItem, b: ShoppingItem) => {
+      const getRank = (name: string) => {
+        if (name.includes('گوشت') || name.includes('گوساله') || name.includes('گاو') || name.includes('گوسفند') || name.includes('چرخ‌کرده') || name.includes('پاچه') || name.includes('جگر') || name.includes('سیرابی')) return 1;
+        if (name.includes('مرغ') || name.includes('بوقلمون') || name.includes('بلدرچین') || name.includes('اردک') || name.includes('غاز')) return 2;
+        if (name.includes('ماهی') || name.includes('میگو') || name.includes('تن ماهی')) return 3;
+        if (name.includes('سوسیس') || name.includes('کالباس')) return 4;
+        return 5;
+      };
+      return getRank(a.name) - getRank(b.name);
+    };
+
+    const sortGrains = (a: ShoppingItem, b: ShoppingItem) => {
+      const getRank = (name: string) => {
+        if (name.includes('برنج')) return 1;
+        if (name.includes('لوبیا')) return 2;
+        if (name.includes('نخود') || name.includes('عدس') || name.includes('لپه')) return 3;
+        return 4;
+      };
+      return getRank(a.name) - getRank(b.name);
+    };
+
+    const sortVegetables = (a: ShoppingItem, b: ShoppingItem) => {
+      const getRank = (name: string) => {
+        if (name.includes('سیب زمینی') || name.includes('پیاز') || name.includes('گوجه') || name.includes('بادمجان') || name.includes('سیر')) return 1;
+        if (name.includes('کرفس') || name.includes('گشنیز') || name.includes('جعفری') || name.includes('تره') || name.includes('ریحان') || name.includes('نعنا') || name.includes('شوید') || name.includes('شنبلیله') || name.includes('اسفناج')) return 2;
+        return 3;
+      };
+      return getRank(a.name) - getRank(b.name);
+    };
+
+    groups['proteins'].sort(sortProteins);
+    groups['grains'].sort(sortGrains);
+    groups['vegetables'].sort(sortVegetables);
+
+    return groups;
+  }, [uniqueItems]);
+
+  const categoryTitles: Record<string, string> = {
+    'proteins': 'مواد پروتئینی',
+    'grains': 'غلات و حبوبات',
+    'vegetables': 'سبزیجات و صیفی‌جات تازه',
+    'other': 'سایر موارد'
+  };
+
   const updateCustomItems = async (newItems: ShoppingItem[]) => {
     setCustomItems(newItems);
     onUpdateUser({ ...user, customShoppingList: newItems });
@@ -42,14 +105,33 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
 
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
-    const newItem: ShoppingItem = {
-      id: Date.now().toString(),
-      name: newItemName.trim(),
-      amount: newItemAmount ? parseFloat(newItemAmount) : undefined,
-      unit: newItemUnit.trim() || undefined,
-      checked: false
-    };
-    updateCustomItems([...customItems, newItem]);
+    const name = newItemName.trim();
+    const amount = newItemAmount ? parseFloat(newItemAmount) : 0;
+    const unit = newItemUnit.trim() || '';
+    
+    const currentList = [...customItems];
+    const existingIdx = currentList.findIndex(item => item.name === name);
+
+    if (existingIdx !== -1) {
+      currentList[existingIdx] = {
+        ...currentList[existingIdx],
+        amount: (currentList[existingIdx].amount || 0) + amount,
+        unit: unit || currentList[existingIdx].unit, // Prefer new unit if provided
+        category: currentList[existingIdx].category || getIngredientCategoryId(name) || 'other'
+      };
+      updateCustomItems(currentList);
+    } else {
+      const newItem: ShoppingItem = {
+        id: Date.now().toString(),
+        name: name,
+        amount: amount || undefined,
+        unit: unit || undefined,
+        checked: false,
+        category: getIngredientCategoryId(name) || 'other'
+      };
+      updateCustomItems([...currentList, newItem]);
+    }
+    
     setNewItemName('');
     setNewItemAmount('');
     setNewItemUnit('');
@@ -85,12 +167,55 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
     text += `📅 تاریخ: ${persianDate}\n`;
     text += `------------------------------------------\n\n`;
     text += `🛒 *لیست مواد مورد نیاز:*\n\n`;
-    activeItems.forEach((item, index) => {
-       const qty = item.amount ? ` (${toPersianDigits(item.amount)} ${item.unit || ''})` : '';
-       const source = item.fromRecipe ? ` [بابت: ${item.fromRecipe}]` : '';
-       text += `${toPersianDigits(index + 1)}. ${item.name}${qty}${source}\n`;
+    
+    const categories = ['proteins', 'grains', 'vegetables', 'other'];
+    categories.forEach(catId => {
+      const items = [...activeItems.filter(i => (i.category || 'other') === catId)];
+      if (items.length > 0) {
+        // Apply internal sorting
+        if (catId === 'proteins') {
+          items.sort((a, b) => {
+            const getRank = (name: string) => {
+              if (name.includes('گوشت') || name.includes('گوساله') || name.includes('گاو') || name.includes('گوسفند') || name.includes('چرخ‌کرده') || name.includes('پاچه') || name.includes('جگر') || name.includes('سیرابی')) return 1;
+              if (name.includes('مرغ') || name.includes('بوقلمون') || name.includes('بلدرچین') || name.includes('اردک') || name.includes('غاز')) return 2;
+              if (name.includes('ماهی') || name.includes('میگو') || name.includes('تن ماهی')) return 3;
+              if (name.includes('سوسیس') || name.includes('کالباس')) return 4;
+              return 5;
+            };
+            return getRank(a.name) - getRank(b.name);
+          });
+        } else if (catId === 'grains') {
+          items.sort((a, b) => {
+            const getRank = (name: string) => {
+              if (name.includes('برنج')) return 1;
+              if (name.includes('لوبیا')) return 2;
+              if (name.includes('نخود') || name.includes('عدس') || name.includes('لپه')) return 3;
+              return 4;
+            };
+            return getRank(a.name) - getRank(b.name);
+          });
+        } else if (catId === 'vegetables') {
+          items.sort((a, b) => {
+            const getRank = (name: string) => {
+              if (name.includes('سیب زمینی') || name.includes('پیاز') || name.includes('گوجه') || name.includes('بادمجان') || name.includes('سیر')) return 1;
+              if (name.includes('کرفس') || name.includes('گشنیز') || name.includes('جعفری') || name.includes('تره') || name.includes('ریحان') || name.includes('نعنا') || name.includes('شوید') || name.includes('شنبلیله') || name.includes('اسفناج')) return 2;
+              return 3;
+            };
+            return getRank(a.name) - getRank(b.name);
+          });
+        }
+
+        text += `🔹 *${categoryTitles[catId]}*\n`;
+        items.forEach((item, index) => {
+          const qty = item.amount ? ` (${toPersianDigits(item.amount)} ${item.unit || ''})` : '';
+          const source = item.fromRecipe ? ` [بابت: ${item.fromRecipe}]` : '';
+          text += `  ${toPersianDigits(index + 1)}. ${item.name}${qty}${source}\n`;
+        });
+        text += `\n`;
+      }
     });
-    text += `\n------------------------------------------\n`;
+
+    text += `------------------------------------------\n`;
     text += `🌐 www.nooshapp.ir\n`;
     return text;
   };
@@ -194,34 +319,57 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ user, weeklyPlan, onUpdateU
                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1"><Ruler size={10} /> واحد</span>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-8">
               {uniqueItems.length === 0 ? (
                 <div className="text-center py-24 text-slate-300 border-2 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/30">
                   <ShoppingCart size={64} className="mx-auto mb-6 opacity-5" />
                   <p className="font-black text-sm text-slate-400">سبد خرید شما خالی است</p>
                 </div>
               ) : (
-                uniqueItems.map((item) => (
-                  <div key={item.id} className={`group flex items-center justify-between p-4 rounded-[1.5rem] border-2 transition-all ${item.checked ? 'bg-slate-50 border-slate-50 opacity-40' : 'bg-white border-slate-50 shadow-sm hover:border-teal-100'}`}>
-                    <div className="flex items-center gap-4 cursor-pointer flex-grow" onClick={() => toggleCheck(item.id)}>
-                      <div className={`w-7 h-7 rounded-xl border-2 flex-shrink-0 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 shadow-lg' : 'border-slate-200 group-hover:border-teal-400'}`}>
-                        {item.checked && <CheckCircle2 size={18} className="text-white" />}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className={`text-base font-black transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                          {item.name}
+                ['proteins', 'grains', 'vegetables', 'other'].map(catId => {
+                  const items = groupedItems[catId];
+                  if (items.length === 0) return null;
+                  
+                  return (
+                    <div key={catId} className="space-y-4">
+                      <div className="flex items-center gap-3 px-2">
+                        <div className={`w-2 h-6 rounded-full ${
+                          catId === 'proteins' ? 'bg-rose-500' : 
+                          catId === 'grains' ? 'bg-amber-500' : 
+                          catId === 'vegetables' ? 'bg-emerald-500' : 'bg-slate-400'
+                        }`} />
+                        <h3 className="text-lg font-black text-slate-800">{categoryTitles[catId]}</h3>
+                        <div className="flex-grow h-px bg-slate-100" />
+                        <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                          {toPersianDigits(items.length)} قلم
                         </span>
-                        {(item.amount || item.fromRecipe) && (
-                          <div className="flex flex-wrap gap-2 items-center mt-1">
-                            {item.amount && item.amount > 0 && <span className="text-[10px] text-teal-600 font-black bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">{toPersianDigits(item.amount)} {item.unit}</span>}
-                            {item.fromRecipe && <span className="text-[9px] text-slate-400 font-bold bg-slate-100/50 px-2 py-0.5 rounded-lg border border-slate-100/50 truncate max-w-[150px]">بابت: {item.fromRecipe}</span>}
+                      </div>
+                      <div className="space-y-3">
+                        {items.map((item) => (
+                          <div key={item.id} className={`group flex items-center justify-between p-4 rounded-[1.5rem] border-2 transition-all ${item.checked ? 'bg-slate-50 border-slate-50 opacity-40' : 'bg-white border-slate-50 shadow-sm hover:border-teal-100'}`}>
+                            <div className="flex items-center gap-4 cursor-pointer flex-grow" onClick={() => toggleCheck(item.id)}>
+                              <div className={`w-7 h-7 rounded-xl border-2 flex-shrink-0 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 shadow-lg' : 'border-slate-200 group-hover:border-teal-400'}`}>
+                                {item.checked && <CheckCircle2 size={18} className="text-white" />}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={`text-base font-black transition-all ${item.checked ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                                  {item.name}
+                                </span>
+                                {(item.amount || item.fromRecipe) && (
+                                  <div className="flex flex-wrap gap-2 items-center mt-1">
+                                    {item.amount && item.amount > 0 && <span className="text-[10px] text-teal-600 font-black bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">{toPersianDigits(item.amount)} {item.unit}</span>}
+                                    {item.fromRecipe && <span className="text-[9px] text-slate-400 font-bold bg-slate-100/50 px-2 py-0.5 rounded-lg border border-slate-100/50 truncate max-w-[150px]">بابت: {item.fromRecipe}</span>}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <button onClick={() => handleDeleteItem(item.id)} className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18} /></button>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteItem(item.id)} className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18} /></button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

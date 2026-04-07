@@ -83,6 +83,7 @@ export interface ShoppingItem {
   unit?: string;
   checked: boolean;
   fromRecipe?: string;
+  category?: string;
 }
 
 export interface AuthUser {

@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
 import DishVisual from './DishVisual';
 import { UserService } from '../services/userService';
-import { estimateCalories, estimateCookTime, getDifficulty, getDishNature, getInventoryUpdate } from '../utils/recipeHelpers';
+import { estimateCalories, estimateCookTime, getDifficulty, getDishNature, getInventoryUpdate, isIngredientMatch } from '../utils/recipeHelpers';
+import { getIngredientCategoryId } from '../data/pantry';
 
 interface RecipeModalProps {
   dish: Dish;
@@ -15,7 +16,7 @@ interface RecipeModalProps {
   onUpdateUser?: (user: UserProfile) => void;
 }
 
-const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن'];
+const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, onUpdateUser }) => {
   const [addedToCart, setAddedToCart] = useState(false);
@@ -155,46 +156,110 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
   const handleAddAllToCart = () => {
     if (!user || !dish.ingredients) return;
     setAddedToCart(true);
-    const currentList = user.customShoppingList || [];
-    const newItems: ShoppingItem[] = dish.ingredients
-      .filter(ing => !EXCLUDED_SHOPPING_ITEMS.includes(ing.item))
-      .map(ing => ({
-        id: `ing-${Date.now()}-${Math.random()}`,
-        name: ing.item,
-        amount: getScaledAmount(ing.amount),
-        unit: ing.unit,
-        checked: false,
-        fromRecipe: `${dish.name} (${toPersianDigits(servings)} نفر)`
-      }));
-    const updatedFullList = [...currentList, ...newItems];
-    if (onUpdateUser) onUpdateUser({ ...user, customShoppingList: updatedFullList });
-    UserService.updateShoppingList(user.username, updatedFullList);
+    const currentList = [...(user.customShoppingList || [])];
+    
+    dish.ingredients.forEach(ing => {
+      // Exclude specific items and additives
+      const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
+      const isAdditive = getIngredientCategoryId(ing.item) === 'additives';
+      
+      if (isExcluded || isAdditive) return;
+
+      const amount = getScaledAmount(ing.amount);
+      const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, ing.item));
+
+      if (existingIdx !== -1) {
+        // Consolidate: Sum amounts
+        currentList[existingIdx] = {
+          ...currentList[existingIdx],
+          amount: (currentList[existingIdx].amount || 0) + amount,
+          fromRecipe: `${currentList[existingIdx].fromRecipe}, ${dish.name}`
+        };
+      } else {
+        // Add new
+        currentList.push({
+          id: `ing-${Date.now()}-${Math.random()}`,
+          name: ing.item,
+          amount: amount,
+          unit: ing.unit,
+          checked: false,
+          fromRecipe: `${dish.name} (${toPersianDigits(servings)} نفر)`
+        });
+      }
+    });
+
+    if (onUpdateUser) onUpdateUser({ ...user, customShoppingList: currentList });
+    UserService.updateShoppingList(user.username, currentList);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleCookDish = async () => {
     if (!user || !dish.ingredients) return;
     
-    const { newInventory, updatedCount } = getInventoryUpdate(
+    const { newInventory, updatedCount, missingItems } = getInventoryUpdate(
       user.inventory || [],
       dish.ingredients,
       servings,
       dish.servings || 4
     );
 
-    if (updatedCount > 0) {
+    if (updatedCount > 0 || hasIngredients) {
       setCooked(true);
-      // Optimistic update
-      if (onUpdateUser) onUpdateUser({ ...user, inventory: newInventory });
       
-      // Sync in background
-      UserService.updateInventory(user.username, newInventory).catch(err => {
-        console.error("Failed to sync inventory after cooking:", err);
-      });
+      if (updatedCount > 0) {
+        let updatedUser = { ...user, inventory: newInventory };
+        
+        // Handle missing items -> add to shopping list
+        if (missingItems && missingItems.length > 0) {
+          const currentList = [...(user.customShoppingList || [])];
+          
+          missingItems.forEach(mi => {
+            const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, mi.item));
+            const isAdditive = getIngredientCategoryId(mi.item) === 'additives';
+            
+            if (isExcluded || isAdditive) return;
+
+            const amount = Math.round(mi.amount * 10) / 10;
+            const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, mi.item));
+
+            if (existingIdx !== -1) {
+              // Consolidate: Sum amounts
+              currentList[existingIdx] = {
+                ...currentList[existingIdx],
+                amount: (currentList[existingIdx].amount || 0) + amount,
+                fromRecipe: `${currentList[existingIdx].fromRecipe}, کسری ${dish.name}`
+              };
+            } else {
+              // Add new
+              currentList.push({
+                id: `ing-deficit-${Date.now()}-${Math.random()}`,
+                name: mi.item,
+                amount: amount,
+                unit: mi.unit,
+                checked: false,
+                fromRecipe: `کسری برای: ${dish.name} (${toPersianDigits(servings)} نفر)`
+              });
+            }
+          });
+          
+          updatedUser.customShoppingList = currentList;
+          UserService.updateShoppingList(user.username, currentList).catch(err => {
+            console.error("Failed to sync shopping list after cooking:", err);
+          });
+        }
+
+        // Optimistic update
+        if (onUpdateUser) onUpdateUser(updatedUser);
+        
+        // Sync in background
+        UserService.updateInventory(user.username, newInventory).catch(err => {
+          console.error("Failed to sync inventory after cooking:", err);
+        });
+      }
       
       setTimeout(() => setCooked(false), 3000);
     } else {
-      alert('هیچ‌کدام از مواد این غذا در انبار شما یافت نشد یا واحدها مطابقت ندارند.');
+      alert('خطایی در کسر از انبار رخ داد.');
     }
   };
 

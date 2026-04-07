@@ -2,11 +2,12 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, VisitorProfile } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera, BookOpen, ChevronLeft } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import { PANTRY_ITEMS } from '../data/pantry';
 import DishVisual from './DishVisual';
 import FeedbackModal from './FeedbackModal';
+import UserGuide from './UserGuide';
 
 interface PreferencesProps {
   user: UserProfile;
@@ -18,6 +19,7 @@ interface PreferencesProps {
 const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout, onNotify }) => {
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarClick = () => {
@@ -177,9 +179,31 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
       </div>
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} user={user} />
+      <UserGuide isOpen={isUserGuideOpen} onClose={() => setIsUserGuideOpen(false)} />
 
       <div className="flex-grow overflow-y-auto [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
           <div className="max-w-4xl mx-auto py-4 sm:py-8 space-y-6 sm:space-y-10">
+              {/* بخش راهنمای اپلیکیشن */}
+              <button 
+                onClick={() => setIsUserGuideOpen(true)}
+                className="w-full bg-gradient-to-r from-teal-600 to-blue-600 rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-xl shadow-teal-100 border border-teal-500/20 group hover:scale-[1.02] transition-all active:scale-95 text-right"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="p-4 sm:p-6 bg-white/20 backdrop-blur-md text-white rounded-2xl sm:rounded-[2rem] group-hover:rotate-12 transition-transform">
+                      <BookOpen size={28} className="sm:w-10 sm:h-10" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-3xl font-black text-white">راهنمای استفاده از اپلیکیشن</h2>
+                      <p className="text-[10px] sm:text-sm text-teal-50 font-bold mt-1 sm:mt-2 opacity-80">آموزش کامل تمام بخش‌ها و امکانات نـوش به زبان ساده</p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex w-12 h-12 bg-white/10 rounded-full items-center justify-center text-white">
+                    <ChevronLeft size={24} />
+                  </div>
+                </div>
+              </button>
+
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">

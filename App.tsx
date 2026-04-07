@@ -15,6 +15,7 @@ import { UserService } from './services/userService';
 import { NotificationService } from './services/notificationService';
 import { DayPlan, UserProfile, CATEGORY_LABELS, DishCategory, Notification } from './types';
 import { generateDailyPlan, generateWeeklyPlan, generateMonthlyPlan, generateSingleReplacement } from './utils/planner';
+import { getInventoryUpdate } from './utils/recipeHelpers';
 import { CHALLENGES } from './data/challenges';
 import metadata from './metadata.json';
 
@@ -44,6 +45,7 @@ const AppContent: React.FC = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [appVersion, setAppVersion] = useState(metadata.name.split(' ').pop() || "V16.2");
   const [planLoading, setPlanLoading] = useState<'daily' | 'weekly' | 'monthly' | null>(null);
+  const [isSyncingPlan, setIsSyncingPlan] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -285,6 +287,73 @@ const AppContent: React.FC = () => {
       }
   };
 
+  const handleSyncPlanToShoppingList = async () => {
+    if (!currentUser || displayPlan.length === 0) return;
+    setIsSyncingPlan(true);
+
+    try {
+      const allIngredients: any[] = [];
+      displayPlan.forEach(plan => {
+        if (plan.dish && plan.dish.ingredients) {
+          allIngredients.push(...plan.dish.ingredients);
+        }
+        if (plan.sideDish && plan.sideDish.ingredients) {
+          allIngredients.push(...plan.sideDish.ingredients);
+        }
+      });
+
+      const { newInventory, missingItems } = getInventoryUpdate(
+        currentUser.inventory || [],
+        allIngredients,
+        currentUser.familySize || 4,
+        4
+      );
+
+      const currentShoppingList = [...(currentUser.customShoppingList || [])];
+      
+      missingItems.forEach(missing => {
+        const existingIdx = currentShoppingList.findIndex(item => 
+          item.name.trim() === missing.item.trim() && !item.checked
+        );
+        
+        if (existingIdx !== -1) {
+          currentShoppingList[existingIdx] = {
+            ...currentShoppingList[existingIdx],
+            amount: (currentShoppingList[existingIdx].amount || 0) + missing.amount,
+            unit: missing.unit || currentShoppingList[existingIdx].unit,
+            category: missing.category || currentShoppingList[existingIdx].category
+          };
+        } else {
+          currentShoppingList.push({
+            id: `plan-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            name: missing.item,
+            amount: missing.amount,
+            unit: missing.unit,
+            checked: false,
+            fromRecipe: 'برنامه غذایی',
+            category: missing.category
+          });
+        }
+      });
+
+      const updatedUser = {
+        ...currentUser,
+        inventory: newInventory,
+        customShoppingList: currentShoppingList
+      };
+
+      setCurrentUser(updatedUser);
+      await UserService.updateInventory(currentUser.username, newInventory);
+      await UserService.updateShoppingList(currentUser.username, currentShoppingList);
+      setIsShoppingListOpen(true);
+    } catch (err: any) {
+      console.error("Sync error:", err);
+      alert("خطا در همگام‌سازی با لیست خرید");
+    } finally {
+      setIsSyncingPlan(false);
+    }
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try { await UserService.logout(); setCurrentUser(null); }
@@ -372,8 +441,8 @@ const AppContent: React.FC = () => {
   if (isAdminMode && isAdmin) return <AdminDashboard onLogout={handleLogout} onSwitchToApp={() => setIsAdminMode(false)} />;
 
   const navItems = [
-    { id: 'plan', label: 'برنامه', icon: CalendarDays },
-    { id: 'pantry', label: 'آشپز برتر', icon: ChefHat },
+    { id: 'plan', label: 'برنامه غذایی', icon: CalendarDays },
+    { id: 'pantry', label: 'آشپزخانه من', icon: ChefHat },
     { id: 'search', label: 'جستجو', icon: Search },
     { id: 'challenges', label: 'چالش‌ها', icon: Trophy }
   ];
@@ -599,17 +668,36 @@ const AppContent: React.FC = () => {
             <div className="flex-grow overflow-y-auto [@media(orientation:landscape)_and_(max-height:500px)]:overflow-visible px-4 sm:px-10 pb-20 no-scrollbar">
                 <div className="max-w-7xl mx-auto py-4 sm:py-6">
                     {displayPlan.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                        {displayPlan.map((plan, idx) => (
-                           <MealCard 
-                            key={idx} 
-                            plan={plan} 
-                            user={currentUser!} 
-                            onUpdateUser={setCurrentUser} 
-                            onRefresh={() => handleRefreshSingleMeal(idx)}
-                           />
-                        ))}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                          {displayPlan.map((plan, idx) => (
+                             <MealCard 
+                              key={idx} 
+                              plan={plan} 
+                              user={currentUser!} 
+                              onUpdateUser={setCurrentUser} 
+                              onRefresh={() => handleRefreshSingleMeal(idx)}
+                             />
+                          ))}
+                        </div>
+                        {displayPlan.length > 1 && (
+                          <div className="mt-12 flex justify-center animate-enter no-print">
+                             <button 
+                              onClick={handleSyncPlanToShoppingList}
+                              disabled={isSyncingPlan}
+                              className="group relative flex items-center gap-4 px-10 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-xl shadow-2xl hover:bg-black transition-all active:scale-95 disabled:opacity-50 overflow-hidden"
+                             >
+                                <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                {isSyncingPlan ? <Loader2 size={28} className="animate-spin text-teal-400" /> : <ShoppingCart size={28} className="text-teal-400" />}
+                                <div className="flex flex-col items-start">
+                                   <span>افزودن کل برنامه به لیست خرید</span>
+                                   <span className="text-[10px] text-slate-400 font-bold">کسری‌های انبار به صورت خودکار محاسبه و اضافه می‌شوند</span>
+                                </div>
+                                <ArrowRight size={24} className="mr-4 group-hover:translate-x-[-10px] transition-transform" />
+                             </button>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="py-24 sm:py-32 text-center">
                          <ChefHat size={60} className="mx-auto text-slate-200 mb-6 animate-pulse sm:w-20" />
