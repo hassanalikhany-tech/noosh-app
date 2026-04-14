@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Dish, ShoppingItem, UserProfile } from '../types';
 import DishVisual from './DishVisual';
 import { UserService } from '../services/userService';
-import { estimateCalories, estimateCookTime, getDifficulty, getDishNature, getInventoryUpdate, isIngredientMatch } from '../utils/recipeHelpers';
+import { estimateCalories, estimateCookTime, getDifficulty, getDishNature, getInventoryUpdate, isIngredientMatch, getCountryCode } from '../utils/recipeHelpers';
 import { getIngredientCategoryId, getBaseIngredientName } from '../data/pantry';
 
 interface RecipeModalProps {
@@ -16,7 +16,7 @@ interface RecipeModalProps {
   onUpdateUser?: (user: UserProfile) => void;
 }
 
-const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
+const EXCLUDED_SHOPPING_ITEMS = ['آب', 'آب جوش', 'آب ولرم', 'آب سرد', 'آب گرم', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
 
 const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, onUpdateUser }) => {
   const [addedToCart, setAddedToCart] = useState(false);
@@ -159,11 +159,15 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
     const currentList = [...(user.customShoppingList || [])];
     
     dish.ingredients.forEach(ing => {
-      // Exclude specific items and additives
-      const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
-      const isAdditive = getIngredientCategoryId(ing.item) === 'additives';
+      // Strictly allow only 3 categories: proteins, grains, vegetables
+      const categoryId = getIngredientCategoryId(ing.item);
+      const allowedCategories = ['proteins', 'grains', 'vegetables'];
+      const isAllowedCategory = categoryId && allowedCategories.includes(categoryId);
       
-      if (isExcluded || isAdditive) return;
+      // Exclude specific items like water
+      const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
+      
+      if (!isAllowedCategory || isExcluded) return;
 
       const baseName = getBaseIngredientName(ing.item);
       const amount = getScaledAmount(ing.amount);
@@ -216,10 +220,15 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           const currentList = [...(user.customShoppingList || [])];
           
           missingItems.forEach(mi => {
-            const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, mi.item));
-            const isAdditive = getIngredientCategoryId(mi.item) === 'additives';
+            // Strictly allow only 3 categories: proteins, grains, vegetables
+            const categoryId = getIngredientCategoryId(mi.item);
+            const allowedCategories = ['proteins', 'grains', 'vegetables'];
+            const isAllowedCategory = categoryId && allowedCategories.includes(categoryId);
             
-            if (isExcluded || isAdditive) return;
+            // Exclude specific items like water
+            const isExcluded = EXCLUDED_SHOPPING_ITEMS.some(ex => isIngredientMatch(ex, mi.item));
+            
+            if (!isAllowedCategory || isExcluded) return;
 
             const amount = Math.round(mi.amount * 10) / 10;
             const existingIdx = currentList.findIndex(item => isIngredientMatch(item.name, mi.item));
@@ -282,7 +291,17 @@ const RecipeModal: React.FC<RecipeModalProps> = ({ dish, isOpen, onClose, user, 
           </button>
 
           {/* Row 1: Dish Name */}
-          <div className="text-center mb-8 pt-2 [@media(orientation:landscape)_and_(max-height:500px)]:mb-2 [@media(orientation:landscape)_and_(max-height:500px)]:pt-0">
+          <div className="text-center mb-8 pt-2 [@media(orientation:landscape)_and_(max-height:500px)]:mb-2 [@media(orientation:landscape)_and_(max-height:500px)]:pt-0 flex flex-col items-center gap-2">
+            {dish.nationality && getCountryCode(dish.nationality) && (
+              <div className="w-12 h-8 rounded-lg overflow-hidden shadow-lg border-2 border-white/50 mb-2">
+                <img 
+                  src={`https://flagcdn.com/w160/${getCountryCode(dish.nationality)}.png`} 
+                  alt={dish.nationality} 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            )}
             <h2 className="text-3xl sm:text-5xl [@media(orientation:landscape)_and_(max-height:500px)]:text-2xl font-black text-slate-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)] tracking-tight leading-tight">
               {dish.name}
             </h2>

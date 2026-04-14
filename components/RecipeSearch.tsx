@@ -36,6 +36,7 @@ const COUNTRY_DATA = [
   { id: 'it', label: 'ایتالیا', matches: ['ایتالیا', 'Italy'] },
   { id: 'fr', label: 'فرانسه', matches: ['فرانسه', 'France'] },
   { id: 'ru', label: 'روسیه', matches: ['روسیه', 'Russia'] },
+  { id: 'gr', label: 'یونان', matches: ['یونان', 'Greek', 'Greece'] },
   { id: 'es', label: 'اسپانیا', matches: ['اسپانیا', 'Spain'] },
   { id: 'us', label: 'آمریکا', matches: ['آمریکا', 'USA'] },
 ].sort((a, b) => a.label.localeCompare(b.label, 'fa'));

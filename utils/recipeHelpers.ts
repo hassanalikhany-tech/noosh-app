@@ -176,7 +176,7 @@ export const convertToBase = (amount: number, unit: string, itemName?: string): 
   return { value: amount, type: 'unknown' };
 };
 
-const EXCLUDED_INVENTORY_ITEMS = ['آب', 'آب جوش', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
+const EXCLUDED_INVENTORY_ITEMS = ['آب', 'آب جوش', 'آب ولرم', 'آب سرد', 'آب گرم', 'نمک', 'فلفل', 'زردچوبه', 'روغن', 'ادویه'];
 
 export const getInventoryUpdate = (
   inventory: any[],
@@ -193,13 +193,15 @@ export const getInventoryUpdate = (
     const requiredAmount = (ing.amount || 0) * scale;
     if (requiredAmount <= 0) return;
 
-    // Check if item is in excluded list, is an additive, or has no category
-    const isExcluded = EXCLUDED_INVENTORY_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
+    // Strictly allow only 3 categories: proteins, grains, vegetables
     const categoryId = getIngredientCategoryId(ing.item);
-    const isAdditive = categoryId === 'additives';
-    const isUnknown = categoryId === null;
+    const allowedCategories = ['proteins', 'grains', 'vegetables'];
+    const isAllowedCategory = categoryId && allowedCategories.includes(categoryId);
     
-    if (isExcluded || isAdditive || isUnknown) return;
+    // Exclude specific items like water and additives
+    const isExcluded = EXCLUDED_INVENTORY_ITEMS.some(ex => isIngredientMatch(ex, ing.item));
+    
+    if (!isAllowedCategory || isExcluded) return;
 
     const invIdx = newInventory.findIndex(item => isIngredientMatch(item.name, ing.item));
     
@@ -361,4 +363,36 @@ export const getStandardUnit = (itemName: string, dishes: Dish[]): string => {
 
   const sorted = Object.entries(units).sort((a, b) => b[1] - a[1]);
   return sorted.length > 0 ? sorted[0][0] : 'عدد';
+};
+
+export const getCountryCode = (nationality: string | undefined): string | null => {
+  if (!nationality) return null;
+  const n = nationality.toLowerCase();
+  if (n.includes('یونان') || n.includes('greek') || n.includes('greece') || n === 'gr') return 'gr';
+  if (n.includes('ایران') || n.includes('iran') || n === 'ir') return 'ir';
+  if (n.includes('ایتالیا') || n.includes('italy') || n === 'it') return 'it';
+  if (n.includes('فرانسه') || n.includes('france') || n === 'fr') return 'fr';
+  if (n.includes('ترکیه') || n.includes('turkey') || n === 'tr') return 'tr';
+  if (n.includes('هند') || n.includes('india') || n === 'in') return 'in';
+  if (n.includes('چین') || n.includes('china') || n === 'cn') return 'cn';
+  if (n.includes('ژاپن') || n.includes('japan') || n === 'jp') return 'jp';
+  if (n.includes('مکزیک') || n.includes('mexico') || n === 'mx') return 'mx';
+  if (n.includes('آمریکا') || n.includes('usa') || n === 'us') return 'us';
+  if (n.includes('لبنان') || n.includes('lebanon') || n === 'lb') return 'lb';
+  if (n.includes('افغانستان') || n.includes('afghanistan') || n === 'af') return 'af';
+  if (n.includes('روسیه') || n.includes('russia') || n === 'ru') return 'ru';
+  if (n.includes('اسپانیا') || n.includes('spain') || n === 'es') return 'es';
+  if (n.includes('بریتانیا') || n.includes('uk') || n === 'gb') return 'gb';
+  if (n.includes('مصر') || n.includes('egypt') || n === 'eg') return 'eg';
+  if (n.includes('عربستان') || n.includes('saudi') || n === 'sa') return 'sa';
+  if (n.includes('یمن') || n.includes('yemen') || n === 'ye') return 'ye';
+  if (n.includes('مراکش') || n.includes('morocco') || n === 'ma') return 'ma';
+  if (n.includes('پرو') || n.includes('peru') || n === 'pe') return 'pe';
+  if (n.includes('برزیل') || n.includes('brazil') || n === 'br') return 'br';
+  if (n.includes('آرژانتین') || n.includes('argentina') || n === 'ar') return 'ar';
+  if (n.includes('اندونزی') || n.includes('indonesia') || n === 'id') return 'id';
+  if (n.includes('تایلند') || n.includes('thailand') || n === 'th') return 'th';
+  if (n.includes('ویتنام') || n.includes('vietnam') || n === 'vn') return 'vn';
+  if (n.includes('مجارستان') || n.includes('hungary') || n === 'hu') return 'hu';
+  return null;
 };

@@ -374,6 +374,12 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
                               {item.name} ({toPersian(item.amount)} {item.unit})
                                 <button onClick={() => {
                                   const currentList = [...(user.customShoppingList || [])];
+                                  
+                                  // Strictly allow only 3 categories: proteins, grains, vegetables
+                                  const categoryId = getIngredientCategoryId(item.name);
+                                  const allowedCategories = ['proteins', 'grains', 'vegetables'];
+                                  if (!categoryId || !allowedCategories.includes(categoryId)) return;
+
                                   const existingIdx = currentList.findIndex(i => i.name === item.name);
                                   const amountToAdd = item.minThreshold * 2;
                                   
