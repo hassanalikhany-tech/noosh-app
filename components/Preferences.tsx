@@ -223,9 +223,48 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-rose-50 text-rose-600 rounded-xl sm:rounded-[1.5rem]"><UserX size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">مواد غذایی ممنوعه</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">غذاهای حاوی این مواد هرگز پیشنهاد نمی‌شوند</p></div></div>
                 <div className="relative">
-                  <input type="text" placeholder="جستجو و حذف ماده..." value={ingredientSearch} onChange={e => setIngredientSearch(e.target.value)} className="w-full px-5 py-3 sm:px-8 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-[2rem] outline-none focus:border-rose-400 font-bold text-sm sm:text-lg transition-all" />
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 sm:w-6" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="جستجو و انتخاب ماده غذایی..." 
+                    value={ingredientSearch} 
+                    onChange={e => setIngredientSearch(e.target.value)} 
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && ingredientSearch.trim()) {
+                            toggleIngredient(ingredientSearch.trim());
+                            setIngredientSearch('');
+                        }
+                    }}
+                    className="w-full px-12 py-3 sm:px-16 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-[2rem] outline-none focus:border-rose-400 font-bold text-sm sm:text-lg transition-all" 
+                  />
+                  <Search className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-slate-300 sm:w-6" size={18} />
+                  {ingredientSearch && (
+                    <button 
+                      onClick={() => { toggleIngredient(ingredientSearch.trim()); setIngredientSearch(''); }}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 px-3 py-1.5 sm:px-4 sm:py-2 bg-rose-600 text-white rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black shadow-lg animate-enter"
+                    >
+                      ثبت ماده
+                    </button>
+                  )}
                 </div>
+
+                {/* نمایش نتایج جستجو */}
+                {ingredientSearch && (
+                  <div className="flex flex-wrap gap-2 animate-enter bg-rose-50/30 p-4 rounded-2xl border border-rose-100/50">
+                    {commonIngredients.filter(i => !(user.dislikedIngredients || []).includes(i)).map(ing => (
+                      <button 
+                        key={ing} 
+                        onClick={() => { toggleIngredient(ing); setIngredientSearch(''); }}
+                        className="px-4 py-2 bg-white border border-rose-200 text-rose-600 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black flex items-center gap-2 hover:bg-rose-50 transition-all active:scale-95"
+                      >
+                        <Plus size={14} /> {ing}
+                      </button>
+                    ))}
+                    {commonIngredients.filter(i => !(user.dislikedIngredients || []).includes(i)).length === 0 && (
+                      <p className="text-[10px] sm:text-xs text-rose-400 font-bold italic w-full text-center">موردی یافت نشد، از دکمه ثبت بالا استفاده کنید.</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   {(user.dislikedIngredients || []).map(ing => (
                     <button key={ing} onClick={() => toggleIngredient(ing)} className="px-4 py-2 sm:px-6 sm:py-3 bg-rose-600 text-white rounded-lg sm:rounded-2xl text-[10px] sm:text-sm font-black flex items-center gap-2 sm:gap-3 shadow-lg">

@@ -4,7 +4,7 @@ import { ChefHat, Sparkles, Search, X, Drumstick, Wheat, Carrot, UtensilsCrossed
 import { PANTRY_ITEMS, getIngredientCategoryId } from '../data/pantry';
 import { RecipeService } from '../services/recipeService';
 import { Dish, UserProfile, InventoryItem } from '../types';
-import { isIngredientMatch, getStandardUnit, convertToBase } from '../utils/recipeHelpers';
+import { isIngredientMatch, getStandardUnit, convertToBase, isDishProhibited } from '../utils/recipeHelpers';
 import { UserService } from '../services/userService';
 import RecipeModal from './RecipeModal';
 import MealCard from './MealCard';
@@ -84,7 +84,7 @@ const PantryChef: React.FC<PantryChefProps> = ({ user, onUpdateUser }) => {
     if (items.length === 0) return;
     setIsSearching(true);
     setTimeout(() => {
-      const all = RecipeService.getAllDishes();
+      const all = RecipeService.getAllDishes().filter(dish => !isDishProhibited(dish, user));
       const processed: ProcessedResult[] = all.map(dish => {
         const matched = dish.ingredients.filter(ing => 
           items.some(s => isIngredientMatch(s, ing.item))

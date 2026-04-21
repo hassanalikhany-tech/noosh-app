@@ -3,6 +3,7 @@ import { Search, Database, RefreshCw, ChevronRight, ChevronLeft, LayoutList, Map
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Dish, DishCategory, CATEGORY_LABELS, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
+import { isDishProhibited } from '../utils/recipeHelpers';
 import MealCard from './MealCard';
 
 interface RecipeSearchProps {
@@ -87,11 +88,15 @@ const RecipeSearch: React.FC<RecipeSearchProps> = ({ user, onUpdateUser, externa
       
       if (selectedCategory === 'international' && selectedCountryId !== 'all') {
         const country = COUNTRY_DATA.find(c => c.id === selectedCountryId);
-        return country?.matches.some(m => dish.nationality?.includes(m));
+        if (!country?.matches.some(m => dish.nationality?.includes(m))) return false;
       }
+
+      // Filter prohibited ingredients
+      if (isDishProhibited(dish, user)) return false;
+
       return true;
     });
-  }, [searchTerm, selectedCategory, selectedCountryId, allDishes]);
+  }, [searchTerm, selectedCategory, selectedCountryId, allDishes, user.dislikedIngredients]);
 
   const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
   const paginatedDishes = filteredDishes.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);

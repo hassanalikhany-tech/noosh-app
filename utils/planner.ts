@@ -2,6 +2,7 @@
 import { Dish, DayPlan, UserProfile } from '../types';
 import { RecipeService } from '../services/recipeService';
 import { UserService } from '../services/userService';
+import { normalizeItemName, isDishProhibited } from './recipeHelpers';
 
 const shuffleArray = <T>(array: T[]): T[] => {
   const newArray = [...array];
@@ -26,15 +27,7 @@ export const filterDishes = (user: UserProfile) => {
   pool = pool.filter(d => !user.blacklistedDishIds?.includes(d.id));
   
   // ۲. فیلتر مواد ممنوعه (حساسیت‌های کاربر)
-  if (user.dislikedIngredients?.length) {
-    pool = pool.filter(dish => {
-        return !dish.ingredients.some(ing => 
-            user.dislikedIngredients.some(disliked => 
-                ing.item.includes(disliked) || disliked.includes(ing.item)
-            )
-        );
-    });
-  }
+  pool = pool.filter(dish => !isDishProhibited(dish, user));
 
   // ۳. فیلتر دسته‌های حذف شده در تنظیمات
   const filteredByCategory = pool.filter(d => !user.excludedCategories?.includes(d.category));

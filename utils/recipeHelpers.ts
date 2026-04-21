@@ -1,5 +1,18 @@
-import { Dish, NatureType } from '../types';
+import { Dish, NatureType, UserProfile } from '../types';
 import { getIngredientCategoryId, getBaseIngredientName } from '../data/pantry';
+
+export const isDishProhibited = (dish: Dish, user: UserProfile): boolean => {
+  if (!user.dislikedIngredients || user.dislikedIngredients.length === 0) return false;
+  if (!dish.ingredients) return false;
+  
+  const normalizedDisliked = user.dislikedIngredients.map(i => normalizeItemName(i));
+  return dish.ingredients.some(ing => {
+    const normalizedIng = normalizeItemName(ing.item);
+    return normalizedDisliked.some(disliked => 
+      normalizedIng.includes(disliked) || disliked.includes(normalizedIng)
+    );
+  });
+};
 
 export const estimateCookTime = (dish: Dish): number => {
   let time = 45; 
