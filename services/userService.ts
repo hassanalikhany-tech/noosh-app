@@ -4,8 +4,10 @@ import { doc, setDoc, getDoc, updateDoc, collection, getDocs, query, where, addD
 import { auth, db } from "./firebase";
 import { UserProfile, ShoppingItem, VisitorProfile, VisitorFinancialInfo, CommissionLog } from "../types";
 import { RecipeService } from "./recipeService";
+import { DB } from "../utils/db";
 
 const TEST_MOBILE = '09143013288';
+let cachedUser: UserProfile | null = null;
 const notifyUpdate = () => window.dispatchEvent(new CustomEvent('user-data-updated'));
 
 const generateReferralCode = () => {
@@ -26,6 +28,8 @@ export const UserService = {
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data() as UserProfile;
+        cachedUser = userData;
+        await DB.put('users', userData).catch(() => {});
         localStorage.setItem('noosh_auth_mobile', user.uid);
         localStorage.setItem('noosh_auth_session', 'email-password-session');
         return { success: true, user: userData };
@@ -58,6 +62,8 @@ export const UserService = {
         isApproved: true
       };
       await setDoc(doc(db, "users", user.uid), newUser);
+      cachedUser = newUser;
+      await DB.put('users', newUser).catch(() => {});
       localStorage.setItem('noosh_auth_mobile', user.uid);
       localStorage.setItem('noosh_auth_session', 'registration-session');
       return { success: true, user: newUser };
@@ -91,13 +97,18 @@ export const UserService = {
           isApproved: true
         };
         await setDoc(doc(db, "users", user.uid), newUser);
+        cachedUser = newUser;
+        await DB.put('users', newUser).catch(() => {});
         localStorage.setItem('noosh_auth_mobile', user.uid);
         localStorage.setItem('noosh_auth_session', 'google-session');
         return { success: true, user: newUser };
       }
+      const userData = userDoc.data() as UserProfile;
+      cachedUser = userData;
+      await DB.put('users', userData).catch(() => {});
       localStorage.setItem('noosh_auth_mobile', user.uid);
       localStorage.setItem('noosh_auth_session', 'google-session');
-      return { success: true, user: userDoc.data() as UserProfile };
+      return { success: true, user: userData };
     } catch (e: any) {
       return { success: false, message: e.message };
     }
@@ -243,12 +254,38 @@ export const UserService = {
     const mobile = localStorage.getItem('noosh_auth_mobile');
     const session = localStorage.getItem('noosh_auth_session');
     if (mobile && session) {
+      if (cachedUser && cachedUser.uid === mobile) {
+        return cachedUser;
+      }
+      
       const isTest = mobile === TEST_MOBILE;
       try {
-        const userDoc = await getDoc(doc(db, "users", mobile));
-        if (userDoc.exists()) return userDoc.data() as UserProfile;
+        // فورا از حافظه محلی آفلاین IndexedDB بارگذاری کن تا لود با تاخیر صفر انجام شود
+        const localSaved = await DB.get('users', mobile).catch(() => null);
+        if (localSaved) {
+          cachedUser = localSaved;
+        }
+
+        // بررسی موازی و با محدودیت زمانی از سرور برای جلوگیری از گیر کردن در لودینگ
+        const docRef = doc(db, "users", mobile);
+        const serverPromise = getDoc(docRef);
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
+        
+        const userDoc = await Promise.race([serverPromise, timeoutPromise]);
+        
+        if (userDoc && 'exists' in userDoc && userDoc.exists()) {
+          const userData = userDoc.data() as UserProfile;
+          cachedUser = userData;
+          await DB.put('users', userData).catch(() => {});
+          return userData;
+        }
+        
+        if (cachedUser) return cachedUser;
         if (isTest) return { uid: TEST_MOBILE, fullName: "مدیر سیستم", isAdmin: true, role: 'admin' } as any;
-      } catch (e) {}
+      } catch (e) {
+        if (cachedUser) return cachedUser;
+        if (isTest) return { uid: TEST_MOBILE, fullName: "مدیر سیستم", isAdmin: true, role: 'admin' } as any;
+      }
     }
     return null;
   },
@@ -256,13 +293,29 @@ export const UserService = {
   updateProfile: async (username: string, updates: Partial<UserProfile>): Promise<UserProfile> => {
     const mobile = localStorage.getItem('noosh_auth_mobile');
     if (!mobile) throw new Error("Not logged in");
-    await updateDoc(doc(db, "users", mobile), updates);
-    const user = await UserService.getCurrentUser();
+
+    // ۱. همگام‌سازی بلافاصله کش حافظه برای بازخوردهای سریع در رابط کاربری
+    if (cachedUser && cachedUser.uid === mobile) {
+      cachedUser = { ...cachedUser, ...updates };
+    } else {
+      const existing = await UserService.getCurrentUser();
+      cachedUser = existing ? { ...existing, ...updates } : ({ uid: mobile, ...updates } as any);
+    }
+
+    // ۲. ذخیره‌سازی محلی و آنی در IndexedDB جهت تضمین پایداری آفلاین
+    await DB.put('users', cachedUser).catch(() => {});
+
+    // ۳. ارسال درخواست غیر مسدودکننده (پیش‌زمینه) به دیتابیس ابری فایربیس
+    updateDoc(doc(db, "users", mobile), updates).catch(err => {
+      console.warn("Background cloud update failed (expected if offline):", err);
+    });
+
     notifyUpdate();
-    return user!;
+    return cachedUser!;
   },
 
   logout: async () => {
+    cachedUser = null;
     localStorage.removeItem('noosh_auth_session');
     localStorage.removeItem('noosh_auth_mobile');
     await signOut(auth);

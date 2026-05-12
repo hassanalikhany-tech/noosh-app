@@ -9,26 +9,59 @@ const STORES = {
   SETTINGS: 'settings'
 };
 
+let cachedDbInstance: IDBDatabase | null = null;
+
 export const DB = {
   init: (): Promise<IDBDatabase> => {
+    if (cachedDbInstance) {
+      return Promise.resolve(cachedDbInstance);
+    }
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      const timeout = setTimeout(() => {
+        reject(new Error("IndexedDB initialization timeout"));
+      }, 1500);
 
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORES.USERS)) {
-          db.createObjectStore(STORES.USERS, { keyPath: 'username' });
+      try {
+        if (!window.indexedDB) {
+          clearTimeout(timeout);
+          reject(new Error("IndexedDB not supported"));
+          return;
         }
-        if (!db.objectStoreNames.contains(STORES.DISHES)) {
-          db.createObjectStore(STORES.DISHES, { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
-          db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
-        }
-      };
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onblocked = () => {
+          clearTimeout(timeout);
+          reject(new Error("IndexedDB blocked by another tab"));
+        };
+
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains(STORES.USERS)) {
+            db.createObjectStore(STORES.USERS, { keyPath: 'username' });
+          }
+          if (!db.objectStoreNames.contains(STORES.DISHES)) {
+            db.createObjectStore(STORES.DISHES, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
+            db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
+          }
+        };
+
+        request.onsuccess = () => {
+          clearTimeout(timeout);
+          cachedDbInstance = request.result;
+          resolve(request.result);
+        };
+
+        request.onerror = () => {
+          clearTimeout(timeout);
+          reject(request.error || new Error("IndexedDB opening failed"));
+        };
+      } catch (err) {
+        clearTimeout(timeout);
+        reject(err);
+      }
     });
   },
 

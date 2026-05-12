@@ -144,19 +144,34 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        await RecipeService.initialize();
+        // ۱. تلاش برای بارگذاری رسپی‌ها از حافظه محلی (موقتی) - با خطاگیری مجزا برای جلوگیری از قفل شدن کل سیستم
+        try {
+          await RecipeService.initialize();
+        } catch (recipeErr) {
+          console.error("Local recipes cache initialization failed:", recipeErr);
+        }
+
+        // ۲. دریافت اطلاعات کاربر فعلی
         const user = await UserService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
           if (user.weeklyPlan) setDisplayPlan(user.weeklyPlan);
-          await checkUnreadNotifications(user);
           
-          // Update last active immediately
-          UserService.updateProfile(user.username, { lastActiveAt: Date.now() });
+          // فرآیندهای فرعی و تحت شبکه که نباید لود اولیه اپلیکیشن را معطل نگه دارند
+          checkUnreadNotifications(user).catch(err => console.error("Notification check failed:", err));
+          UserService.updateProfile(user.username, { lastActiveAt: Date.now() }).catch(err => console.error("Last active update failed:", err));
+        } else {
+          // اگر با وجود لاگین بودن، داکیومنت کاربر در دیتابیس یافت نشد، نشست را پاک کرده و به صفحه ورود هدایت می‌کنیم تا از لودینگ نامحدود جلوگیری شود
+          await UserService.logout();
         }
-        if (RecipeService.getLocalCount() === 0) await RecipeService.syncFromCloud();
-      } catch (err) { console.error(err); }
-      finally { setIsInitializing(false); }
+
+        // ۳. هماهنگ‌سازی دستورهای غذایی با سرور ابری در پس‌زمینه بدون ایجاد تاخیر در لود اولیه
+        RecipeService.syncFromCloud(false).catch(err => console.error("Sync from cloud failed:", err));
+      } catch (err) { 
+        console.error("Critical error in initApp:", err); 
+      } finally { 
+        setIsInitializing(false); 
+      }
     };
     initApp();
 
@@ -636,7 +651,7 @@ const AppContent: React.FC = () => {
           <div className="flex flex-col h-full [@media(orientation:landscape)_and_(max-height:500px)]:h-auto animate-enter">
             <div className="sticky [@media(orientation:landscape)_and_(max-height:500px)]:relative z-[900] bg-white/60 backdrop-blur-xl px-4 py-2 sm:py-4 sm:px-10 border-b border-slate-100">
                 <div className="bg-white border border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] p-2 sm:p-4 space-y-2 sm:space-y-3 max-w-7xl mx-auto">
-                    <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3">
+                    <div className="flex justify-center gap-10 sm:gap-20 border-b border-slate-100 pb-2 sm:pb-3 h-[68.5333px]">
                        <button onClick={() => handleToggleFilter('meatlessMode')} className={`p-2 sm:p-3 transition-all active:scale-125 hover:scale-110 ${currentUser.meatlessMode ? 'text-emerald-600' : 'text-slate-300'}`} title="رژیم گیاهی">
                          <Leaf size={28} className="sm:w-10 sm:h-10" fill={currentUser.meatlessMode ? "currentColor" : "none"} />
                        </button>

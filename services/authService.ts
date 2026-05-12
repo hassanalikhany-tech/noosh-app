@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } fro
 import { signInAnonymously } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { AuthUser } from "../types";
+import { DB } from "../utils/db";
 
 const TEST_MOBILE = '09143013288';
 const TEST_OTP = '11111';
@@ -127,13 +128,42 @@ export const AuthService = {
     const mobile = localStorage.getItem('noosh_auth_mobile');
     const localSession = localStorage.getItem('noosh_auth_session');
     if (!mobile || !localSession) return { isValid: false };
+    
     try {
+      // تست سریع و لود آنی سشن از لوکال دیتابیس بوسیله IndexedDB
+      const localUser = await DB.get('users', mobile).catch(() => null);
+      if (localUser && localUser.sessionId === localSession) {
+        // اگر سشن لوکال درست بود، بلافاصله وارد شو تا کاربر معطل نشود
+        return { isValid: true, user: localUser };
+      }
+
       if (!auth.currentUser) await signInAnonymously(auth);
-      const userSnap = await getDoc(doc(db, "users", mobile));
-      if (!userSnap.exists()) return { isValid: false };
-      const userData = userSnap.data() as AuthUser;
-      return { isValid: userData.sessionId === localSession, user: userData.sessionId === localSession ? userData : undefined };
+      
+      const docRef = doc(db, "users", mobile);
+      const serverPromise = getDoc(docRef);
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
+      
+      const userSnap = await Promise.race([serverPromise, timeoutPromise]);
+      
+      if (userSnap && 'exists' in userSnap && userSnap.exists()) {
+        const userData = userSnap.data() as AuthUser;
+        await DB.put('users', userData).catch(() => {});
+        return { isValid: userData.sessionId === localSession, user: userData.sessionId === localSession ? userData : undefined };
+      }
+
+      // در صورت بروز تاخیر، به سشن معتبر لوکال قبلی اعتماد کن
+      if (localUser) {
+        return { isValid: localUser.sessionId === localSession, user: localUser.sessionId === localSession ? localUser : undefined };
+      }
+      
+      if (mobile === TEST_MOBILE) return { isValid: true, user: { uid: TEST_MOBILE, role: 'admin', isActive: true } as any };
+      return { isValid: false };
     } catch {
+      // تلاش مجدد با لود از لوکال در صورت قطع ارتباط با کلود فایربیس
+      const localUser = await DB.get('users', mobile).catch(() => null);
+      if (localUser && localUser.sessionId === localSession) {
+        return { isValid: true, user: localUser };
+      }
       if (mobile === TEST_MOBILE) return { isValid: true, user: { uid: TEST_MOBILE, role: 'admin', isActive: true } as any };
       return { isValid: false };
     }

@@ -1,5 +1,6 @@
 
 import { Dish } from '../types';
+import { BACKUP_DISHES } from './backupDishes';
 import { ASHES } from './dishes_ashes';
 import { POLOS } from './dishes_polos';
 import { KHORAKS } from './dishes_khoraks';
@@ -36,6 +37,7 @@ import { INTERNATIONAL_DESSERTS } from './dishes_international_desserts';
  * دیتابیس جامع محلی (اکنون کاملاً تخلیه شده اما پیوندهای ساختاری برای حفظ فیلترها برقرار است)
  */
 export const DEFAULT_DISHES: Dish[] = [
+  ...BACKUP_DISHES,
   ...ASHES,
   ...POLOS,
   ...KHORAKS,

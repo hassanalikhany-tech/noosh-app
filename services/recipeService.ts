@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { DB } from '../utils/db';
+import { DEFAULT_DISHES } from '../data/recipes';
 import { getHiddenDishIds, getRenamedDishes } from '../utils/dishStorage';
 
 let cachedDishes: Dish[] = [];
@@ -32,8 +33,32 @@ export const RecipeService = {
         isInitialized = true;
         return { count: cachedDishes.length };
       }
+      
+      // تلاش برای استفاده از غذاهای پیش‌فرض در صورت تهی بودن دیتابیس محلی
+      if (DEFAULT_DISHES && DEFAULT_DISHES.length > 0) {
+        cachedDishes = DEFAULT_DISHES;
+        isInitialized = true;
+        
+        try {
+          const dbInstance = await DB.init();
+          const transaction = dbInstance.transaction('dishes', 'readwrite');
+          const store = transaction.objectStore('dishes');
+          for (const d of DEFAULT_DISHES) {
+            await store.put(d);
+          }
+        } catch (dbErr) {
+          console.warn("Failed to seed DEFAULT_DISHES to IndexedDB:", dbErr);
+        }
+        return { count: cachedDishes.length };
+      }
+      
       return { count: 0 };
     } catch (e) {
+      if (DEFAULT_DISHES && DEFAULT_DISHES.length > 0) {
+        cachedDishes = DEFAULT_DISHES;
+        isInitialized = true;
+        return { count: cachedDishes.length };
+      }
       return { count: 0 };
     }
   },
