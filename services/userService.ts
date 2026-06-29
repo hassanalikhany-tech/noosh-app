@@ -345,9 +345,34 @@ export const UserService = {
   resetUserDevices: async (uid: string) => { await updateDoc(doc(db, "users", uid), { registeredDevices: [] }); notifyUpdate(); },
   deleteUser: async (uid: string) => { await updateDoc(doc(db, "users", uid), { isDeleted: true }); notifyUpdate(); },
   hideGuidance: async (uid: string, key: string) => {
-    await updateDoc(doc(db, "users", uid), {
+    // ۱. همگام‌سازی آنی کش محلی
+    if (cachedUser && cachedUser.uid === uid) {
+      const keys = cachedUser.hiddenGuidanceKeys || [];
+      if (!keys.includes(key)) {
+        cachedUser.hiddenGuidanceKeys = [...keys, key];
+      }
+    } else {
+      const user = await UserService.getCurrentUser();
+      if (user && user.uid === uid) {
+        const keys = user.hiddenGuidanceKeys || [];
+        if (!keys.includes(key)) {
+          user.hiddenGuidanceKeys = [...keys, key];
+        }
+        cachedUser = user;
+      }
+    }
+
+    if (cachedUser) {
+      await DB.put('users', cachedUser).catch(() => {});
+    }
+
+    // ۲. به‌روزرسانی ابری در پس‌زمینه بدون مسدود کردن اجرای برنامه یا رابط کاربری
+    updateDoc(doc(db, "users", uid), {
       hiddenGuidanceKeys: arrayUnion(key)
+    }).catch(err => {
+      console.warn("Background guidance cloud update failed (expected if offline):", err);
     });
+
     notifyUpdate();
   }
 };

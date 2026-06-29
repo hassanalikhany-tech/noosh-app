@@ -2,9 +2,10 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { UserProfile, DishCategory, CATEGORY_LABELS, NatureType, VisitorProfile } from '../types';
 import { UserService } from '../services/userService';
-import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera, BookOpen, ChevronLeft } from 'lucide-react';
+import { LogOut, User, Sun, Snowflake, Scale, Heart, Plus, ThumbsDown, RotateCcw, ShieldCheck, Award, Info, Layers, Minus, FilterX, X, Check, CheckCircle, AlertTriangle, UserX, Search, MessageSquare, Camera, BookOpen, ChevronLeft, Leaf, Zap, Trophy } from 'lucide-react';
 import { RecipeService } from '../services/recipeService';
 import { PANTRY_ITEMS } from '../data/pantry';
+import { CHALLENGES } from '../data/challenges';
 import DishVisual from './DishVisual';
 import FeedbackModal from './FeedbackModal';
 import UserGuide from './UserGuide';
@@ -14,9 +15,28 @@ interface PreferencesProps {
   onUpdateUser: (update: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
   onLogout: () => void;
   onNotify?: (title: string, message: string, icon: any, color: string) => void;
+  onToggleFilter?: (filter: 'onlyFavoritesMode' | 'quickMealsMode' | 'meatlessMode') => void;
 }
 
-const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout, onNotify }) => {
+const ToggleSwitch = ({ isActive, onChange }: { isActive: boolean; onChange: () => void }) => {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      type="button"
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+        isActive ? 'bg-teal-500' : 'bg-slate-200'
+      }`}
+    >
+      <span
+        className={`pointer-events-none absolute top-0.5 right-0.5 h-4 w-4 transform rounded-full bg-white shadow transition-all duration-200 ease-in-out ${
+          isActive ? 'translate-x-[-20px]' : 'translate-x-[0px]'
+        }`}
+      />
+    </button>
+  );
+};
+
+const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout, onNotify, onToggleFilter }) => {
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isUserGuideOpen, setIsUserGuideOpen] = useState(false);
@@ -125,6 +145,66 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
     return all.filter(i => i.includes(ingredientSearch)).slice(0, 20);
   }, [ingredientSearch]);
 
+  const handleToggleChallenge = async (challengeId: string) => {
+    const isCurrentlyActive = user.activeChallengeId === challengeId;
+    const nextActiveId = isCurrentlyActive ? null : challengeId;
+    const selectedChallenge = CHALLENGES.find(c => c.id === challengeId);
+    
+    try {
+      const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: nextActiveId });
+      onUpdateUser(updatedUser);
+      if (onNotify && selectedChallenge) {
+        if (isCurrentlyActive) {
+          onNotify(
+            'چالش غیرفعال شد',
+            'برنامه غذایی شما به حالت عادی بازگشت.',
+            'bg-slate-600',
+            Trophy
+          );
+        } else {
+          onNotify(
+            `چالش ${selectedChallenge.title} فعال شد`,
+            selectedChallenge.description,
+            'emerald',
+            selectedChallenge.icon
+          );
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMainChallengeToggle = async () => {
+    try {
+      if (user.activeChallengeId) {
+        const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: null });
+        onUpdateUser(updatedUser);
+        if (onNotify) {
+          onNotify(
+            'چالش غیرفعال شد',
+            'برنامه غذایی شما به حالت عادی بازگشت.',
+            'bg-slate-600',
+            Trophy
+          );
+        }
+      } else {
+        const updatedUser = await UserService.updateProfile(user.username, { activeChallengeId: 'vegan-week' });
+        onUpdateUser(updatedUser);
+        if (onNotify) {
+          onNotify(
+            'چالش هفته گیاه‌خواری فعال شد',
+            'یک هفته بدون گوشت قرمز، مرغ و ماهی. تمرکز روی سبزیجات و حبوبات.',
+            'emerald',
+            Leaf
+          );
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full [@media(orientation:landscape)_and_(max-height:500px)]:h-auto animate-enter">
       {/* هدر شیشه‌ای دقیق با فونت استاندارد */}
@@ -203,6 +283,125 @@ const Preferences: React.FC<PreferencesProps> = ({ user, onUpdateUser, onLogout,
                   </div>
                 </div>
               </button>
+
+              {/* بخش تنظیمات هوشمند و فیلترهای سریع */}
+              <div id="smart-filters-section" className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
+                 <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="p-3 sm:p-4 bg-teal-50 text-teal-600 rounded-xl sm:rounded-[1.5rem]">
+                       <Layers size={22} className="sm:w-8" />
+                    </div>
+                    <div>
+                       <h2 className="text-base sm:text-2xl font-black text-slate-800">تنظیمات هوشمند و فیلترهای سریع</h2>
+                       <p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">مدیریت آسان رژیم‌های فعال، شخصی‌سازی برنامه‌ها و چالش‌ها با کلیدهای روشن/خاموش</p>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                    {/* رژیم بدون گوشت */}
+                    <div className="flex items-center justify-between p-4 sm:p-6 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100/80 rounded-2xl sm:rounded-[2rem] transition-all">
+                       <div className="flex items-center gap-3 sm:gap-4 text-right">
+                          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+                             <Leaf size={20} className="sm:w-6 sm:h-6" />
+                          </div>
+                          <div>
+                             <h3 className="text-xs sm:text-sm font-black text-slate-800">رژیم بدون گوشت</h3>
+                             <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-normal">حذف خودکار غذاهای گوشتی و کباب‌ها</p>
+                          </div>
+                       </div>
+                       <ToggleSwitch 
+                          isActive={!!user.meatlessMode} 
+                          onChange={() => onToggleFilter?.('meatlessMode')} 
+                       />
+                    </div>
+
+                    {/* فیلتر فقط محبوب‌ها */}
+                    <div className="flex items-center justify-between p-4 sm:p-6 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100/80 rounded-2xl sm:rounded-[2rem] transition-all">
+                       <div className="flex items-center gap-3 sm:gap-4 text-right">
+                          <div className="p-3 bg-rose-50 text-rose-600 rounded-xl shrink-0">
+                             <Heart size={20} className="sm:w-6 sm:h-6" fill={user.onlyFavoritesMode ? "currentColor" : "none"} />
+                          </div>
+                          <div>
+                             <h3 className="text-xs sm:text-sm font-black text-slate-800">فقط غذاهای محبوب من</h3>
+                             <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-normal">پیشنهاد هوشمند فقط از موارد پسندیده</p>
+                          </div>
+                       </div>
+                       <ToggleSwitch 
+                          isActive={!!user.onlyFavoritesMode} 
+                          onChange={() => onToggleFilter?.('onlyFavoritesMode')} 
+                       />
+                    </div>
+
+                    {/* غذاهای سریع پشت */}
+                    <div className="flex items-center justify-between p-4 sm:p-6 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100/80 rounded-2xl sm:rounded-[2rem] transition-all">
+                       <div className="flex items-center gap-3 sm:gap-4 text-right">
+                          <div className="p-3 bg-amber-50 text-amber-500 rounded-xl shrink-0">
+                             <Zap size={20} className="sm:w-6 sm:h-6" />
+                          </div>
+                          <div>
+                             <h3 className="text-xs sm:text-sm font-black text-slate-800">غذاهای سریع‌پخت</h3>
+                             <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-normal">اولویت عالی به غذاهای زیر ۴۵ دقیقه</p>
+                          </div>
+                       </div>
+                       <ToggleSwitch 
+                          isActive={!!user.quickMealsMode} 
+                          onChange={() => onToggleFilter?.('quickMealsMode')} 
+                       />
+                    </div>
+
+                    {/* چالش‌های هفتگی */}
+                    <div className="flex items-center justify-between p-4 sm:p-6 bg-slate-50/50 hover:bg-slate-50/80 border border-slate-100/80 rounded-2xl sm:rounded-[2rem] transition-all">
+                       <div className="flex items-center gap-3 sm:gap-4 text-right">
+                          <div className="p-3 bg-violet-50 text-violet-600 rounded-xl shrink-0">
+                             <Trophy size={20} className="sm:w-6 sm:h-6" />
+                          </div>
+                          <div>
+                             <h3 className="text-xs sm:text-sm font-black text-slate-800">چالش‌های هفتگی فعال</h3>
+                             <p className="text-[10px] text-slate-400 font-semibold mt-0.5 leading-normal">
+                                {user.activeChallengeId 
+                                   ? `چالش فعال: ${CHALLENGES.find(c => c.id === user.activeChallengeId)?.title || "هفته گیاه‌خواری"}` 
+                                   : 'بدون چالش هفتگی فعال'}
+                             </p>
+                          </div>
+                       </div>
+                       <ToggleSwitch 
+                          isActive={!!user.activeChallengeId} 
+                          onChange={handleMainChallengeToggle} 
+                       />
+                    </div>
+                 </div>
+
+                 {/* انتخاب و تغییر مستقیم چالش در صورت فعال بودن */}
+                 {user.activeChallengeId && (
+                    <div className="mt-4 pt-4 border-t border-slate-100/80 animate-enter text-right">
+                       <p className="text-xs font-bold text-slate-600 mb-3 block">شما می‌توانید چالش فعال خود را از بین گزینه‌های زیر تغییر دهید:</p>
+                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {CHALLENGES.map(ch => {
+                             const isCurrent = user.activeChallengeId === ch.id;
+                             const ChIcon = ch.icon;
+                             return (
+                                <button
+                                   key={ch.id}
+                                   onClick={() => handleToggleChallenge(ch.id)}
+                                   className={`flex items-center gap-3 p-3.5 rounded-xl border border-slate-200/80 transition-all text-right ${
+                                      isCurrent 
+                                         ? 'bg-violet-600 border-violet-600 text-white shadow-md' 
+                                         : 'bg-white hover:bg-slate-50 text-slate-700'
+                                   }`}
+                                >
+                                   <div className={`p-1.5 rounded-lg shrink-0 ${isCurrent ? 'bg-white/20 text-white' : `${ch.color} text-white`}`}>
+                                      <ChIcon size={16} />
+                                   </div>
+                                   <div className="min-w-0 flex-1">
+                                      <h4 className="text-xs font-black truncate">{ch.title}</h4>
+                                      <p className={`text-[9px] truncate ${isCurrent ? 'text-violet-100' : 'text-slate-400'}`}>{ch.description}</p>
+                                   </div>
+                                </button>
+                             );
+                          })}
+                       </div>
+                    </div>
+                 )}
+              </div>
 
               <div className="bg-white rounded-[1.75rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-sm border border-slate-100 space-y-6 sm:space-y-8">
                  <div className="flex items-center gap-3 sm:gap-4"><div className="p-3 sm:p-4 bg-orange-50 text-orange-600 rounded-xl sm:rounded-[1.5rem]"><ShieldCheck size={22} className="sm:w-8" /></div><div><h2 className="text-base sm:text-2xl font-black text-slate-800">فیلتر طبع غذاها</h2><p className="text-[9px] sm:text-xs text-slate-400 font-bold mt-1">انتخاب مزاج برای پیشنهادات دقیق‌تر</p></div></div>

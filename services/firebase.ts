@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAja246w3aHwF3HtHbkEJv6FzkXiZQeQFM",
@@ -16,4 +16,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 // تنظیم ماندگاری فقط برای نشست فعلی مرورگر
 setPersistence(auth, browserSessionPersistence);
-export const db = getFirestore(app);
+
+// فعال‌سازی کش آفلاین دائمی چندتبی برای حل خطای عدم اتصال به فایربیس و افزایش سرعت بالا
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});

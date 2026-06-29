@@ -199,9 +199,20 @@ const AppContent: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (filterNotif.show && !filterNotif.exiting) {
+      const timer = setTimeout(() => {
+        closeNotif();
+      }, 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [filterNotif.show, filterNotif.exiting, filterNotif.filterKey, dontShowAgain, currentUser]);
+
   const closeNotif = async () => {
     if (dontShowAgain && filterNotif.filterKey && currentUser) {
-      await UserService.hideGuidance(currentUser.uid, filterNotif.filterKey);
+      UserService.hideGuidance(currentUser.uid, filterNotif.filterKey).catch(err => {
+        console.error("Failed to hide guidance in background:", err);
+      });
     }
     setFilterNotif(prev => ({ ...prev, exiting: true }));
     setTimeout(() => setFilterNotif(prev => ({ ...prev, show: false, exiting: false })), 800);
@@ -471,39 +482,40 @@ const AppContent: React.FC = () => {
     <div className="h-[100dvh] w-full bg-[#f8fafc] font-sans text-right dir-rtl flex flex-col relative overflow-hidden select-none">
       
       {filterNotif.show && (
-        <>
-          <div className="fixed inset-0 z-[4999] bg-slate-900/60 backdrop-blur-md animate-enter"></div>
-          <div className={`fixed top-1/2 left-1/2 z-[5000] w-[90%] max-w-xl pointer-events-auto ${filterNotif.exiting ? 'animate-filter-out' : 'animate-filter-in'}`}>
-             <div className="bg-white/95 backdrop-blur-[40px] border border-white p-8 sm:p-12 rounded-[3rem] sm:rounded-[4rem] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] flex flex-col items-center text-center gap-6 sm:gap-8">
-                <div className={`p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-${filterNotif.color === 'purple' ? 'indigo' : filterNotif.color}-500 text-white shadow-2xl`}>
-                   <FilterIcon size={64} className="sm:w-20 sm:h-20" strokeWidth={2.5} />
-                </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl sm:text-3xl font-black text-slate-900">تنظیمات هوشمند نوش</h3>
-                   <p className="text-lg sm:text-2xl font-bold text-slate-800 leading-relaxed px-4">{filterNotif.message}</p>
-                </div>
-                
-                <div className="w-full space-y-5 pt-4 border-t border-slate-100">
-                   <button 
-                    onClick={() => setDontShowAgain(!dontShowAgain)}
-                    className="flex items-center justify-center gap-3 w-full group cursor-pointer transition-all"
-                  >
-                      <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${dontShowAgain ? 'bg-slate-900 border-slate-900 shadow-md' : 'border-slate-200 group-hover:border-slate-400'}`}>
-                         {dontShowAgain && <Check size={20} className="text-white" strokeWidth={4} />}
-                      </div>
-                      <span className="text-base sm:text-lg font-black text-slate-600">دیگر نمایش نده</span>
-                   </button>
+        <div 
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[5000] w-[92%] max-w-md bg-white/95 backdrop-blur-md border border-slate-200/80 p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex items-start gap-3.5 text-right dir-rtl pointer-events-auto transition-all duration-500 ease-out transform ${
+            filterNotif.exiting 
+              ? 'translate-y-32 opacity-0 scale-90' 
+              : 'translate-y-0 opacity-100 scale-100'
+          }`}
+        >
+          <div className={`p-2.5 rounded-xl text-white shadow-md shrink-0 bg-${filterNotif.color === 'purple' ? 'indigo' : filterNotif.color}-500`}>
+             <FilterIcon size={20} strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 min-w-0 pr-1">
+             <h3 className="text-sm font-black text-slate-900">تنظیمات هوشمند نوش</h3>
+             <p className="text-xs font-semibold text-slate-600 mt-0.5 leading-relaxed">{filterNotif.message}</p>
+             
+             <div className="flex items-center gap-4 mt-3 justify-between pt-2 border-t border-slate-100/80">
+                <button 
+                  onClick={() => setDontShowAgain(!dontShowAgain)}
+                  className="flex items-center gap-1.5 group cursor-pointer transition-all"
+                >
+                   <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${dontShowAgain ? 'bg-slate-900 border-slate-900' : 'border-slate-300 group-hover:border-slate-400'}`}>
+                      {dontShowAgain && <Check size={12} className="text-white" strokeWidth={4} />}
+                   </div>
+                   <span className="text-[10px] font-bold text-slate-500">دیگر نمایش نده</span>
+                </button>
 
-                   <button 
-                    onClick={closeNotif}
-                    className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[1.75rem] font-black text-lg sm:text-xl shadow-xl transition-all active:scale-95"
-                  >
-                      متوجه شدم
-                   </button>
-                </div>
+                <button 
+                  onClick={closeNotif}
+                  className="text-[10px] font-black text-rose-500 hover:text-rose-600 transition-colors"
+                >
+                  بستن سریع
+                </button>
              </div>
           </div>
-        </>
+        </div>
       )}
 
       <div className="print-only">
@@ -727,7 +739,14 @@ const AppContent: React.FC = () => {
         {viewMode === 'pantry' && <PantryChef user={currentUser!} onUpdateUser={setCurrentUser} />}
         {viewMode === 'search' && <RecipeSearch user={currentUser!} onUpdateUser={setCurrentUser} externalSearchTerm={globalSearchTerm} />}
         {viewMode === 'challenges' && <Challenges user={currentUser!} onUpdateUser={setCurrentUser} onNotify={handleChallengeNotify} />}
-        {viewMode === 'settings' && <Preferences user={currentUser!} onUpdateUser={setCurrentUser} onLogout={handleLogout} />}
+        {viewMode === 'settings' && (
+          <Preferences 
+            user={currentUser!} 
+            onUpdateUser={setCurrentUser} 
+            onLogout={handleLogout} 
+            onToggleFilter={handleToggleFilter}
+          />
+        )}
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 z-[1000] no-print h-12 sm:h-auto">

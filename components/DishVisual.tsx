@@ -32,11 +32,18 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
     setIsLoaded(false);
     setRetryCount(0);
     
-    if (imageUrl && imageUrl.trim() !== "") {
+    const isGitHubId = dishId && (dishId.startsWith('dish-') || /^[a-f0-9-]{8,}/i.test(dishId) || dishId.includes('-'));
+    
+    if (isGitHubId) {
+      const githubUrl = `https://raw.githubusercontent.com/hassanalikhany-tech/noosh-app/main/public/images/dishes/${dishId}.png`;
+      setResolvedSrc(githubUrl);
+    } else if (imageUrl && imageUrl.trim() !== "" && !imageUrl.includes('unsplash.com')) {
       setResolvedSrc(imageUrl);
     } else if (dishId) {
-      const path = `images/dishes/${dishId}.png`;
-      setResolvedSrc(path);
+      const githubUrl = `https://raw.githubusercontent.com/hassanalikhany-tech/noosh-app/main/public/images/dishes/${dishId}.png`;
+      setResolvedSrc(githubUrl);
+    } else if (imageUrl && imageUrl.trim() !== "") {
+      setResolvedSrc(imageUrl);
     } else {
       setResolvedSrc(null);
     }
@@ -49,16 +56,26 @@ const DishVisual: React.FC<DishVisualProps> = ({ category, className = "", iconS
   }, [resolvedSrc]);
 
   const handleImageError = () => {
-    if (!dishId || imageUrl) {
+    if (!dishId) {
       setImageError(true);
       return;
     }
 
+    const isGitHub = resolvedSrc?.includes('raw.githubusercontent.com');
+
     if (retryCount === 0) { 
-      setResolvedSrc(`images/dishes/${dishId}.jpg`); 
+      const ext = 'jpg';
+      const nextSrc = isGitHub 
+        ? `https://raw.githubusercontent.com/hassanalikhany-tech/noosh-app/main/public/images/dishes/${dishId}.${ext}`
+        : `images/dishes/${dishId}.${ext}`;
+      setResolvedSrc(nextSrc);
       setRetryCount(1); 
     } else if (retryCount === 1) { 
-      setResolvedSrc(`images/dishes/${dishId}.jpeg`); 
+      const ext = 'jpeg';
+      const nextSrc = isGitHub 
+        ? `https://raw.githubusercontent.com/hassanalikhany-tech/noosh-app/main/public/images/dishes/${dishId}.${ext}`
+        : `images/dishes/${dishId}.${ext}`;
+      setResolvedSrc(nextSrc);
       setRetryCount(2); 
     } else { 
       setImageError(true); 
